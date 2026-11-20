@@ -3345,6 +3345,281 @@ setInterval(() => {
       }
     });
   }, 350);
+  const bnM_all = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const enM_all = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  function bnOrd_all(d) {
+    if (d === 1) return "১লা";
+    if (d === 2 || d === 3) return toBn(d) + "রা";
+    if (d === 4) return "৪ঠা";
+    if (d >= 5 && d <= 18) return toBn(d) + "ই";
+    return toBn(d) + "শে";
+  }
+
+  function convertAnyDateFinal(val) {
+    const s = toEn(String(val)).trim();
+    const parts = s.split(/[\/\-\.\\]+/);
+    if (parts.length !== 3) return val;
+    let d = 0, m = 0, y = 0;
+    if (parts.at(0).length === 4) {
+      y = parseInt(parts.at(0), 10); m = parseInt(parts.at(1), 10); d = parseInt(parts.at(2), 10);
+    } else if (parts.at(2).length === 4) {
+      d = parseInt(parts.at(0), 10); m = parseInt(parts.at(1), 10); y = parseInt(parts.at(2), 10);
+    } else {
+      return val;
+    }
+    if (!d || !m || m < 1 || m > 12 || y < 1900 || y > 2100) return val;
+    const isEn = (typeof curLang !== "undefined" && curLang === "en");
+    return isEn ? (d + " " + enM_all[m - 1] + " " + y) : (bnOrd_all(d) + " " + bnM_all[m - 1] + " " + toBn(y));
+  }
+
+  function toUrlSafeB64(str) {
+    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function fromUrlSafeB64(b64) {
+    let s = b64.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    return decodeURIComponent(escape(atob(s)));
+  }
+
+  sendMemberMagicLink = function(s) {
+    const r = rows.find(x => x.s === s); if (!r) return;
+    const pin = String(Math.floor(1000 + Math.random() * 9000));
+    const pins = db._get("member_pins", {}); pins[toEn(r.n)] = pin; db._set("member_pins", pins);
+    const payload = toUrlSafeB64(JSON.stringify({
+      s: r.s, n: r.n, nm: r.nm, f: r.f || "", m: r.m || "", o: r.o || "",
+      b: r.b || "", h: r.h || "", r: r.r || "", fl: r.fl || "", p: r.p || [], pin: pin
+    }));
+    const baseUrl = location.href.split("?").at(0);
+    const url = baseUrl + "?member=" + toEn(r.n) + "&pin=" + pin + "&d=" + payload;
+    const txt = `আসসালামু আলাইকুম ${r.nm},\n${ORG_NAME}-এ আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন (গোপন পিন: ${pin}):\n${url}`;
+    const rawPh = (r.p && r.p.at(0)) ? toEn(String(r.p.at(0))).replace(/\D/g, "") : "";
+    const waTarget = rawPh ? ("88" + rawPh.replace(/^88/, "")) : "";
+    const waHref = "https://wa.me" + waTarget + "?text=" + encodeURIComponent(txt);
+
+    dlg.innerHTML = `<h2>🔗 তথ্য হালনাগাদ লিংক (পিন: ${pin})</h2>
+      <p class="msg">কম্পিউটার বা মোবাইলের WhatsApp-এ পাঠাতে নিচের বাটনে ক্লিক করুন অথবা কপি করে পেস্ট করুন:</p>
+      <textarea id="mlTxt" style="width:100%;height:95px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(txt)}</textarea>
+      <div class="bar">
+        <button class="btn" id="cpMlBtn">📋 লিংক ও বার্তা কপি করুন</button>
+        <a class="btn" style="background:#128c7e;text-decoration:none;" href="${waHref}" target="_blank" rel="noopener">💬 WhatsApp-এ পাঠান</a>
+        <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+      </div>`;
+    dlg.showModal();
+    document.getElementById("cpMlBtn").onclick = () => {
+      const ta = document.getElementById("mlTxt"); ta.select();
+      navigator.clipboard?.writeText(txt).catch(() => document.execCommand("copy"));
+      document.getElementById("cpMlBtn").textContent = "✓ কপি হয়েছে!";
+    };
+  };
+
+  (function(){
+    const qp = new URLSearchParams(location.search);
+    const dStr = qp.get("d");
+    const mNo = qp.get("member");
+    if (dStr && mNo) {
+      try {
+        const obj = JSON.parse(fromUrlSafeB64(dStr));
+        if (obj && obj.pin) {
+          const pins = db._get("member_pins", {});
+          pins[toEn(obj.n)] = obj.pin;
+          db._set("member_pins", pins);
+          if (!rows.some(x => toEn(x.n) === toEn(obj.n))) {
+            rows.push(obj);
+            if (typeof save === "function") save();
+          }
+        }
+      } catch(e) {}
+    }
+  })();
+
+  document.addEventListener("click", function(e) {
+    const el = e.target.closest("a, button");
+    if (!el) return;
+    const href = el.getAttribute("href") || "";
+    if (href.includes("whatsapp.com") || href.includes("wa.me") || el.textContent.includes("WhatsApp")) {
+      const m = href.match(/text=([^&]*)/);
+      const rawTxt = m ? decodeURIComponent(m.at(1)) : "";
+      let ph = "";
+      const box = el.closest(".m, tr, div");
+      if (box) {
+        const phMatch = toEn(box.textContent).match(/01[3-9]\d{8}/);
+        if (phMatch) ph = "88" + phMatch.at(0);
+      }
+      if (href.includes("{ph") || !href.startsWith("https://wa.me")) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        window.open("https://wa.me" + ph + (rawTxt ? "?text=" + encodeURIComponent(rawTxt) : ""), "_blank");
+      }
+    }
+  }, true);
+
+  setInterval(() => {
+    document.querySelectorAll(".m, #pv, .pdfpage, #list").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        if (!n.nodeValue || !/[\/\-\.\\]/.test(n.nodeValue)) continue;
+        n.nodeValue = n.nodeValue.replace(/([০-৯\d]{1,4}[\/\-\.\\][০-৯\d]{1,2}[\/\-\.\\][০-৯\d]{1,4})/g, convertAnyDateFinal);
+      }
+    });
+
+    const pv = document.getElementById("pv");
+    if (pv) {
+      const todayTxt = convertAnyDateFinal(new Date().toLocaleDateString("en-GB"));
+      pv.querySelectorAll(".sub, p, div").forEach(el => {
+        if (el.querySelector("table") || el.classList.contains("clean-hdr") || el.classList.contains("hdr-split")) return;
+        const txt = el.textContent.trim();
+        if (txt.includes("তারিখ") && txt.length < 120 && !txt.includes("বয়স/জন্ম")) {
+          const leftPart = txt.split(/,?\s*তারিখ[:\s]*/).at(0).trim();
+          el.style.display = "none";
+          const tbl = pv.querySelector("table");
+          if (tbl) {
+            let hdr = tbl.previousElementSibling;
+            if (!hdr || !hdr.classList.contains("clean-hdr")) {
+              hdr = document.createElement("div");
+              hdr.className = "clean-hdr";
+              hdr.style.cssText = "display:flex;justify-content:space-between;align-items:center;width:100%;margin:8px 0 6px;padding-bottom:4px;border-bottom:1.5px solid #0a6b6b;font-weight:700;font-size:10.5pt;";
+              tbl.parentNode.insertBefore(hdr, tbl);
+            }
+            const labelLeft = leftPart.includes("সদস্য তালিকা") ? leftPart : ("সদস্যের নাম: " + leftPart);
+            hdr.innerHTML = `<span>${esc(labelLeft)}</span><span>তারিখ: ${esc(todayTxt)}</span>`;
+          }
+        }
+      });
+    }
+
+    const dlgEl = document.getElementById("dlg");
+    if (dlgEl && dlgEl.open) {
+      dlgEl.querySelectorAll("a").forEach(a => {
+        const href = a.getAttribute("href") || "";
+        if (href.includes("whatsapp.com") || href.includes("wa.me") || a.textContent.includes("WhatsApp")) {
+          const m = href.match(/text=([^&]*)/);
+          const rawTxt = m ? decodeURIComponent(m.at(1)) : "";
+          let num = "";
+          const numMatch = href.match(/(?:phone=|wa\.me\/)(\d{10,15})/);
+          if (numMatch) num = numMatch.at(1);
+          else if (a.parentElement) {
+            const rowPh = toEn(a.parentElement.textContent).match(/01[3-9]\d{8}/);
+            if (rowPh) num = "88" + rowPh.at(0);
+          }
+          const cleanHref = "https://wa.me" + num + (rawTxt ? "?text=" + encodeURIComponent(rawTxt) : "");
+          if (href !== cleanHref) { a.setAttribute("href", cleanHref); a.setAttribute("target", "_blank"); a.setAttribute("rel", "noopener"); }
+        }
+      });
+
+      const dlgH2 = dlgEl.querySelector("h2");
+      if (dlgH2 && dlgH2.textContent.includes("সেটিংস") && !document.getElementById("secSignWrap")) {
+        const sigData = localStorage.getItem("nhs_secretary_sign") || "";
+        const wrap = document.createElement("div");
+        wrap.id = "secSignWrap";
+        wrap.style.cssText = "margin-top:10px;padding:10px;border:1.5px solid #0a6b6b;border-radius:10px;background:var(--bg);";
+        wrap.innerHTML = `<b style="display:block;margin-bottom:5px;color:#064e4e;">✍️ সম্পাদকের স্বাক্ষর (আইডি কার্ডের জন্য)</b>
+          ${sigData ? `<img src="${sigData}" style="max-height:46px;display:block;margin-bottom:6px;background:#fff;padding:3px;border:1px solid #cbd5e1;border-radius:4px;">` : `<small style="display:block;color:var(--muted);margin-bottom:5px;">এখনো কোনো স্বাক্ষর আপলোড করা হয়নি</small>`}
+          <input type="file" id="sec_sign_inp" accept="image/*">`;
+        const closeBtn = [...dlgEl.querySelectorAll(".btn")].find(b => b.textContent.trim() === "বন্ধ");
+        if (closeBtn && closeBtn.parentNode) closeBtn.parentNode.insertBefore(wrap, closeBtn);
+        else dlgEl.appendChild(wrap);
+
+        document.getElementById("sec_sign_inp").onchange = (ev) => {
+          const f = ev.target.files && ev.target.files.item(0);
+          if (!f) return;
+          const rd = new FileReader();
+          rd.onload = () => {
+            localStorage.setItem("nhs_secretary_sign", rd.result);
+            alert("সম্পাদকের স্বাক্ষর সফলভাবে সংরক্ষিত হয়েছে! এখন থেকে সব আইডি কার্ডে স্বয়ংক্রিয়ভাবে যুক্ত হবে।");
+            dlgEl.close();
+          };
+          rd.readAsDataURL(f);
+        };
+      }
+    }
+
+    const idCard = document.getElementById("smartIdCardArea");
+    if (idCard) {
+      const isEn = (typeof curLang !== "undefined" && curLang === "en");
+      const sigData = localStorage.getItem("nhs_secretary_sign") || "";
+      const signEl = idCard.querySelector(".smart-id-sign");
+      if (signEl) {
+        const sigTitle = isEn ? "Secretary" : "সম্পাদক";
+        signEl.innerHTML = `${sigData ? `<img src="${sigData}" style="max-height:34px;max-width:100px;display:block;margin:0 auto 2px;object-fit:contain;">` : ""}<div class="smart-id-sign-line"></div>${sigTitle}`;
+      }
+
+      const pTxt = idCard.querySelector(".pill-txt");
+      const pNum = idCard.querySelector(".pill-num");
+      if (pTxt) {
+        const isLife = pTxt.textContent.includes("আজীবন") || pTxt.textContent.includes("Life");
+        pTxt.textContent = isEn ? (isLife ? "Life Member" : "General Member") : (isLife ? "আজীবন সদস্য" : "সাধারণ সদস্য");
+      }
+      if (pNum) pNum.textContent = isEn ? toEn(pNum.textContent) : toBn(pNum.textContent);
+
+      if (isEn) {
+        const topH1 = document.querySelector("#hdr h1, .brand h1, header h1");
+        const orgEl = idCard.querySelector(".smart-id-org");
+        if (orgEl && topH1 && topH1.textContent.trim()) orgEl.textContent = topH1.textContent.trim();
+        const subEl = idCard.querySelector(".smart-id-sub");
+        if (subEl) subEl.textContent = "MEMBER IDENTITY CARD";
+        const footEl = idCard.querySelector(".smart-id-foot");
+        const topSub = document.querySelector("#hdr small, .brand small, header p");
+        if (footEl && topSub && topSub.textContent.trim()) footEl.textContent = topSub.textContent.trim();
+
+        const rList = [...idCard.querySelectorAll(".smart-id-row")];
+        if (rList.at(0)) rList.at(0).children.item(0).textContent = "Father's Name :";
+        if (rList.at(1)) rList.at(1).children.item(0).textContent = "Blood Group :";
+        if (rList.at(2)) { rList.at(2).children.item(0).textContent = "Address :"; rList.at(2).children.item(1).textContent = toEn(rList.at(2).children.item(1).textContent); }
+        if (rList.at(3)) { rList.at(3).children.item(0).textContent = "Mobile :"; rList.at(3).children.item(1).textContent = toEn(rList.at(3).children.item(1).textContent); }
+      }
+
+      const prBtn = [...document.querySelectorAll("#dlg .bar .btn")].find(b => b.textContent.includes("প্রিন্ট") || b.textContent.includes("Print"));
+      if (prBtn) {
+        prBtn.onclick = (e) => {
+          e.preventDefault();
+          const cardClone = idCard.outerHTML;
+          dlg.close();
+          const pvEl = document.getElementById("pv");
+          if (pvEl) {
+            pvEl.style.display = "block";
+            pvEl.innerHTML = `<div class="bar" style="margin-bottom:10px;display:flex;gap:8px;justify-content:center;">
+              <button class="btn" onclick="window.print()">🖨️ এখনই প্রিন্ট করুন</button>
+              <button class="btn ghost" onclick="document.getElementById('pv').style.display='none'">বন্ধ করুন</button>
+            </div>
+            <div style="display:flex;justify-content:center;padding:12px;">${cardClone}</div>`;
+            pvEl.scrollIntoView({ behavior: "smooth" });
+          }
+        };
+      }
+    }
+
+    const qMem = new URLSearchParams(location.search).get("member");
+    if (qMem && !document.getElementById("self_bg_wrap")) {
+      const allLabels = [...document.querySelectorAll("label")];
+      const targetLbl = allLabels.find(l => l.textContent.includes("বর্তমান ঠিকানা") || l.textContent.includes("ইমেইল") || l.textContent.includes("পেশা"));
+      if (targetLbl && targetLbl.parentNode) {
+        const r = rows.find(x => toEn(x.n) === toEn(qMem));
+        const bgs = db._get("member_blood_groups", {});
+        const curBg = r ? (bgs[String(r.s)] || r.bg || "") : "";
+        const wrap = document.createElement("label");
+        wrap.id = "self_bg_wrap";
+        wrap.innerHTML = `রক্তের গ্রুপ (Blood Group)
+          <select id="self_bg_sel">
+            <option value="">নির্বাচন করুন</option>
+            ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${curBg === g ? "selected" : ""}>${g}</option>`).join("")}
+          </select>`;
+        targetLbl.parentNode.insertBefore(wrap, targetLbl.nextSibling);
+
+        const saveSelfBtn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("সংরক্ষণ"));
+        if (saveSelfBtn) {
+          saveSelfBtn.addEventListener("click", () => {
+            if (r) {
+              const st = db._get("member_blood_groups", {});
+              st[String(r.s)] = document.getElementById("self_bg_sel")?.value || "";
+              db._set("member_blood_groups", st);
+            }
+          }, true);
+        }
+      }
+    }
+  }, 250);
 
 </script>
 
