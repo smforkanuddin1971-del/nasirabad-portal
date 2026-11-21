@@ -3635,6 +3635,36 @@ setInterval(() => {
   }
 }, 300);
 </script>
+<script>
+setInterval(() => {
+  const dlg = document.getElementById("dlg");
+  if (!dlg || !dlg.open) return;
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const toEnD = s => String(s || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+
+  dlg.querySelectorAll("a, button").forEach(el => {
+    if (el.dataset.noticeWaFixed) return;
+    const href = el.getAttribute("href") || "";
+    if (href.includes("{ph") || href.includes("whatsapp.com") || href.includes("wa.me") || el.textContent.includes("WhatsApp")) {
+      el.dataset.noticeWaFixed = "1";
+      const tm = href.match(/text=([^&]*)/);
+      const encMsg = tm ? tm.at(1) : "";
+      let ph = "";
+      const rowTxt = el.parentElement ? el.parentElement.textContent : "";
+      const rm = toEnD(rowTxt).replace(/[\s\-]/g, "").match(/(?:\+?88)?(01[3-9]\d{8})/);
+      if (rm) ph = "88" + rm.at(1);
+
+      const u1 = isAndroid ? `intent://send?phone=${ph}&text=${encMsg}#Intent;scheme=whatsapp;package=com.whatsapp;end` : `https://wa.me{ph}?text=${encMsg}`;
+      const u2 = isAndroid ? `intent://send?phone=${ph}&text=${encMsg}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end` : `https://wa.me{ph}?text=${encMsg}`;
+
+      const box = document.createElement("span");
+      box.style.cssText = "display:inline-flex;gap:4px;";
+      box.innerHTML = `<a href="${u1}" style="background:#16a34a;color:#fff;padding:5px 8px;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:700;">💬 WA</a><a href="${u2}" style="background:#0f766e;color:#fff;padding:5px 8px;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:700;">💼 Business</a>`;
+      el.replaceWith(box);
+    }
+  });
+}, 250);
+</script>
 
 </body>
 </html>
