@@ -3747,6 +3747,108 @@ setInterval(() => {
       }, 150);
     }
   })();
+  (function(){
+    function sEsc(v) {
+      return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+    function sEn(v) {
+      return String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+    }
+    function encB64(str) {
+      return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+    function decB64(b64) {
+      let s = String(b64).replace(/-/g, "+").replace(/_/g, "/");
+      while (s.length % 4) s += "=";
+      return decodeURIComponent(escape(atob(s)));
+    }
+    function findMemberPhone(r) {
+      if (!r) return "";
+      const allText = sEn([r.m, r.p, r.ph, r.phone, r.mobile, JSON.stringify(r)].join(" "));
+      const match = allText.match(/01[3-9]\d{8}/);
+      return match ? ("88" + match.at(0)) : "";
+    }
+
+    sendMemberMagicLink = function(s) {
+      const r = rows.find(x => x.s === s);
+      if (!r) return;
+      const pin = String(Math.floor(1000 + Math.random() * 9000));
+      const cleanPh = findMemberPhone(r);
+      const bgs = (typeof db !== "undefined" && db._get) ? db._get("member_blood_groups", {}) : {};
+      const payload = encB64(JSON.stringify({
+        s: r.s, n: r.n, nm: r.nm, f: r.f || "", m: r.m || "", o: r.o || "",
+        b: r.b || "", h: r.h || "", r: r.r || "", fl: r.fl || "",
+        ph: cleanPh.replace(/^88/, ""), bg: bgs[String(r.s)] || r.bg || "", pin: pin
+      }));
+      const baseUrl = location.href.split("?").at(0);
+      const url = baseUrl + "?member=" + sEn(r.n) + "&pin=" + pin + "&d=" + payload;
+      const orgTitle = (typeof ORG_NAME !== "undefined" && ORG_NAME) ? ORG_NAME : "নাসিরাবাদ হাউজিং সোসাইটি";
+      const txt = `আসসালামু আলাইকুম ${r.nm},\n${orgTitle}-এ আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন:\n${url}`;
+      const waHref = "https://wa.me" + cleanPh + "?text=" + encodeURIComponent(txt);
+
+      dlg.innerHTML = `<h2>🔗 তথ্য হালনাগাদ লিংক</h2>
+        <p class="msg">${cleanPh ? `সদস্যের মোবাইল: <b>+${cleanPh}</b> (সরাসরি এই নম্বরের WhatsApp চ্যাট খুলবে)` : `এই সদস্যের মোবাইল নম্বর ডাটাবেসে পাওয়া যায়নি`}</p>
+        <textarea id="mlTxt" style="width:100%;height:95px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${sEsc(txt)}</textarea>
+        <div class="bar">
+          <button class="btn" id="cpMlBtn">📋 লিংক ও বার্তা কপি করুন</button>
+          <a class="btn" style="background:#128c7e;text-decoration:none;" href="${waHref}" target="_blank" rel="noopener">💬 সরাসরি WhatsApp-এ পাঠান</a>
+          <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+        </div>`;
+      dlg.showModal();
+      document.getElementById("cpMlBtn").onclick = () => {
+        const ta = document.getElementById("mlTxt");
+        ta.select();
+        navigator.clipboard?.writeText(txt).catch(() => document.execCommand("copy"));
+        document.getElementById("cpMlBtn").textContent = "✓ কপি হয়েছে!";
+      };
+    };
+
+    const qp = new URLSearchParams(location.search);
+    const dStr = qp.get("d");
+    if (dStr) {
+      try {
+        const obj = JSON.parse(decB64(dStr));
+        if (obj && obj.nm) {
+          const showFixedForm = () => {
+            if (document.getElementById("fixedMemberUpdateOverlay")) return;
+            const ov = document.createElement("div");
+            ov.id = "fixedMemberUpdateOverlay";
+            ov.style.cssText = "position:fixed;inset:0;z-index:999999;background:#f1f5f9;overflow-y:auto;padding:16px;font-family:inherit;";
+            ov.innerHTML = `<div style="max-width:520px;margin:10px auto;background:#fff;color:#0f172a;padding:18px;border-radius:14px;border:1.5px solid #0a6b6b;box-shadow:0 8px 24px rgba(0,0,0,.15);">
+              <h2 style="margin:0 0 4px;color:#064e4e;font-size:1.25rem;">📝 নিজস্ব তথ্য হালনাগাদ ফরম</h2>
+              <p style="margin:0 0 14px;color:#475569;font-size:.9rem;">সদস্য নং: <b>${sEsc(obj.n)}</b> | আপনার তথ্য যাচাই ও হালনাগাদ করুন</p>
+              <div style="display:grid;gap:10px;">
+                <label style="font-weight:600;font-size:.9rem;">সদস্যের নাম<input id="mu2_nm" value="${sEsc(obj.nm)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
+                <label style="font-weight:600;font-size:.9rem;">পিতার নাম<input id="mu2_f" value="${sEsc(obj.f)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
+                <label style="font-weight:600;font-size:.9rem;">মাতার নাম<input id="mu2_m" value="${sEsc(obj.m)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
+                <label style="font-weight:600;font-size:.9rem;">পেশা<input id="mu2_o" value="${sEsc(obj.o)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
+                <label style="font-weight:600;font-size:.9rem;">রক্তের গ্রুপ (Blood Group)
+                  <select id="mu2_bg" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
+                    <option value="">নির্বাচন করুন</option>
+                    ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}
+                  </select>
+                </label>
+                <label style="font-weight:600;font-size:.9rem;">মোবাইল নম্বর<input id="mu2_ph" value="${sEsc(obj.ph)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
+                <label style="font-weight:600;font-size:.9rem;">বর্তমান ঠিকানা<input id="mu2_addr" value="${sEsc([obj.b, obj.r ? "রোড " + obj.r : "", obj.h ? "বাড়ি " + obj.h : "", obj.fl ? "ফ্ল্যাট " + obj.fl : ""].filter(Boolean).join(", "))}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
+                <button id="mu2_submit" style="background:#0a6b6b;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:6px;">✅ তথ্য সংরক্ষণ ও এডমিনকে পাঠান</button>
+              </div>
+            </div>`;
+            document.body.appendChild(ov);
+            document.getElementById("mu2_submit").onclick = () => {
+              const summary = `সদস্য তথ্য হালনাগাদ আবেদন:\nসদস্য নং: ${obj.n}\nনাম: ${document.getElementById("mu2_nm").value}\nপিতা: ${document.getElementById("mu2_f").value}\nমাতা: ${document.getElementById("mu2_m").value}\nপেশা: ${document.getElementById("mu2_o").value}\nরক্তের গ্রুপ: ${document.getElementById("mu2_bg").value}\nমোবাইল: ${document.getElementById("mu2_ph").value}\nঠিকানা: ${document.getElementById("mu2_addr").value}`;
+              ov.innerHTML = `<div style="max-width:520px;margin:30px auto;background:#ecfdf5;color:#064e4e;padding:20px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;">
+                <h2 style="margin:0 0 8px;">🎉 ধন্যবাদ! আপনার তথ্য প্রস্তুত হয়েছে</h2>
+                <p style="margin:0 0 14px;">নিচের বাটনে ক্লিক করে অফিসের WhatsApp-এ তথ্যটি পাঠিয়ে দিন:</p>
+                <a href="https://wa.me?text=${encodeURIComponent(summary)}" target="_blank" style="display:inline-block;background:#128c7e;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700;">💬 WhatsApp-এ পাঠান</a>
+              </div>`;
+            };
+          };
+          if (document.body) showFixedForm();
+          else window.addEventListener("DOMContentLoaded", showFixedForm);
+        }
+      } catch(e) {}
+    }
+  })();
 
 </script>
 
