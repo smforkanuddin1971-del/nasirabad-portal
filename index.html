@@ -4301,6 +4301,72 @@ setInterval(() => {
   }
 }, 250);
 </script>
+<script>
+setInterval(() => {
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  // ১. সদস্যের তথ্য হালনাগাদ পপআপে গোপন পিন যোগ ও স্ল্যাশ-মুক্ত সঠিক ডাইরেক্ট ইন্টেন্ট লিংক
+  const inp = document.getElementById("waTargetInp");
+  const ta = document.getElementById("waMsgBox");
+  const box = document.getElementById("dualWaBtnGroup");
+  if (inp && ta && box) {
+    if (!ta.value.includes("গোপন পিন:")) {
+      const pm = ta.value.match(/pin=(\d{4})/);
+      if (pm) {
+        ta.value = ta.value.replace("নিচের লিংকে ক্লিক করুন:", `নিচের লিংকে ক্লিক করুন (গোপন পিন: ${pm.at(1)}):`);
+      }
+    }
+    const digits = String(inp.value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/\D/g, "");
+    const m = digits.match(/(?:88)?(01[3-9]\d{8})/);
+    const fullPh = m ? ("88" + m.at(1)) : "";
+    const encTxt = encodeURIComponent(ta.value || "");
+
+    const waUrl = isAndroid
+      ? `intent://send?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp;end`
+      : `https://whatsapp.com{fullPh}&text=${encTxt}`;
+    const wabUrl = isAndroid
+      ? `intent://send?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`
+      : `https://whatsapp.com{fullPh}&text=${encTxt}`;
+
+    if (box.dataset.v2Href !== waUrl) {
+      box.dataset.v2Href = waUrl;
+      box.innerHTML = `
+        <a href="${waUrl}" style="background:#16a34a;color:#fff;padding:9px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.85rem;">💬 WhatsApp</a>
+        <a href="${wabUrl}" style="background:#0f766e;color:#fff;padding:9px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.85rem;">💼 WA Business</a>
+      `;
+    }
+  }
+
+  // ২. গণ-বার্তা ও নোটিশ বোর্ডের তালিকায়ও সরাসরি WhatsApp ও WA Business বাটন যোগ
+  const dlgEl = document.getElementById("dlg");
+  if (dlgEl && dlgEl.open) {
+    dlgEl.querySelectorAll("a").forEach(a => {
+      if (a.dataset.dualFixed) return;
+      const href = a.getAttribute("href") || "";
+      if (href.includes("whatsapp.com") || href.includes("wa.me") || a.textContent.includes("WhatsApp")) {
+        a.dataset.dualFixed = "1";
+        const tm = href.match(/text=([^&]*)/);
+        const encMsg = tm ? tm.at(1) : "";
+        let ph = "";
+        const pm = href.match(/(?:phone=|wa\.me\/)(\d{10,15})/);
+        if (pm) ph = pm.at(1);
+        else if (a.parentElement) {
+          const rowDigits = String(a.parentElement.textContent).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/[\s\-]/g, "");
+          const rm = rowDigits.match(/(?:\+?88)?(01[3-9]\d{8})/);
+          if (rm) ph = "88" + rm.at(1);
+        }
+        const u1 = isAndroid ? `intent://send?phone=${ph}&text=${encMsg}#Intent;scheme=whatsapp;package=com.whatsapp;end` : `https://whatsapp.com{ph}&text=${encMsg}`;
+        const u2 = isAndroid ? `intent://send?phone=${ph}&text=${encMsg}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end` : `https://whatsapp.com{ph}&text=${encMsg}`;
+
+        const wrap = document.createElement("span");
+        wrap.style.cssText = "display:inline-flex;gap:4px;";
+        wrap.innerHTML = `<a href="${u1}" style="background:#16a34a;color:#fff;padding:5px 8px;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:700;">💬 WA</a><a href="${u2}" style="background:#0f766e;color:#fff;padding:5px 8px;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:700;">💼 Business</a>`;
+        a.replaceWith(wrap);
+      }
+    });
+  }
+}, 250);
+</script>
 
 </body>
 </html>
