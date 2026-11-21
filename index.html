@@ -3597,6 +3597,44 @@ document.addEventListener("click", function(e) {
 }, true);
 </script>
 
+<script>
+setInterval(() => {
+  const sendBtn = document.getElementById("cfSendWa");
+  const phoneInp = document.getElementById("cfPhone");
+  const msgTa = document.getElementById("cfMsg");
+  if (!sendBtn || !phoneInp || !msgTa) return;
+
+  const toEnD = s => String(s || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const m = toEnD(phoneInp.value).replace(/\D/g, "").match(/(?:88)?(01[3-9]\d{8})/);
+  const fullPh = m ? ("88" + m.at(1)) : "";
+  const encTxt = encodeURIComponent(msgTa.value || "");
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  let bar = document.getElementById("cfDualWaBar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "cfDualWaBar";
+    bar.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;width:100%;margin-bottom:4px;";
+    sendBtn.parentNode.insertBefore(bar, sendBtn);
+    sendBtn.style.display = "none";
+  }
+
+  const waLink = isAndroid
+    ? `intent://send?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp;end`
+    : `https://wa.me{fullPh}?text=${encTxt}`;
+  const wabLink = isAndroid
+    ? `intent://send?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`
+    : `https://wa.me{fullPh}?text=${encTxt}`;
+
+  if (bar.dataset.cur !== waLink) {
+    bar.dataset.cur = waLink;
+    bar.innerHTML = `
+      <a href="${waLink}" style="background:#16a34a;color:#fff;padding:10px 13px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.86rem;">💬 WhatsApp</a>
+      <a href="${wabLink}" style="background:#0f766e;color:#fff;padding:10px 13px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.86rem;">💼 WA Business</a>
+    `;
+  }
+}, 300);
+</script>
 
 </body>
 </html>
