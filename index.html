@@ -3685,6 +3685,158 @@ setInterval(() => {
   };
 })();
 </script>
+<script>
+(function(){
+  for (let i = 1; i < 9999; i++) clearInterval(i);
+
+  // ১. সদস্য কার্ডের পপআপে 'তথ্য হালনাগাদ লিংক' ও 'একক বার্তা' মোড যুক্ত করা
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest("button, a");
+    if (!btn) return;
+    const lbl = (btn.textContent || "").trim();
+    if (lbl.includes("লিংক") && !lbl.includes("ভোটার") && !lbl.includes("কপি")) {
+      const card = btn.closest(".m");
+      if (!card) return;
+      setTimeout(() => {
+        const msgBox = document.getElementById("cfMsg");
+        const modal = document.getElementById("cleanFinalModal");
+        if (!msgBox || !modal || document.getElementById("cfModeBar")) return;
+
+        const defaultLinkMsg = msgBox.value;
+        const bar = document.createElement("div");
+        bar.id = "cfModeBar";
+        bar.style.cssText = "display:flex;gap:6px;margin-bottom:8px;";
+        bar.innerHTML = `
+          <button type="button" id="modeLinkBtn" style="flex:1;background:#0a6b6b;color:#fff;border:none;padding:7px;border-radius:7px;font-weight:700;font-size:.82rem;cursor:pointer;">🔗 তথ্য হালনাগাদ লিংক</button>
+          <button type="button" id="modeSingleBtn" style="flex:1;background:#e2e8f0;color:#0f172a;border:none;padding:7px;border-radius:7px;font-weight:700;font-size:.82rem;cursor:pointer;">✍️ একক বার্তা লিখুন</button>
+        `;
+        msgBox.parentNode.insertBefore(bar, msgBox);
+
+        document.getElementById("modeLinkBtn").onclick = () => {
+          msgBox.readOnly = true;
+          msgBox.value = defaultLinkMsg;
+          document.getElementById("modeLinkBtn").style.background = "#0a6b6b";
+          document.getElementById("modeLinkBtn").style.color = "#fff";
+          document.getElementById("modeSingleBtn").style.background = "#e2e8f0";
+          document.getElementById("modeSingleBtn").style.color = "#0f172a";
+        };
+        document.getElementById("modeSingleBtn").onclick = () => {
+          msgBox.readOnly = false;
+          const nameLine = defaultLinkMsg.split("\n").at(0) || "আসসালামু আলাইকুম,";
+          msgBox.value = nameLine + "\n";
+          msgBox.focus();
+          document.getElementById("modeSingleBtn").style.background = "#0a6b6b";
+          document.getElementById("modeSingleBtn").style.color = "#fff";
+          document.getElementById("modeLinkBtn").style.background = "#e2e8f0";
+          document.getElementById("modeLinkBtn").style.color = "#0f172a";
+        };
+      }, 40);
+    }
+  }, true);
+
+  // ২. নোটিশ বোর্ড: ইমেইল (একসাথে BCC ও সিঙ্গেল) + টেলিগ্রাম চ্যানেল ও শেয়ার
+  const setupFutureNoticeBoard = () => {
+    const dlg = document.getElementById("dlg");
+    if (!dlg || !dlg.open) return;
+    const h2 = dlg.querySelector("h2");
+    if (!h2 || (!h2.textContent.includes("নোটিশ") && !h2.textContent.includes("বার্তা"))) return;
+
+    dlg.querySelectorAll("button, a").forEach(b => {
+      if (b.textContent.includes("WhatsApp")) b.style.display = "none";
+    });
+
+    if (document.getElementById("cleanNoticeTools")) return;
+    const allRows = (typeof rows !== "undefined" && Array.isArray(rows)) ? rows : [];
+    const emailRows = allRows.filter(r => r && r.e && String(r.e).includes("@"));
+    const emailList = emailRows.map(r => String(r.e).trim());
+    const savedTgChannel = localStorage.getItem("nhs_tg_channel") || "";
+
+    const box = document.createElement("div");
+    box.id = "cleanNoticeTools";
+    box.style.cssText = "margin-top:12px;padding:12px;background:#f8fafc;border:1.5px solid #0a6b6b;border-radius:10px;";
+    box.innerHTML = `
+      <div style="font-weight:700;color:#064e4e;margin-bottom:8px;">📧 ইমেইল ও ✈️ টেলিগ্রাম যোগাযোগ কেন্দ্র (মোবাইল ও PC)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+        <button type="button" id="ntBulkMail" style="background:#dc2626;color:#fff;border:none;padding:9px 12px;border-radius:8px;font-weight:700;cursor:pointer;">📧 একসাথে ইমেইল (BCC: ${emailList.length})</button>
+        <button type="button" id="ntCopyMail" style="background:#334155;color:#fff;border:none;padding:9px 12px;border-radius:8px;font-weight:700;cursor:pointer;">📋 ইমেইল কপি</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+        <select id="ntSingleSel" style="flex:1;min-width:190px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;">
+          <option value="">একক (সিঙ্গেল) ইমেইল নির্বাচন করুন</option>
+          ${emailRows.map(r => `<option value="${String(r.e).trim()}">${r.n ? "নং " + r.n + " - " : ""}${r.nm}</option>`).join("")}
+        </select>
+        <button type="button" id="ntSingleMailBtn" style="background:#0a6b6b;color:#fff;border:none;padding:8px 13px;border-radius:8px;font-weight:700;cursor:pointer;">✉️ সিঙ্গেল ইমেইল</button>
+      </div>
+      <div style="border-top:1px dashed #cbd5e1;padding-top:8px;">
+        <div style="font-size:.82rem;font-weight:700;color:#0369a1;margin-bottom:5px;">✈️ টেলিগ্রাম চ্যানেল ও শেয়ার (একসাথে সব সদস্যকে):</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+          <input id="tgChannelInp" type="url" value="${savedTgChannel}" placeholder="সোসাইটির Telegram চ্যানেল লিংক (যেমন: https://t.me)" style="flex:1;min-width:190px;padding:7px 9px;border:1px solid #bae6fd;border-radius:7px;font-size:.85rem;background:#fff;color:#0f172a;">
+          <button type="button" id="tgSaveLinkBtn" style="background:#0284c7;color:#fff;border:none;padding:7px 11px;border-radius:7px;font-weight:700;font-size:.82rem;cursor:pointer;">💾 লিংক সেভ</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button type="button" id="ntTgChannelOpen" style="background:#0088cc;color:#fff;border:none;padding:9px 12px;border-radius:8px;font-weight:700;cursor:pointer;">📢 চ্যানেলে পোস্ট করুন (বার্তা কপিসহ)</button>
+          <button type="button" id="ntTgDirectShare" style="background:#0369a1;color:#fff;border:none;padding:9px 12px;border-radius:8px;font-weight:700;cursor:pointer;">✈️ টেলিগ্রাম শেয়ার (গ্রুপ/সিঙ্গেল)</button>
+        </div>
+      </div>
+    `;
+    dlg.appendChild(box);
+
+    const getMsgData = () => {
+      const inp = dlg.querySelector("input[type='text']");
+      const ta = dlg.querySelector("textarea");
+      const title = (inp && inp.value.trim()) ? inp.value.trim() : "জরুরি বিজ্ঞপ্তি - নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ";
+      const body = (ta && ta.value.trim()) ? ta.value.trim() : "আসসালামু আলাইকুম,\nনাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদের পক্ষ থেকে জরুরি নোটিশ।";
+      return { title, body };
+    };
+
+    document.getElementById("ntBulkMail").onclick = () => {
+      if (!emailList.length) return alert("কোনো সদস্যের ইমেইল যুক্ত করা নেই।");
+      const m = getMsgData();
+      window.open("https://google.com" + encodeURIComponent(emailList.join(",")) + "&su=" + encodeURIComponent(m.title) + "&body=" + encodeURIComponent(m.body), "_blank");
+    };
+
+    document.getElementById("ntSingleMailBtn").onclick = () => {
+      const to = document.getElementById("ntSingleSel").value;
+      if (!to) return alert("তালিকা থেকে একজন সদস্য নির্বাচন করুন।");
+      const m = getMsgData();
+      window.open("https://google.com" + encodeURIComponent(to) + "&su=" + encodeURIComponent(m.title) + "&body=" + encodeURIComponent(m.body), "_blank");
+    };
+
+    document.getElementById("ntCopyMail").onclick = () => {
+      if (!emailList.length) return alert("কোনো ইমেইল পাওয়া যায়নি।");
+      navigator.clipboard?.writeText(emailList.join(", ")).catch(() => {});
+      document.getElementById("ntCopyMail").textContent = "✓ কপি হয়েছে!";
+    };
+
+    document.getElementById("tgSaveLinkBtn").onclick = () => {
+      const val = document.getElementById("tgChannelInp").value.trim();
+      localStorage.setItem("nhs_tg_channel", val);
+      document.getElementById("tgSaveLinkBtn").textContent = "✓ সেভ হয়েছে";
+    };
+
+    document.getElementById("ntTgChannelOpen").onclick = () => {
+      const m = getMsgData();
+      const fullText = m.title + "\n\n" + m.body;
+      navigator.clipboard?.writeText(fullText).catch(() => {});
+      const chUrl = document.getElementById("tgChannelInp").value.trim();
+      if (chUrl && chUrl.startsWith("http")) {
+        window.open(chUrl, "_blank");
+      } else {
+        alert("বার্তাটি কপি হয়েছে! ওপরে সোসাইটির Telegram চ্যানেল লিংক সেভ করলে সরাসরি চ্যানেল খুলে যাবে।");
+      }
+    };
+
+    document.getElementById("ntTgDirectShare").onclick = () => {
+      const m = getMsgData();
+      const fullText = m.title + "\n\n" + m.body;
+            window.open("https://" + "t.me/share/url?url=" + encodeURIComponent("https://vercel.app") + "&text=" + encodeURIComponent(fullText), "_blank");
+
+    };
+  };
+
+  document.addEventListener("click", () => setTimeout(setupFutureNoticeBoard, 60));
+})();
+</script>
 
 </body>
 </html>
