@@ -3631,6 +3631,28 @@ setInterval(() => {
     }
     return _origWinOpen.call(window, url, target || "_blank", features);
   };
+  setInterval(() => {
+    const qp = new URLSearchParams(location.search);
+    const dStr = qp.get("d");
+    const mNo = qp.get("member");
+    const qPin = qp.get("pin");
+    if (dStr && mNo && document.body.textContent.includes("সঠিক নয়") && !document.body.dataset.pinFixed) {
+      document.body.dataset.pinFixed = "1";
+      try {
+        const obj = JSON.parse(fromUrlSafeB64(dStr));
+        if (obj && obj.pin && obj.pin === qPin) {
+          const pins = db._get("member_pins", {});
+          pins[toEn(obj.n)] = obj.pin;
+          db._set("member_pins", pins);
+          if (!rows.some(x => toEn(x.n) === toEn(obj.n))) {
+            rows.push(obj);
+            if (typeof save === "function") save();
+          }
+          location.reload();
+        }
+      } catch(e) {}
+    }
+  }, 200);
 
 </script>
 
