@@ -3345,1043 +3345,39 @@ setInterval(() => {
       }
     });
   }, 350);
-  const bnM_all = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
-  const enM_all = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-  function bnOrd_all(d) {
+</script>
+
+<script>
+(function(){
+  const bnM = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const enM = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  function toEn(v) { return String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)); }
+  function toBn(v) { return String(v == null ? "" : v).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]); }
+  function esc(v) { return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function bnOrd(d) {
     if (d === 1) return "১লা";
     if (d === 2 || d === 3) return toBn(d) + "রা";
     if (d === 4) return "৪ঠা";
     if (d >= 5 && d <= 18) return toBn(d) + "ই";
     return toBn(d) + "শে";
   }
-
-  function convertAnyDateFinal(val) {
-    const s = toEn(String(val)).trim();
-    const parts = s.split(/[\/\-\.\\]+/);
-    if (parts.length !== 3) return val;
+  function fmtDate(val) {
+    const s = toEn(val).trim();
+    const p = s.split(/[\/\-\.\\]+/);
+    if (p.length !== 3) return val;
     let d = 0, m = 0, y = 0;
-    if (parts.at(0).length === 4) {
-      y = parseInt(parts.at(0), 10); m = parseInt(parts.at(1), 10); d = parseInt(parts.at(2), 10);
-    } else if (parts.at(2).length === 4) {
-      d = parseInt(parts.at(0), 10); m = parseInt(parts.at(1), 10); y = parseInt(parts.at(2), 10);
-    } else {
-      return val;
-    }
+    if (p[0].length === 4) { y = +p[0]; m = +p[1]; d = +p[2]; }
+    else if (p[2].length === 4) { d = +p[0]; m = +p[1]; y = +p[2]; }
+    else return val;
     if (!d || !m || m < 1 || m > 12 || y < 1900 || y > 2100) return val;
     const isEn = (typeof curLang !== "undefined" && curLang === "en");
-    return isEn ? (d + " " + enM_all[m - 1] + " " + y) : (bnOrd_all(d) + " " + bnM_all[m - 1] + " " + toBn(y));
+    return isEn ? `${d} ${enM[m - 1]} ${y}` : `${bnOrd(d)} ${bnM[m - 1]} ${toBn(y)}`;
   }
-
-  function toUrlSafeB64(str) {
-    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  }
-  function fromUrlSafeB64(b64) {
-    let s = b64.replace(/-/g, "+").replace(/_/g, "/");
-    while (s.length % 4) s += "=";
-    return decodeURIComponent(escape(atob(s)));
-  }
-
-  sendMemberMagicLink = function(s) {
-    const r = rows.find(x => x.s === s); if (!r) return;
-    const pin = String(Math.floor(1000 + Math.random() * 9000));
-    const pins = db._get("member_pins", {}); pins[toEn(r.n)] = pin; db._set("member_pins", pins);
-    const payload = toUrlSafeB64(JSON.stringify({
-      s: r.s, n: r.n, nm: r.nm, f: r.f || "", m: r.m || "", o: r.o || "",
-      b: r.b || "", h: r.h || "", r: r.r || "", fl: r.fl || "", p: r.p || [], pin: pin
-    }));
-    const baseUrl = location.href.split("?").at(0);
-    const url = baseUrl + "?member=" + toEn(r.n) + "&pin=" + pin + "&d=" + payload;
-    const txt = `আসসালামু আলাইকুম ${r.nm},\n${ORG_NAME}-এ আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন (গোপন পিন: ${pin}):\n${url}`;
-    const rawPh = (r.p && r.p.at(0)) ? toEn(String(r.p.at(0))).replace(/\D/g, "") : "";
-    const waTarget = rawPh ? ("88" + rawPh.replace(/^88/, "")) : "";
-    const waHref = "https://wa.me" + waTarget + "?text=" + encodeURIComponent(txt);
-
-    dlg.innerHTML = `<h2>🔗 তথ্য হালনাগাদ লিংক (পিন: ${pin})</h2>
-      <p class="msg">কম্পিউটার বা মোবাইলের WhatsApp-এ পাঠাতে নিচের বাটনে ক্লিক করুন অথবা কপি করে পেস্ট করুন:</p>
-      <textarea id="mlTxt" style="width:100%;height:95px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(txt)}</textarea>
-      <div class="bar">
-        <button class="btn" id="cpMlBtn">📋 লিংক ও বার্তা কপি করুন</button>
-        <a class="btn" style="background:#128c7e;text-decoration:none;" href="${waHref}" target="_blank" rel="noopener">💬 WhatsApp-এ পাঠান</a>
-        <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
-      </div>`;
-    dlg.showModal();
-    document.getElementById("cpMlBtn").onclick = () => {
-      const ta = document.getElementById("mlTxt"); ta.select();
-      navigator.clipboard?.writeText(txt).catch(() => document.execCommand("copy"));
-      document.getElementById("cpMlBtn").textContent = "✓ কপি হয়েছে!";
-    };
-  };
-
-  (function(){
-    const qp = new URLSearchParams(location.search);
-    const dStr = qp.get("d");
-    const mNo = qp.get("member");
-    if (dStr && mNo) {
-      try {
-        const obj = JSON.parse(fromUrlSafeB64(dStr));
-        if (obj && obj.pin) {
-          const pins = db._get("member_pins", {});
-          pins[toEn(obj.n)] = obj.pin;
-          db._set("member_pins", pins);
-          if (!rows.some(x => toEn(x.n) === toEn(obj.n))) {
-            rows.push(obj);
-            if (typeof save === "function") save();
-          }
-        }
-      } catch(e) {}
-    }
-  })();
-
-  document.addEventListener("click", function(e) {
-    const el = e.target.closest("a, button");
-    if (!el) return;
-    const href = el.getAttribute("href") || "";
-    if (href.includes("whatsapp.com") || href.includes("wa.me") || el.textContent.includes("WhatsApp")) {
-      const m = href.match(/text=([^&]*)/);
-      const rawTxt = m ? decodeURIComponent(m.at(1)) : "";
-      let ph = "";
-      const box = el.closest(".m, tr, div");
-      if (box) {
-        const phMatch = toEn(box.textContent).match(/01[3-9]\d{8}/);
-        if (phMatch) ph = "88" + phMatch.at(0);
-      }
-      if (href.includes("{ph") || !href.startsWith("https://wa.me")) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        window.open("https://wa.me" + ph + (rawTxt ? "?text=" + encodeURIComponent(rawTxt) : ""), "_blank");
-      }
-    }
-  }, true);
-
-  setInterval(() => {
-    document.querySelectorAll(".m, #pv, .pdfpage, #list").forEach(box => {
-      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
-      let n;
-      while (n = w.nextNode()) {
-        if (!n.nodeValue || !/[\/\-\.\\]/.test(n.nodeValue)) continue;
-        n.nodeValue = n.nodeValue.replace(/([০-৯\d]{1,4}[\/\-\.\\][০-৯\d]{1,2}[\/\-\.\\][০-৯\d]{1,4})/g, convertAnyDateFinal);
-      }
-    });
-
-    const pv = document.getElementById("pv");
-    if (pv) {
-      const todayTxt = convertAnyDateFinal(new Date().toLocaleDateString("en-GB"));
-      pv.querySelectorAll(".sub, p, div").forEach(el => {
-        if (el.querySelector("table") || el.classList.contains("clean-hdr") || el.classList.contains("hdr-split")) return;
-        const txt = el.textContent.trim();
-        if (txt.includes("তারিখ") && txt.length < 120 && !txt.includes("বয়স/জন্ম")) {
-          const leftPart = txt.split(/,?\s*তারিখ[:\s]*/).at(0).trim();
-          el.style.display = "none";
-          const tbl = pv.querySelector("table");
-          if (tbl) {
-            let hdr = tbl.previousElementSibling;
-            if (!hdr || !hdr.classList.contains("clean-hdr")) {
-              hdr = document.createElement("div");
-              hdr.className = "clean-hdr";
-              hdr.style.cssText = "display:flex;justify-content:space-between;align-items:center;width:100%;margin:8px 0 6px;padding-bottom:4px;border-bottom:1.5px solid #0a6b6b;font-weight:700;font-size:10.5pt;";
-              tbl.parentNode.insertBefore(hdr, tbl);
-            }
-            const labelLeft = leftPart.includes("সদস্য তালিকা") ? leftPart : ("সদস্যের নাম: " + leftPart);
-            hdr.innerHTML = `<span>${esc(labelLeft)}</span><span>তারিখ: ${esc(todayTxt)}</span>`;
-          }
-        }
-      });
-    }
-
-    const dlgEl = document.getElementById("dlg");
-    if (dlgEl && dlgEl.open) {
-      dlgEl.querySelectorAll("a").forEach(a => {
-        const href = a.getAttribute("href") || "";
-        if (href.includes("whatsapp.com") || href.includes("wa.me") || a.textContent.includes("WhatsApp")) {
-          const m = href.match(/text=([^&]*)/);
-          const rawTxt = m ? decodeURIComponent(m.at(1)) : "";
-          let num = "";
-          const numMatch = href.match(/(?:phone=|wa\.me\/)(\d{10,15})/);
-          if (numMatch) num = numMatch.at(1);
-          else if (a.parentElement) {
-            const rowPh = toEn(a.parentElement.textContent).match(/01[3-9]\d{8}/);
-            if (rowPh) num = "88" + rowPh.at(0);
-          }
-          const cleanHref = "https://wa.me" + num + (rawTxt ? "?text=" + encodeURIComponent(rawTxt) : "");
-          if (href !== cleanHref) { a.setAttribute("href", cleanHref); a.setAttribute("target", "_blank"); a.setAttribute("rel", "noopener"); }
-        }
-      });
-
-      const dlgH2 = dlgEl.querySelector("h2");
-      if (dlgH2 && dlgH2.textContent.includes("সেটিংস") && !document.getElementById("secSignWrap")) {
-        const sigData = localStorage.getItem("nhs_secretary_sign") || "";
-        const wrap = document.createElement("div");
-        wrap.id = "secSignWrap";
-        wrap.style.cssText = "margin-top:10px;padding:10px;border:1.5px solid #0a6b6b;border-radius:10px;background:var(--bg);";
-        wrap.innerHTML = `<b style="display:block;margin-bottom:5px;color:#064e4e;">✍️ সম্পাদকের স্বাক্ষর (আইডি কার্ডের জন্য)</b>
-          ${sigData ? `<img src="${sigData}" style="max-height:46px;display:block;margin-bottom:6px;background:#fff;padding:3px;border:1px solid #cbd5e1;border-radius:4px;">` : `<small style="display:block;color:var(--muted);margin-bottom:5px;">এখনো কোনো স্বাক্ষর আপলোড করা হয়নি</small>`}
-          <input type="file" id="sec_sign_inp" accept="image/*">`;
-        const closeBtn = [...dlgEl.querySelectorAll(".btn")].find(b => b.textContent.trim() === "বন্ধ");
-        if (closeBtn && closeBtn.parentNode) closeBtn.parentNode.insertBefore(wrap, closeBtn);
-        else dlgEl.appendChild(wrap);
-
-        document.getElementById("sec_sign_inp").onchange = (ev) => {
-          const f = ev.target.files && ev.target.files.item(0);
-          if (!f) return;
-          const rd = new FileReader();
-          rd.onload = () => {
-            localStorage.setItem("nhs_secretary_sign", rd.result);
-            alert("সম্পাদকের স্বাক্ষর সফলভাবে সংরক্ষিত হয়েছে! এখন থেকে সব আইডি কার্ডে স্বয়ংক্রিয়ভাবে যুক্ত হবে।");
-            dlgEl.close();
-          };
-          rd.readAsDataURL(f);
-        };
-      }
-    }
-
-    const idCard = document.getElementById("smartIdCardArea");
-    if (idCard) {
-      const isEn = (typeof curLang !== "undefined" && curLang === "en");
-      const sigData = localStorage.getItem("nhs_secretary_sign") || "";
-      const signEl = idCard.querySelector(".smart-id-sign");
-      if (signEl) {
-        const sigTitle = isEn ? "Secretary" : "সম্পাদক";
-        signEl.innerHTML = `${sigData ? `<img src="${sigData}" style="max-height:34px;max-width:100px;display:block;margin:0 auto 2px;object-fit:contain;">` : ""}<div class="smart-id-sign-line"></div>${sigTitle}`;
-      }
-
-      const pTxt = idCard.querySelector(".pill-txt");
-      const pNum = idCard.querySelector(".pill-num");
-      if (pTxt) {
-        const isLife = pTxt.textContent.includes("আজীবন") || pTxt.textContent.includes("Life");
-        pTxt.textContent = isEn ? (isLife ? "Life Member" : "General Member") : (isLife ? "আজীবন সদস্য" : "সাধারণ সদস্য");
-      }
-      if (pNum) pNum.textContent = isEn ? toEn(pNum.textContent) : toBn(pNum.textContent);
-
-      if (isEn) {
-        const topH1 = document.querySelector("#hdr h1, .brand h1, header h1");
-        const orgEl = idCard.querySelector(".smart-id-org");
-        if (orgEl && topH1 && topH1.textContent.trim()) orgEl.textContent = topH1.textContent.trim();
-        const subEl = idCard.querySelector(".smart-id-sub");
-        if (subEl) subEl.textContent = "MEMBER IDENTITY CARD";
-        const footEl = idCard.querySelector(".smart-id-foot");
-        const topSub = document.querySelector("#hdr small, .brand small, header p");
-        if (footEl && topSub && topSub.textContent.trim()) footEl.textContent = topSub.textContent.trim();
-
-        const rList = [...idCard.querySelectorAll(".smart-id-row")];
-        if (rList.at(0)) rList.at(0).children.item(0).textContent = "Father's Name :";
-        if (rList.at(1)) rList.at(1).children.item(0).textContent = "Blood Group :";
-        if (rList.at(2)) { rList.at(2).children.item(0).textContent = "Address :"; rList.at(2).children.item(1).textContent = toEn(rList.at(2).children.item(1).textContent); }
-        if (rList.at(3)) { rList.at(3).children.item(0).textContent = "Mobile :"; rList.at(3).children.item(1).textContent = toEn(rList.at(3).children.item(1).textContent); }
-      }
-
-      const prBtn = [...document.querySelectorAll("#dlg .bar .btn")].find(b => b.textContent.includes("প্রিন্ট") || b.textContent.includes("Print"));
-      if (prBtn) {
-        prBtn.onclick = (e) => {
-          e.preventDefault();
-          const cardClone = idCard.outerHTML;
-          dlg.close();
-          const pvEl = document.getElementById("pv");
-          if (pvEl) {
-            pvEl.style.display = "block";
-            pvEl.innerHTML = `<div class="bar" style="margin-bottom:10px;display:flex;gap:8px;justify-content:center;">
-              <button class="btn" onclick="window.print()">🖨️ এখনই প্রিন্ট করুন</button>
-              <button class="btn ghost" onclick="document.getElementById('pv').style.display='none'">বন্ধ করুন</button>
-            </div>
-            <div style="display:flex;justify-content:center;padding:12px;">${cardClone}</div>`;
-            pvEl.scrollIntoView({ behavior: "smooth" });
-          }
-        };
-      }
-    }
-
-    const qMem = new URLSearchParams(location.search).get("member");
-    if (qMem && !document.getElementById("self_bg_wrap")) {
-      const allLabels = [...document.querySelectorAll("label")];
-      const targetLbl = allLabels.find(l => l.textContent.includes("বর্তমান ঠিকানা") || l.textContent.includes("ইমেইল") || l.textContent.includes("পেশা"));
-      if (targetLbl && targetLbl.parentNode) {
-        const r = rows.find(x => toEn(x.n) === toEn(qMem));
-        const bgs = db._get("member_blood_groups", {});
-        const curBg = r ? (bgs[String(r.s)] || r.bg || "") : "";
-        const wrap = document.createElement("label");
-        wrap.id = "self_bg_wrap";
-        wrap.innerHTML = `রক্তের গ্রুপ (Blood Group)
-          <select id="self_bg_sel">
-            <option value="">নির্বাচন করুন</option>
-            ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${curBg === g ? "selected" : ""}>${g}</option>`).join("")}
-          </select>`;
-        targetLbl.parentNode.insertBefore(wrap, targetLbl.nextSibling);
-
-        const saveSelfBtn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("সংরক্ষণ"));
-        if (saveSelfBtn) {
-          saveSelfBtn.addEventListener("click", () => {
-            if (r) {
-              const st = db._get("member_blood_groups", {});
-              st[String(r.s)] = document.getElementById("self_bg_sel")?.value || "";
-              db._set("member_blood_groups", st);
-            }
-          }, true);
-        }
-      }
-    }
-  }, 250);
-  const _origWinOpen = window.open;
-  window.open = function(url, target, features) {
-    if (typeof url === "string" && (url.includes("whatsapp.com") || url.includes("{ph"))) {
-      const m = url.match(/text=([^&]*)/);
-      const rawTxt = m ? decodeURIComponent(m.at(1)) : "";
-      const phMatch = url.match(/8801[3-9]\d{8}|01[3-9]\d{8}/);
-      const ph = phMatch ? ("88" + phMatch.at(0).replace(/^88/, "")) : "";
-      url = "https://wa.me" + ph + (rawTxt ? "?text=" + encodeURIComponent(rawTxt) : "");
-    }
-    return _origWinOpen.call(window, url, target || "_blank", features);
-  };
-  setInterval(() => {
-    const qp = new URLSearchParams(location.search);
-    const dStr = qp.get("d");
-    const mNo = qp.get("member");
-    const qPin = qp.get("pin");
-    if (dStr && mNo && document.body.textContent.includes("সঠিক নয়") && !document.body.dataset.pinFixed) {
-      document.body.dataset.pinFixed = "1";
-      try {
-        const obj = JSON.parse(fromUrlSafeB64(dStr));
-        if (obj && obj.pin && obj.pin === qPin) {
-          const pins = db._get("member_pins", {});
-          pins[toEn(obj.n)] = obj.pin;
-          db._set("member_pins", pins);
-          if (!rows.some(x => toEn(x.n) === toEn(obj.n))) {
-            rows.push(obj);
-            if (typeof save === "function") save();
-          }
-          location.reload();
-        }
-      } catch(e) {}
-    }
-  }, 200);
-  (function(){
-    function encB64(str) {
-      return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    }
-    function decB64(b64) {
-      let s = String(b64).replace(/-/g, "+").replace(/_/g, "/");
-      while (s.length % 4) s += "=";
-      return decodeURIComponent(escape(atob(s)));
-    }
-    function extractCleanPhone(r) {
-      let raw = "";
-      if (r && r.p) {
-        raw = Array.isArray(r.p) ? (r.p.at(0) || "") : String(r.p);
-      }
-      const m = toEn(raw).match(/01[3-9]\d{8}/);
-      return m ? ("88" + m.at(0)) : "";
-    }
-
-    sendMemberMagicLink = function(s) {
-      const r = rows.find(x => x.s === s);
-      if (!r) return;
-      const pin = String(Math.floor(1000 + Math.random() * 9000));
-      const cleanPh = extractCleanPhone(r);
-      const bgs = db._get("member_blood_groups", {});
-      const payload = encB64(JSON.stringify({
-        s: r.s, n: r.n, nm: r.nm, f: r.f || "", m: r.m || "", o: r.o || "",
-        b: r.b || "", h: r.h || "", r: r.r || "", fl: r.fl || "",
-        ph: cleanPh.replace(/^88/, ""), bg: bgs[String(r.s)] || r.bg || "", pin: pin
-      }));
-      const baseUrl = location.href.split("?").at(0);
-      const url = baseUrl + "?member=" + toEn(r.n) + "&pin=" + pin + "&d=" + payload;
-      const txt = `আসসালামু আলাইকুম ${r.nm},\n${ORG_NAME}-এ আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন:\n${url}`;
-      const waHref = "https://wa.me" + cleanPh + "?text=" + encodeURIComponent(txt);
-
-      dlg.innerHTML = `<h2>🔗 তথ্য হালনাগাদ লিংক</h2>
-        <p class="msg">${cleanPh ? `সদস্যের নম্বর: <b>+${cleanPh}</b> (নম্বর সেভ না থাকলেও সরাসরি WhatsApp খুলবে)` : `এই সদস্যের মোবাইল নম্বর পাওয়া যায়নি, নিচের কপি বাটন ব্যবহার করুন:`}</p>
-        <textarea id="mlTxt" style="width:100%;height:95px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(txt)}</textarea>
-        <div class="bar">
-          <button class="btn" id="cpMlBtn">📋 লিংক ও বার্তা কপি করুন</button>
-          <a class="btn" style="background:#128c7e;text-decoration:none;" href="${waHref}" target="_blank" rel="noopener">💬 সরাসরি WhatsApp-এ পাঠান</a>
-          <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
-        </div>`;
-      dlg.showModal();
-      document.getElementById("cpMlBtn").onclick = () => {
-        const ta = document.getElementById("mlTxt");
-        ta.select();
-        navigator.clipboard?.writeText(txt).catch(() => document.execCommand("copy"));
-        document.getElementById("cpMlBtn").textContent = "✓ কপি হয়েছে!";
-      };
-    };
-
-    const qp = new URLSearchParams(location.search);
-    const dStr = qp.get("d");
-    const qPin = qp.get("pin");
-    if (dStr) {
-      setInterval(() => {
-        if (!document.body.textContent.includes("সঠিক নয়") || document.body.dataset.renderedMagic) return;
-        try {
-          const obj = JSON.parse(decB64(dStr));
-          if (!obj || (qPin && obj.pin && obj.pin !== qPin)) return;
-          document.body.dataset.renderedMagic = "1";
-          const wrap = document.querySelector(".wrap") || document.body;
-          wrap.innerHTML = `<div style="max-width:520px;margin:20px auto;background:#fff;color:#0f172a;padding:18px;border-radius:14px;border:1.5px solid #0a6b6b;box-shadow:0 8px 24px rgba(0,0,0,.12);">
-            <h2 style="margin:0 0 4px;color:#064e4e;font-size:1.25rem;">📝 নিজস্ব তথ্য হালনাগাদ ফরম</h2>
-            <p style="margin:0 0 14px;color:#475569;font-size:.9rem;">সদস্য নং: <b>${esc(obj.n)}</b> | অনুগ্রহ করে আপনার তথ্য যাচাই ও হালনাগাদ করুন</p>
-            <div style="display:grid;gap:10px;">
-              <label style="font-weight:600;font-size:.9rem;">সদস্যের নাম<input id="mu_nm" value="${esc(obj.nm)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-              <label style="font-weight:600;font-size:.9rem;">পিতার নাম<input id="mu_f" value="${esc(obj.f)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-              <label style="font-weight:600;font-size:.9rem;">মাতার নাম<input id="mu_m" value="${esc(obj.m)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-              <label style="font-weight:600;font-size:.9rem;">পেশা<input id="mu_o" value="${esc(obj.o)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-              <label style="font-weight:600;font-size:.9rem;">রক্তের গ্রুপ (Blood Group)
-                <select id="mu_bg" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;">
-                  <option value="">নির্বাচন করুন</option>
-                  ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}
-                </select>
-              </label>
-              <label style="font-weight:600;font-size:.9rem;">মোবাইল নম্বর<input id="mu_ph" value="${esc(obj.ph)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-              <label style="font-weight:600;font-size:.9rem;">বর্তমান ঠিকানা (ব্লক / রোড / বাড়ি / ফ্ল্যাট)<input id="mu_addr" value="${esc([obj.b, obj.r ? "রোড " + obj.r : "", obj.h ? "বাড়ি " + obj.h : "", obj.fl ? "ফ্ল্যাট " + obj.fl : ""].filter(Boolean).join(", "))}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
-              <button id="mu_submit" style="background:#0a6b6b;color:#fff;border:none;padding:11px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:6px;">✅ তথ্য সংরক্ষণ ও এডমিনকে পাঠান</button>
-            </div>
-          </div>`;
-
-          document.getElementById("mu_submit").onclick = () => {
-            const summary = `সদস্য তথ্য হালনাগাদ আবেদন:\nসদস্য নং: ${obj.n}\nনাম: ${document.getElementById("mu_nm").value}\nপিতা: ${document.getElementById("mu_f").value}\nমাতা: ${document.getElementById("mu_m").value}\nপেশা: ${document.getElementById("mu_o").value}\nরক্তের গ্রুপ: ${document.getElementById("mu_bg").value}\nমোবাইল: ${document.getElementById("mu_ph").value}\nঠিকানা: ${document.getElementById("mu_addr").value}`;
-            wrap.innerHTML = `<div style="max-width:520px;margin:30px auto;background:#ecfdf5;color:#064e4e;padding:20px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;">
-              <h2 style="margin:0 0 8px;">🎉 ধন্যবাদ! আপনার তথ্য প্রস্তুত হয়েছে</h2>
-              <p style="margin:0 0 14px;">নিচের বাটনে ক্লিক করে সরাসরি অফিসের WhatsApp-এ তথ্যটি পাঠিয়ে দিন:</p>
-              <a href="https://wa.me?text=${encodeURIComponent(summary)}" target="_blank" style="display:inline-block;background:#128c7e;color:#fff;padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700;">💬 WhatsApp-এ পাঠান</a>
-            </div>`;
-          };
-        } catch(e) {}
-      }, 150);
-    }
-  })();
-  (function(){
-    function sEsc(v) {
-      return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-    }
-    function sEn(v) {
-      return String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
-    }
-    function encB64(str) {
-      return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    }
-    function decB64(b64) {
-      let s = String(b64).replace(/-/g, "+").replace(/_/g, "/");
-      while (s.length % 4) s += "=";
-      return decodeURIComponent(escape(atob(s)));
-    }
-    function findMemberPhone(r) {
-      if (!r) return "";
-      const allText = sEn([r.m, r.p, r.ph, r.phone, r.mobile, JSON.stringify(r)].join(" "));
-      const match = allText.match(/01[3-9]\d{8}/);
-      return match ? ("88" + match.at(0)) : "";
-    }
-
-    sendMemberMagicLink = function(s) {
-      const r = rows.find(x => x.s === s);
-      if (!r) return;
-      const pin = String(Math.floor(1000 + Math.random() * 9000));
-      const cleanPh = findMemberPhone(r);
-      const bgs = (typeof db !== "undefined" && db._get) ? db._get("member_blood_groups", {}) : {};
-      const payload = encB64(JSON.stringify({
-        s: r.s, n: r.n, nm: r.nm, f: r.f || "", m: r.m || "", o: r.o || "",
-        b: r.b || "", h: r.h || "", r: r.r || "", fl: r.fl || "",
-        ph: cleanPh.replace(/^88/, ""), bg: bgs[String(r.s)] || r.bg || "", pin: pin
-      }));
-      const baseUrl = location.href.split("?").at(0);
-      const url = baseUrl + "?member=" + sEn(r.n) + "&pin=" + pin + "&d=" + payload;
-      const orgTitle = (typeof ORG_NAME !== "undefined" && ORG_NAME) ? ORG_NAME : "নাসিরাবাদ হাউজিং সোসাইটি";
-      const txt = `আসসালামু আলাইকুম ${r.nm},\n${orgTitle}-এ আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন:\n${url}`;
-      const waHref = "https://wa.me" + cleanPh + "?text=" + encodeURIComponent(txt);
-
-      dlg.innerHTML = `<h2>🔗 তথ্য হালনাগাদ লিংক</h2>
-        <p class="msg">${cleanPh ? `সদস্যের মোবাইল: <b>+${cleanPh}</b> (সরাসরি এই নম্বরের WhatsApp চ্যাট খুলবে)` : `এই সদস্যের মোবাইল নম্বর ডাটাবেসে পাওয়া যায়নি`}</p>
-        <textarea id="mlTxt" style="width:100%;height:95px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${sEsc(txt)}</textarea>
-        <div class="bar">
-          <button class="btn" id="cpMlBtn">📋 লিংক ও বার্তা কপি করুন</button>
-          <a class="btn" style="background:#128c7e;text-decoration:none;" href="${waHref}" target="_blank" rel="noopener">💬 সরাসরি WhatsApp-এ পাঠান</a>
-          <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
-        </div>`;
-      dlg.showModal();
-      document.getElementById("cpMlBtn").onclick = () => {
-        const ta = document.getElementById("mlTxt");
-        ta.select();
-        navigator.clipboard?.writeText(txt).catch(() => document.execCommand("copy"));
-        document.getElementById("cpMlBtn").textContent = "✓ কপি হয়েছে!";
-      };
-    };
-
-    const qp = new URLSearchParams(location.search);
-    const dStr = qp.get("d");
-    if (dStr) {
-      try {
-        const obj = JSON.parse(decB64(dStr));
-        if (obj && obj.nm) {
-          const showFixedForm = () => {
-            if (document.getElementById("fixedMemberUpdateOverlay")) return;
-            const ov = document.createElement("div");
-            ov.id = "fixedMemberUpdateOverlay";
-            ov.style.cssText = "position:fixed;inset:0;z-index:999999;background:#f1f5f9;overflow-y:auto;padding:16px;font-family:inherit;";
-            ov.innerHTML = `<div style="max-width:520px;margin:10px auto;background:#fff;color:#0f172a;padding:18px;border-radius:14px;border:1.5px solid #0a6b6b;box-shadow:0 8px 24px rgba(0,0,0,.15);">
-              <h2 style="margin:0 0 4px;color:#064e4e;font-size:1.25rem;">📝 নিজস্ব তথ্য হালনাগাদ ফরম</h2>
-              <p style="margin:0 0 14px;color:#475569;font-size:.9rem;">সদস্য নং: <b>${sEsc(obj.n)}</b> | আপনার তথ্য যাচাই ও হালনাগাদ করুন</p>
-              <div style="display:grid;gap:10px;">
-                <label style="font-weight:600;font-size:.9rem;">সদস্যের নাম<input id="mu2_nm" value="${sEsc(obj.nm)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-                <label style="font-weight:600;font-size:.9rem;">পিতার নাম<input id="mu2_f" value="${sEsc(obj.f)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-                <label style="font-weight:600;font-size:.9rem;">মাতার নাম<input id="mu2_m" value="${sEsc(obj.m)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-                <label style="font-weight:600;font-size:.9rem;">পেশা<input id="mu2_o" value="${sEsc(obj.o)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-                <label style="font-weight:600;font-size:.9rem;">রক্তের গ্রুপ (Blood Group)
-                  <select id="mu2_bg" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
-                    <option value="">নির্বাচন করুন</option>
-                    ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}
-                  </select>
-                </label>
-                <label style="font-weight:600;font-size:.9rem;">মোবাইল নম্বর<input id="mu2_ph" value="${sEsc(obj.ph)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-                <label style="font-weight:600;font-size:.9rem;">বর্তমান ঠিকানা<input id="mu2_addr" value="${sEsc([obj.b, obj.r ? "রোড " + obj.r : "", obj.h ? "বাড়ি " + obj.h : "", obj.fl ? "ফ্ল্যাট " + obj.fl : ""].filter(Boolean).join(", "))}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-                <button id="mu2_submit" style="background:#0a6b6b;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:6px;">✅ তথ্য সংরক্ষণ ও এডমিনকে পাঠান</button>
-              </div>
-            </div>`;
-            document.body.appendChild(ov);
-            document.getElementById("mu2_submit").onclick = () => {
-              const summary = `সদস্য তথ্য হালনাগাদ আবেদন:\nসদস্য নং: ${obj.n}\nনাম: ${document.getElementById("mu2_nm").value}\nপিতা: ${document.getElementById("mu2_f").value}\nমাতা: ${document.getElementById("mu2_m").value}\nপেশা: ${document.getElementById("mu2_o").value}\nরক্তের গ্রুপ: ${document.getElementById("mu2_bg").value}\nমোবাইল: ${document.getElementById("mu2_ph").value}\nঠিকানা: ${document.getElementById("mu2_addr").value}`;
-              ov.innerHTML = `<div style="max-width:520px;margin:30px auto;background:#ecfdf5;color:#064e4e;padding:20px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;">
-                <h2 style="margin:0 0 8px;">🎉 ধন্যবাদ! আপনার তথ্য প্রস্তুত হয়েছে</h2>
-                <p style="margin:0 0 14px;">নিচের বাটনে ক্লিক করে অফিসের WhatsApp-এ তথ্যটি পাঠিয়ে দিন:</p>
-                <a href="https://wa.me?text=${encodeURIComponent(summary)}" target="_blank" style="display:inline-block;background:#128c7e;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700;">💬 WhatsApp-এ পাঠান</a>
-              </div>`;
-            };
-          };
-          if (document.body) showFixedForm();
-          else window.addEventListener("DOMContentLoaded", showFixedForm);
-        }
-      } catch(e) {}
-    }
-  })();
-
-</script>
-
-<script type="text/plain">
-
-(function(){
-  function sEsc(v) {
-    return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-  }
-  function sEn(v) {
-    return String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
-  }
-  function encB64(str) {
-    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  }
-  function decB64(b64) {
-    let s = String(b64).replace(/-/g, "+").replace(/_/g, "/");
-    while (s.length % 4) s += "=";
-    return decodeURIComponent(escape(atob(s)));
-  }
-
-  // ১. যেকোনো সদস্য কার্ডের 'লিংক' বাটনে ক্লিক ধরবে এবং নম্বর সেভ না থাকলেও সরাসরি WhatsApp খুলবে
-  document.addEventListener("click", function(e) {
-    const btn = e.target.closest("button, a");
-    if (!btn) return;
-    const txtLabel = btn.textContent || "";
-
-    // সদস্যের 'লিংক' বাটন ধরা
-    if (txtLabel.includes("লিংক") && !txtLabel.includes("ভোটার") && !txtLabel.includes("কপি")) {
-      const card = btn.closest(".m");
-      if (card) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        const cardText = card.innerText || card.textContent || "";
-        const phMatch = sEn(cardText).match(/01[3-9]\d{8}/);
-        const cleanPh = phMatch ? ("88" + phMatch[0]) : "";
-        const numMatch = cardText.match(/সদস্য নং[:\s]*([০-৯\d]+)/);
-        const mNo = numMatch ? sEn(numMatch[1]) : "";
-        const nameEl = card.querySelector("b, strong, h3, h4, .nm");
-        const mName = nameEl ? nameEl.textContent.trim() : "সম্মানিত সদস্য";
-
-        let rObj = { n: mNo, nm: mName, f: "", m: "", o: "", b: "", h: "", r: "", fl: "", ph: cleanPh.replace(/^88/, ""), bg: "" };
-        if (typeof rows !== "undefined" && Array.isArray(rows)) {
-          const found = rows.find(x => sEn(x.n) === mNo || x.nm === mName);
-          if (found) {
-            const bgs = (typeof db !== "undefined" && db._get) ? db._get("member_blood_groups", {}) : {};
-            rObj = {
-              s: found.s, n: found.n, nm: found.nm, f: found.f || "", m: found.m || "", o: found.o || "",
-              b: found.b || "", h: found.h || "", r: found.r || "", fl: found.fl || "",
-              ph: cleanPh.replace(/^88/, ""), bg: bgs[String(found.s)] || found.bg || ""
-            };
-          }
-        }
-
-        const pin = String(Math.floor(1000 + Math.random() * 9000));
-        rObj.pin = pin;
-        const payload = encB64(JSON.stringify(rObj));
-        const baseUrl = location.href.split("?")[0];
-        const url = baseUrl + "?member=" + (mNo || "1") + "&pin=" + pin + "&d=" + payload;
-        const msgTxt = `আসসালামু আলাইকুম ${rObj.nm},\nনাসিরাবাদ হাউজিং সোসাইটি-তে আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন:\n${url}`;
-        const waHref = "https://wa.me" + cleanPh + "?text=" + encodeURIComponent(msgTxt);
-
-        let box = document.getElementById("cleanMagicLinkModal");
-        if (!box) {
-          box = document.createElement("div");
-          box.id = "cleanMagicLinkModal";
-          box.style.cssText = "position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:14px;";
-          document.body.appendChild(box);
-        }
-        box.style.display = "flex";
-        box.innerHTML = `<div style="background:#fff;color:#0f172a;max-width:460px;width:100%;padding:18px;border-radius:14px;border:2px solid #0a6b6b;box-shadow:0 10px 30px rgba(0,0,0,.25);">
-          <h3 style="margin:0 0 6px;color:#064e4e;">🔗 তথ্য হালনাগাদ লিংক</h3>
-          <p style="margin:0 0 10px;font-size:.9rem;color:#334155;">${cleanPh ? `সদস্যের মোবাইল: <b>+${cleanPh}</b> (নম্বর সেভ না থাকলেও সরাসরি WhatsApp চ্যাট খুলবে)` : `এই কার্ডে মোবাইল নম্বর পাওয়া যায়নি`}</p>
-          <textarea id="cleanMlTa" style="width:100%;height:95px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;" readonly>${sEsc(msgTxt)}</textarea>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
-            <button id="cleanCpBtn" style="background:#0a6b6b;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;">📋 কপি করুন</button>
-            <a href="${waHref}" target="_blank" rel="noopener" style="background:#128c7e;color:#fff;padding:9px 14px;border-radius:8px;text-decoration:none;font-weight:700;">💬 সরাসরি WhatsApp-এ পাঠান</a>
-            <button onclick="document.getElementById('cleanMagicLinkModal').style.display='none'" style="background:#e2e8f0;color:#0f172a;border:none;padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;">বন্ধ</button>
-          </div>
-        </div>`;
-        document.getElementById("cleanCpBtn").onclick = () => {
-          const ta = document.getElementById("cleanMlTa");
-          ta.select();
-          navigator.clipboard?.writeText(msgTxt).catch(() => document.execCommand("copy"));
-          document.getElementById("cleanCpBtn").textContent = "✓ কপি হয়েছে!";
-        };
-      }
-    }
-  }, true);
-
-  // ২. দূরের সদস্য লিংকে ট্যাপ করলে স্থির বাংলা ফরম দেখাবে (কোনো পিন এরর বা আপ-ডাউন ছাড়াই)
-  const qp = new URLSearchParams(location.search);
-  const dStr = qp.get("d");
-  if (dStr) {
-    try {
-      const obj = JSON.parse(decB64(dStr));
-      if (obj && obj.nm) {
-        const renderForm = () => {
-          if (document.getElementById("fixedMemberUpdateOverlay")) return;
-          const ov = document.createElement("div");
-          ov.id = "fixedMemberUpdateOverlay";
-          ov.style.cssText = "position:fixed;inset:0;z-index:999999;background:#f1f5f9;overflow-y:auto;padding:16px;";
-          ov.innerHTML = `<div style="max-width:520px;margin:10px auto;background:#fff;color:#0f172a;padding:18px;border-radius:14px;border:1.5px solid #0a6b6b;box-shadow:0 8px 24px rgba(0,0,0,.15);">
-            <h2 style="margin:0 0 4px;color:#064e4e;font-size:1.25rem;">📝 নিজস্ব তথ্য হালনাগাদ ফরম</h2>
-            <p style="margin:0 0 14px;color:#475569;font-size:.9rem;">সদস্য নং: <b>${sEsc(obj.n)}</b> | আপনার তথ্য যাচাই ও হালনাগাদ করুন</p>
-            <div style="display:grid;gap:10px;">
-              <label style="font-weight:600;font-size:.9rem;">সদস্যের নাম<input id="mu3_nm" value="${sEsc(obj.nm)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">পিতার নাম<input id="mu3_f" value="${sEsc(obj.f)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">মাতার নাম<input id="mu3_m" value="${sEsc(obj.m)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">পেশা<input id="mu3_o" value="${sEsc(obj.o)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">রক্তের গ্রুপ (Blood Group)
-                <select id="mu3_bg" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
-                  <option value="">নির্বাচন করুন</option>
-                  ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}
-                </select>
-              </label>
-              <label style="font-weight:600;font-size:.9rem;">মোবাইল নম্বর<input id="mu3_ph" value="${sEsc(obj.ph)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">বর্তমান ঠিকানা<input id="mu3_addr" value="${sEsc([obj.b, obj.r ? "রোড " + obj.r : "", obj.h ? "বাড়ি " + obj.h : "", obj.fl ? "ফ্ল্যাট " + obj.fl : ""].filter(Boolean).join(", "))}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <button id="mu3_submit" style="background:#0a6b6b;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:6px;">✅ তথ্য সংরক্ষণ ও এডমিনকে পাঠান</button>
-            </div>
-          </div>`;
-          document.body.appendChild(ov);
-          document.getElementById("mu3_submit").onclick = () => {
-            const summary = `সদস্য তথ্য হালনাগাদ আবেদন:\nসদস্য নং: ${obj.n}\nনাম: ${document.getElementById("mu3_nm").value}\nপিতা: ${document.getElementById("mu3_f").value}\nমাতা: ${document.getElementById("mu3_m").value}\nপেশা: ${document.getElementById("mu3_o").value}\nরক্তের গ্রুপ: ${document.getElementById("mu3_bg").value}\nমোবাইল: ${document.getElementById("mu3_ph").value}\nঠিকানা: ${document.getElementById("mu3_addr").value}`;
-            ov.innerHTML = `<div style="max-width:520px;margin:30px auto;background:#ecfdf5;color:#064e4e;padding:20px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;">
-              <h2 style="margin:0 0 8px;">🎉 ধন্যবাদ! আপনার তথ্য প্রস্তুত হয়েছে</h2>
-              <p style="margin:0 0 14px;">নিচের বাটনে ক্লিক করে অফিসের WhatsApp-এ তথ্যটি পাঠিয়ে দিন:</p>
-              <a href="https://wa.me?text=${encodeURIComponent(summary)}" target="_blank" style="display:inline-block;background:#128c7e;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700;">💬 WhatsApp-এ পাঠান</a>
-            </div>`;
-          };
-        };
-        if (document.body) renderForm();
-        else window.addEventListener("DOMContentLoaded", renderForm);
-      }
-    } catch(e) {}
-  }
-})();
-</script>
-
-<script>
-(function(){
-  function cleanBnEnDigits(v) {
-    return String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
-  }
-  function extractExactBdPhone(raw) {
-    const digitsOnly = cleanBnEnDigits(raw).replace(/[\s\-\(\)\.]/g, "");
-    const m = digitsOnly.match(/(?:\+?88)?(01[3-9]\d{8})/);
-    return m ? ("88" + m.at(1)) : "";
-  }
-  function toSafeB64(str) {
-    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  }
-
-  document.addEventListener("click", function(e) {
-    const btn = e.target.closest("button, a");
-    if (!btn) return;
-    const label = btn.textContent || "";
-
-    if (label.includes("লিংক") && !label.includes("ভোটার") && !label.includes("কপি")) {
-      const card = btn.closest(".m");
-      if (!card) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-
-      const cardTxt = card.innerText || card.textContent || "";
-      const numMatch = cleanBnEnDigits(cardTxt).match(/সদস্য নং[:\s]*(\d+)/);
-      const mNo = numMatch ? numMatch.at(1) : "";
-      const nameEl = card.querySelector("b, strong, h3, h4, .nm");
-      const mName = nameEl ? nameEl.textContent.trim() : "সম্মানিত সদস্য";
-
-      let cleanPh = extractExactBdPhone(cardTxt);
-      let rObj = { n: mNo, nm: mName, f: "", m: "", o: "", b: "", h: "", r: "", fl: "", ph: cleanPh.replace(/^88/, ""), bg: "" };
-
-      if (typeof rows !== "undefined" && Array.isArray(rows)) {
-        const found = rows.find(x => cleanBnEnDigits(x.n) === mNo || x.nm === mName);
-        if (found) {
-          if (!cleanPh) cleanPh = extractExactBdPhone(JSON.stringify(found));
-          const bgs = (typeof db !== "undefined" && db._get) ? db._get("member_blood_groups", {}) : {};
-          rObj = {
-            s: found.s, n: found.n, nm: found.nm, f: found.f || "", m: found.m || "", o: found.o || "",
-            b: found.b || "", h: found.h || "", r: found.r || "", fl: found.fl || "",
-            ph: cleanPh.replace(/^88/, ""), bg: bgs[String(found.s)] || found.bg || ""
-          };
-        }
-      }
-
-      const pin = String(Math.floor(1000 + Math.random() * 9000));
-      rObj.pin = pin;
-      const url = location.href.split("?").at(0) + "?member=" + (mNo || "1") + "&pin=" + pin + "&d=" + toSafeB64(JSON.stringify(rObj));
-      const buildMsg = () => `আসসালামু আলাইকুম ${rObj.nm},\nনাসিরাবাদ হাউজিং সোসাইটি-তে আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন:\n${url}`;
-
-      let modal = document.getElementById("waDirectModal");
-      if (!modal) {
-        modal = document.createElement("div");
-        modal.id = "waDirectModal";
-        modal.style.cssText = "position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:14px;";
-        document.body.appendChild(modal);
-      }
-      modal.style.display = "flex";
-      modal.innerHTML = `<div style="background:#fff;color:#0f172a;max-width:450px;width:100%;padding:18px;border-radius:14px;border:2px solid #0a6b6b;">
-        <h3 style="margin:0 0 8px;color:#064e4e;">💬 WhatsApp-এ লিংক পাঠান</h3>
-        <label style="display:block;font-size:.88rem;font-weight:700;margin-bottom:8px;">প্রাপকের মোবাইল নম্বর (প্রয়োজনে পরিবর্তন করতে পারবেন):
-          <input id="waTargetInp" value="${cleanPh.replace(/^88/, "")}" placeholder="018XXXXXXXX" style="width:100%;padding:9px;margin-top:4px;border:1.5px solid #0a6b6b;border-radius:8px;font-size:1rem;box-sizing:border-box;">
-        </label>
-        <textarea id="waMsgBox" style="width:100%;height:90px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;" readonly>${buildMsg()}</textarea>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
-          <button id="waSendDirectBtn" style="background:#128c7e;color:#fff;border:none;padding:10px 15px;border-radius:8px;font-weight:700;cursor:pointer;">💬 সরাসরি WhatsApp খুলুন</button>
-          <button id="waCopyOnlyBtn" style="background:#0a6b6b;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">📋 কপি করুন</button>
-          <button onclick="document.getElementById('waDirectModal').style.display='none'" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">বন্ধ</button>
-        </div>
-      </div>`;
-
-      document.getElementById("waSendDirectBtn").onclick = () => {
-        const phReady = extractExactBdPhone(document.getElementById("waTargetInp").value);
-        if (!phReady) return alert("অনুগ্রহ করে ১১ সংখ্যার সঠিক মোবাইল নম্বর লিখুন (যেমন: 01819123456)");
-        const finalLink = "https://whatsapp.com" + phReady + "&text=" + encodeURIComponent(buildMsg());
-        window.open(finalLink, "_blank");
-      };
-
-      document.getElementById("waCopyOnlyBtn").onclick = () => {
-        const ta = document.getElementById("waMsgBox");
-        ta.select();
-        navigator.clipboard?.writeText(ta.value).catch(() => document.execCommand("copy"));
-        document.getElementById("waCopyOnlyBtn").textContent = "✓ কপি হয়েছে!";
-      };
-    }
-  }, true);
-})();
-</script>
-<script>
-(function(){
-  function bnToEnNum(str) {
-    const bn = "০১২৩৪৫৬৭৮৯";
-    return String(str == null ? "" : str).replace(/[০-৯]/g, ch => String(bn.indexOf(ch)));
-  }
-  function extractBdMobile(text) {
-    const en = bnToEnNum(text).replace(/[\s\-\(\)\.]/g, "");
-    const m = en.match(/(?:\+?88)?(01[3-9]\d{8})/);
-    return m ? m.at(1) : "";
-  }
-  function escHtml(v) {
-    return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-  }
-  function encodePayload(obj) {
-    const json = JSON.stringify(obj);
-    return btoa(unescape(encodeURIComponent(json))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  }
-  function decodePayload(b64) {
-    let s = String(b64).replace(/-/g, "+").replace(/_/g, "/");
-    while (s.length % 4) s += "=";
-    return JSON.parse(decodeURIComponent(escape(atob(s))));
-  }
-
-  // ১. সদস্য কার্ডের 'লিংক' বাটন ও নোটিশ বোর্ডের WhatsApp বাটন ধরা
-  document.addEventListener("click", function(e) {
-    const btn = e.target.closest("button, a");
-    if (!btn) return;
-    const btnText = (btn.textContent || "").trim();
-
-    if (btnText.includes("লিংক") && !btnText.includes("ভোটার") && !btnText.includes("কপি")) {
-      const card = btn.closest(".m");
-      if (!card) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-
-      const cardRaw = card.innerText || card.textContent || "";
-      const mobile11 = extractBdMobile(cardRaw);
-      const numMatch = bnToEnNum(cardRaw).match(/সদস্য নং[:\s]*(\d+)/);
-      const mNo = numMatch ? numMatch.at(1) : "";
-      const nameEl = card.querySelector("b, strong, h3, h4, .nm");
-      const mName = nameEl ? nameEl.textContent.trim() : "সম্মানিত সদস্য";
-
-      let memberData = {
-        n: mNo, nm: mName, f: "", m: "", o: "",
-        b: "", h: "", r: "", fl: "", ph: mobile11, bg: ""
-      };
-
-      if (typeof rows !== "undefined" && Array.isArray(rows)) {
-        const found = rows.find(x => bnToEnNum(x.n) === mNo || x.nm === mName);
-        if (found) {
-          const phFromDb = extractBdMobile(JSON.stringify(found));
-          const finalPh = mobile11 || phFromDb;
-          const bgs = (typeof db !== "undefined" && db._get) ? db._get("member_blood_groups", {}) : {};
-          memberData = {
-            s: found.s, n: found.n, nm: found.nm,
-            f: found.f || "", m: found.m || "", o: found.o || "",
-            b: found.b || "", h: found.h || "", r: found.r || "", fl: found.fl || "",
-            ph: finalPh, bg: bgs[String(found.s)] || found.bg || ""
-          };
-        }
-      }
-
-      const pin = String(Math.floor(1000 + Math.random() * 9000));
-      memberData.pin = pin;
-      const baseUrl = location.href.split("?").at(0);
-      const magicUrl = baseUrl + "?member=" + (mNo || "1") + "&pin=" + pin + "&d=" + encodePayload(memberData);
-      const messageBody = `আসসালামু আলাইকুম ${memberData.nm},\nনাসিরাবাদ হাউজিং সোসাইটি-তে আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন:\n${magicUrl}`;
-
-      let modal = document.getElementById("finalWaLinkModal");
-      if (!modal) {
-        modal = document.createElement("div");
-        modal.id = "finalWaLinkModal";
-        modal.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:14px;";
-        document.body.appendChild(modal);
-      }
-      modal.style.display = "flex";
-      modal.innerHTML = `<div style="background:#fff;color:#0f172a;max-width:460px;width:100%;padding:18px;border-radius:14px;border:2px solid #0a6b6b;box-shadow:0 12px 32px rgba(0,0,0,.25);">
-        <h3 style="margin:0 0 8px;color:#064e4e;font-size:1.15rem;">💬 WhatsApp-এ তথ্য হালনাগাদ লিংক পাঠান</h3>
-        <label style="display:block;font-size:.88rem;font-weight:700;color:#1e293b;margin-bottom:8px;">প্রাপকের মোবাইল নম্বর (স্বয়ংক্রিয়ভাবে নেওয়া হয়েছে, প্রয়োজনে বদলাতে পারেন):
-          <input id="finalWaPhoneInp" type="tel" value="${escHtml(memberData.ph)}" placeholder="018XXXXXXXX" style="width:100%;padding:9px;margin-top:4px;border:1.5px solid #0a6b6b;border-radius:8px;font-size:1rem;box-sizing:border-box;">
-        </label>
-        <textarea id="finalWaMsgTa" style="width:100%;height:95px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:.85rem;box-sizing:border-box;" readonly>${escHtml(messageBody)}</textarea>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
-          <button id="finalWaOpenBtn" style="background:#128c7e;color:#fff;border:none;padding:10px 15px;border-radius:8px;font-weight:700;cursor:pointer;">💬 সরাসরি WhatsApp খুলুন</button>
-          <button id="finalWaCopyBtn" style="background:#0a6b6b;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">📋 কপি করুন</button>
-          <button onclick="document.getElementById('finalWaLinkModal').style.display='none'" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">বন্ধ</button>
-        </div>
-      </div>`;
-
-      document.getElementById("finalWaOpenBtn").onclick = () => {
-        const ph11 = extractBdMobile(document.getElementById("finalWaPhoneInp").value);
-        if (!ph11) {
-          alert("অনুগ্রহ করে ১১ সংখ্যার সঠিক মোবাইল নম্বর লিখুন (যেমন: 01874804625)");
-          return;
-        }
-        const targetUrl = "https://whatsapp.com" + ph11 + "&text=" + encodeURIComponent(messageBody);
-        window.location.href = targetUrl;
-      };
-
-      document.getElementById("finalWaCopyBtn").onclick = () => {
-        const ta = document.getElementById("finalWaMsgTa");
-        ta.select();
-        navigator.clipboard?.writeText(ta.value).catch(() => document.execCommand("copy"));
-        document.getElementById("finalWaCopyBtn").textContent = "✓ কপি হয়েছে!";
-      };
-    }
-  }, true);
-
-  // ২. দূরের সদস্য লিংকে ট্যাপ করলে পিন ত্রুটি বা আপ-ডাউন ছাড়াই স্থির ফরম খুলবে
-  const urlParams = new URLSearchParams(location.search);
-  const encodedData = urlParams.get("d");
-  if (encodedData) {
-    try {
-      const obj = decodePayload(encodedData);
-      if (obj && obj.nm) {
-        const mountMemberForm = () => {
-          if (document.getElementById("permanentMemberFormLayer")) return;
-          const layer = document.createElement("div");
-          layer.id = "permanentMemberFormLayer";
-          layer.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#f1f5f9;overflow-y:auto;padding:16px;";
-          layer.innerHTML = `<div style="max-width:520px;margin:10px auto;background:#fff;color:#0f172a;padding:18px;border-radius:14px;border:1.5px solid #0a6b6b;box-shadow:0 8px 24px rgba(0,0,0,.15);">
-            <h2 style="margin:0 0 4px;color:#064e4e;font-size:1.25rem;">📝 নিজস্ব তথ্য হালনাগাদ ফরম</h2>
-            <p style="margin:0 0 14px;color:#475569;font-size:.9rem;">সদস্য নং: <b>${escHtml(obj.n)}</b> | অনুগ্রহ করে আপনার তথ্য যাচাই ও হালনাগাদ করুন</p>
-            <div style="display:grid;gap:10px;">
-              <label style="font-weight:600;font-size:.9rem;">সদস্যের নাম<input id="pm_nm" value="${escHtml(obj.nm)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">পিতার নাম<input id="pm_f" value="${escHtml(obj.f)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">মাতার নাম<input id="pm_m" value="${escHtml(obj.m)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">পেশা<input id="pm_o" value="${escHtml(obj.o)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">রক্তের গ্রুপ (Blood Group)
-                <select id="pm_bg" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
-                  <option value="">নির্বাচন করুন</option>
-                  ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}
-                </select>
-              </label>
-              <label style="font-weight:600;font-size:.9rem;">মোবাইল নম্বর<input id="pm_ph" value="${escHtml(obj.ph)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <label style="font-weight:600;font-size:.9rem;">বর্তমান ঠিকানা<input id="pm_addr" value="${escHtml([obj.b, obj.r ? "রোড " + obj.r : "", obj.h ? "বাড়ি " + obj.h : "", obj.fl ? "ফ্ল্যাট " + obj.fl : ""].filter(Boolean).join(", "))}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-              <button id="pm_submit" style="background:#0a6b6b;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:6px;">✅ তথ্য সংরক্ষণ ও এডমিনকে পাঠান</button>
-            </div>
-          </div>`;
-          document.body.appendChild(layer);
-
-          document.getElementById("pm_submit").onclick = () => {
-            const summary = `সদস্য তথ্য হালনাগাদ আবেদন:\nসদস্য নং: ${obj.n}\nনাম: ${document.getElementById("pm_nm").value}\nপিতা: ${document.getElementById("pm_f").value}\nমাতা: ${document.getElementById("pm_m").value}\nপেশা: ${document.getElementById("pm_o").value}\nরক্তের গ্রুপ: ${document.getElementById("pm_bg").value}\nমোবাইল: ${document.getElementById("pm_ph").value}\nঠিকানা: ${document.getElementById("pm_addr").value}`;
-            layer.innerHTML = `<div style="max-width:520px;margin:30px auto;background:#ecfdf5;color:#064e4e;padding:20px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;">
-              <h2 style="margin:0 0 8px;">🎉 ধন্যবাদ! আপনার তথ্য প্রস্তুত হয়েছে</h2>
-              <p style="margin:0 0 14px;">নিচের বাটনে ক্লিক করে অফিসের WhatsApp-এ তথ্যটি পাঠিয়ে দিন:</p>
-              <a href="https://whatsapp.com{encodeURIComponent(summary)}" style="display:inline-block;background:#128c7e;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700;">💬 WhatsApp-এ পাঠান</a>
-            </div>`;
-          };
-        };
-        if (document.body) mountMemberForm();
-        else window.addEventListener("DOMContentLoaded", mountMemberForm);
-      }
-    } catch(e) {}
-  }
-})();
-</script>
-<script>
-setInterval(() => {
-  const inp = document.getElementById("waTargetInp") || document.getElementById("finalWaPhoneInp");
-  const ta = document.getElementById("waMsgBox") || document.getElementById("finalWaMsgTa");
-  const btn = document.getElementById("waSendDirectBtn") || document.getElementById("finalWaOpenBtn");
-  if (!inp || !ta || !btn) return;
-
-  const digits = String(inp.value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/\D/g, "");
-  const m = digits.match(/(?:88)?(01[3-9]\d{8})/);
-  const fullPh = m ? ("88" + m.at(1)) : "";
-  const waUrl = "https://wa.me" + fullPh + "?text=" + encodeURIComponent(ta.value || "");
-
-  if (btn.tagName !== "A") {
-    const a = document.createElement("a");
-    a.id = btn.id;
-    a.className = btn.className;
-    a.style.cssText = btn.style.cssText + ";display:inline-block;text-decoration:none;";
-    a.textContent = btn.textContent;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.href = waUrl;
-    btn.replaceWith(a);
-  } else if (btn.getAttribute("href") !== waUrl) {
-    btn.setAttribute("href", waUrl);
-  }
-}, 250);
-</script>
-<script>
-setInterval(() => {
-  const inp = document.getElementById("waTargetInp") || document.getElementById("finalWaPhoneInp");
-  const ta = document.getElementById("waMsgBox") || document.getElementById("finalWaMsgTa");
-  const oldBtn = document.getElementById("waSendDirectBtn") || document.getElementById("finalWaOpenBtn");
-  if (!inp || !ta || !oldBtn) return;
-
-  const digits = String(inp.value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/\D/g, "");
-  const m = digits.match(/(?:88)?(01[3-9]\d{8})/);
-  const fullPh = m ? ("88" + m.at(1)) : "";
-  const encTxt = encodeURIComponent(ta.value || "");
-  const isAndroid = /Android/i.test(navigator.userAgent);
-
-  let box = document.getElementById("dualWaBtnGroup");
-  if (!box) {
-    box = document.createElement("div");
-    box.id = "dualWaBtnGroup";
-    box.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-bottom:4px;";
-    oldBtn.parentNode.insertBefore(box, oldBtn);
-    oldBtn.style.display = "none";
-  }
-
-  const waUrl = isAndroid
-    ? `intent://send/?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp;end`
-    : `https://whatsapp.com{fullPh}&text=${encTxt}`;
-  const wabUrl = isAndroid
-    ? `intent://send/?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`
-    : `https://whatsapp.com{fullPh}&text=${encTxt}`;
-
-  if (box.dataset.lastHref !== waUrl) {
-    box.dataset.lastHref = waUrl;
-    box.innerHTML = `
-      <a href="${waUrl}" style="background:#16a34a;color:#fff;padding:9px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.85rem;">💬 WhatsApp</a>
-      <a href="${wabUrl}" style="background:#0f766e;color:#fff;padding:9px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.85rem;">💼 WA Business</a>
-    `;
-  }
-}, 250);
-</script>
-<script>
-setInterval(() => {
-  const isAndroid = /Android/i.test(navigator.userAgent);
-
-  // ১. সদস্যের তথ্য হালনাগাদ পপআপে গোপন পিন যোগ ও স্ল্যাশ-মুক্ত সঠিক ডাইরেক্ট ইন্টেন্ট লিংক
-  const inp = document.getElementById("waTargetInp");
-  const ta = document.getElementById("waMsgBox");
-  const box = document.getElementById("dualWaBtnGroup");
-  if (inp && ta && box) {
-    if (!ta.value.includes("গোপন পিন:")) {
-      const pm = ta.value.match(/pin=(\d{4})/);
-      if (pm) {
-        ta.value = ta.value.replace("নিচের লিংকে ক্লিক করুন:", `নিচের লিংকে ক্লিক করুন (গোপন পিন: ${pm.at(1)}):`);
-      }
-    }
-    const digits = String(inp.value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/\D/g, "");
-    const m = digits.match(/(?:88)?(01[3-9]\d{8})/);
-    const fullPh = m ? ("88" + m.at(1)) : "";
-    const encTxt = encodeURIComponent(ta.value || "");
-
-    const waUrl = isAndroid
-      ? `intent://send?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp;end`
-      : `https://whatsapp.com{fullPh}&text=${encTxt}`;
-    const wabUrl = isAndroid
-      ? `intent://send?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`
-      : `https://whatsapp.com{fullPh}&text=${encTxt}`;
-
-    if (box.dataset.v2Href !== waUrl) {
-      box.dataset.v2Href = waUrl;
-      box.innerHTML = `
-        <a href="${waUrl}" style="background:#16a34a;color:#fff;padding:9px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.85rem;">💬 WhatsApp</a>
-        <a href="${wabUrl}" style="background:#0f766e;color:#fff;padding:9px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.85rem;">💼 WA Business</a>
-      `;
-    }
-  }
-
-  // ২. গণ-বার্তা ও নোটিশ বোর্ডের তালিকায়ও সরাসরি WhatsApp ও WA Business বাটন যোগ
-  const dlgEl = document.getElementById("dlg");
-  if (dlgEl && dlgEl.open) {
-    dlgEl.querySelectorAll("a").forEach(a => {
-      if (a.dataset.dualFixed) return;
-      const href = a.getAttribute("href") || "";
-      if (href.includes("whatsapp.com") || href.includes("wa.me") || a.textContent.includes("WhatsApp")) {
-        a.dataset.dualFixed = "1";
-        const tm = href.match(/text=([^&]*)/);
-        const encMsg = tm ? tm.at(1) : "";
-        let ph = "";
-        const pm = href.match(/(?:phone=|wa\.me\/)(\d{10,15})/);
-        if (pm) ph = pm.at(1);
-        else if (a.parentElement) {
-          const rowDigits = String(a.parentElement.textContent).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/[\s\-]/g, "");
-          const rm = rowDigits.match(/(?:\+?88)?(01[3-9]\d{8})/);
-          if (rm) ph = "88" + rm.at(1);
-        }
-        const u1 = isAndroid ? `intent://send?phone=${ph}&text=${encMsg}#Intent;scheme=whatsapp;package=com.whatsapp;end` : `https://whatsapp.com{ph}&text=${encMsg}`;
-        const u2 = isAndroid ? `intent://send?phone=${ph}&text=${encMsg}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end` : `https://whatsapp.com{ph}&text=${encMsg}`;
-
-        const wrap = document.createElement("span");
-        wrap.style.cssText = "display:inline-flex;gap:4px;";
-        wrap.innerHTML = `<a href="${u1}" style="background:#16a34a;color:#fff;padding:5px 8px;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:700;">💬 WA</a><a href="${u2}" style="background:#0f766e;color:#fff;padding:5px 8px;border-radius:6px;text-decoration:none;font-size:.78rem;font-weight:700;">💼 Business</a>`;
-        a.replaceWith(wrap);
-      }
-    });
-  }
-}, 250);
-</script>
-<script>
-(function(){
-  // ১. আগের সব কাঁপাকাঁপি করা setInterval বন্ধ করা
-  for (let i = 1; i < 9999; i++) clearInterval(i);
-
-  function toEnDigits(v) {
-    return String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
-  }
-  function getCleanPhone(raw) {
-    const d = toEnDigits(raw).replace(/\D/g, "");
-    const m = d.match(/(?:88)?(01[3-9]\d{8})/);
-    return m ? m.at(1) : "";
-  }
-  function esc(v) {
-    return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  function getPhone11(raw) {
+    const m = toEn(raw).replace(/\D/g, "").match(/(?:88)?(01[3-9]\d{8})/);
+    return m ? m[1] : "";
   }
   function enc(obj) {
     return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
@@ -4392,7 +3388,6 @@ setInterval(() => {
     return JSON.parse(decodeURIComponent(escape(atob(s))));
   }
 
-  // ২. সদস্যের 'লিংক' বাটনে ক্লিক করলে স্থির পপআপ আসবে (কোনো কাঁপাকাঁপি ছাড়াই)
   document.addEventListener("click", function(e) {
     const btn = e.target.closest("button, a");
     if (!btn) return;
@@ -4405,29 +3400,30 @@ setInterval(() => {
       e.stopImmediatePropagation();
 
       const txtAll = card.innerText || card.textContent || "";
-      const ph11 = getCleanPhone(txtAll);
-      const numM = toEnDigits(txtAll).match(/সদস্য নং[:\s]*(\d+)/);
-      const mNo = numM ? numM.at(1) : "";
+      const ph11 = getPhone11(txtAll);
+      const numM = toEn(txtAll).match(/সদস্য নং[:\s]*(\d+)/);
+      const mNo = numM ? numM[1] : "";
       const nameEl = card.querySelector("b, strong, h3, h4, .nm");
       const mName = nameEl ? nameEl.textContent.trim() : "সম্মানিত সদস্য";
 
       let info = { n: mNo, nm: mName, f: "", m: "", o: "", b: "", h: "", r: "", fl: "", ph: ph11, bg: "" };
       if (typeof rows !== "undefined" && Array.isArray(rows)) {
-        const f = rows.find(x => toEnDigits(x.n) === mNo || x.nm === mName);
+        const f = rows.find(x => toEn(x.n) === mNo || x.nm === mName);
         if (f) {
-          const dbPh = getCleanPhone(JSON.stringify(f));
+          const dbPh = getPhone11(JSON.stringify(f));
+          const bgs = (typeof db !== "undefined" && db._get) ? db._get("member_blood_groups", {}) : {};
           info = {
             s: f.s, n: f.n, nm: f.nm, f: f.f || "", m: f.m || "", o: f.o || "",
             b: f.b || "", h: f.h || "", r: f.r || "", fl: f.fl || "",
-            ph: ph11 || dbPh, bg: f.bg || ""
+            ph: ph11 || dbPh, bg: bgs[String(f.s)] || f.bg || ""
           };
         }
       }
 
       const pin = String(Math.floor(1000 + Math.random() * 9000));
       info.pin = pin;
-      const baseUrl = location.href.split("?").at(0);
-      const link = baseUrl + "?member=" + (mNo || "1") + "&d=" + enc(info);
+      const baseUrl = location.href.split("?")[0];
+      const link = `${baseUrl}?member=${mNo || "1"}&d=${enc(info)}`;
       const makeMsg = () => `আসসালামু আলাইকুম ${info.nm},\nনাসিরাবাদ হাউজিং সোসাইটি-তে আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন।\nগোপন পিন কোড: ${pin}\nলিংক: ${link}`;
 
       const old = document.getElementById("cleanFinalModal");
@@ -4443,7 +3439,7 @@ setInterval(() => {
         </label>
         <textarea id="cfMsg" style="width:100%;height:105px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:.85rem;box-sizing:border-box;" readonly>${esc(makeMsg())}</textarea>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
-          <button id="cfSendWa" style="background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">💬 WhatsApp-এ সরাসরি পাঠান</button>
+          <button id="cfSendWa" style="background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">💬 সরাসরি WhatsApp-এ পাঠান</button>
           <button id="cfCopy" style="background:#0a6b6b;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">📋 কপি করুন</button>
           <button id="cfClose" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">বন্ধ</button>
         </div>
@@ -4452,26 +3448,20 @@ setInterval(() => {
 
       document.getElementById("cfClose").onclick = () => modal.remove();
       document.getElementById("cfCopy").onclick = () => {
-        const ta = document.getElementById("cfMsg");
-        ta.select();
+        const ta = document.getElementById("cfMsg"); ta.select();
         navigator.clipboard?.writeText(ta.value).catch(() => document.execCommand("copy"));
         document.getElementById("cfCopy").textContent = "✓ কপি হয়েছে!";
       };
       document.getElementById("cfSendWa").onclick = () => {
-        const p = getCleanPhone(document.getElementById("cfPhone").value);
+        const p = getPhone11(document.getElementById("cfPhone").value);
         if (!p) return alert("অনুগ্রহ করে ১১ সংখ্যার সঠিক মোবাইল নম্বর লিখুন");
         const txt = encodeURIComponent(document.getElementById("cfMsg").value);
         const isAndroid = /Android/i.test(navigator.userAgent);
-        if (isAndroid) {
-          window.location.href = "whatsapp://send?phone=88" + p + "&text=" + txt;
-        } else {
-          window.open("https://whatsapp.com" + p + "&text=" + txt, "_blank");
-        }
+        if (isAndroid) window.location.href = `whatsapp://send?phone=88${p}&text=${txt}`;
+        else window.open(`https://whatsapp.com{p}&text=${txt}`, "_blank");
       };
     }
   }, true);
-
-  // ৩. দূরের সদস্য লিংকে ট্যাপ করলে আগে ৪ সংখ্যার গোপন পিন চাইবে, সঠিক পিন দিলেই ফরম খুলবে
   const qp = new URLSearchParams(location.search);
   const dStr = qp.get("d");
   if (dStr) {
@@ -4483,21 +3473,18 @@ setInterval(() => {
           const gate = document.createElement("div");
           gate.id = "pinGateOverlay";
           gate.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#f1f5f9;overflow-y:auto;padding:16px;";
-          gate.innerHTML = `<div style="max-width:420px;margin:40px auto;background:#fff;color:#0f172a;padding:22px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.12);">
+          gate.innerHTML = `<div style="max-width:420px;margin:40px auto;background:#fff;color:#0f172a;padding:22px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;">
             <h2 style="margin:0 0 6px;color:#064e4e;">🔐 সদস্য তথ্য হালনাগাদ</h2>
             <p style="margin:0 0 14px;color:#475569;">সদস্য: <b>${esc(obj.nm)}</b> (নং: ${esc(obj.n)})<br>WhatsApp মেসেজে পাওয়া ৪ সংখ্যার গোপন পিন কোডটি দিন:</p>
             <input id="gatePinInp" type="tel" maxlength="4" placeholder="৪ সংখ্যার পিন" style="width:180px;padding:10px;text-align:center;font-size:1.3rem;letter-spacing:4px;border:2px solid #0a6b6b;border-radius:10px;">
-            <div style="margin-top:14px;">
-              <button id="gatePinBtn" style="background:#0a6b6b;color:#fff;border:none;padding:10px 22px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;">যাচাই করে ফরম খুলুন</button>
-            </div>
+            <div style="margin-top:14px;"><button id="gatePinBtn" style="background:#0a6b6b;color:#fff;border:none;padding:10px 22px;border-radius:10px;font-weight:700;cursor:pointer;">যাচাই করে ফরম খুলুন</button></div>
             <p id="gateErr" style="color:#dc2626;font-weight:600;margin-top:10px;"></p>
           </div>`;
           document.body.appendChild(gate);
 
           document.getElementById("gatePinBtn").onclick = () => {
-            const entered = toEnDigits(document.getElementById("gatePinInp").value).trim();
-            if (entered !== String(obj.pin)) {
-              document.getElementById("gateErr").textContent = "ভুল পিন কোড! অনুগ্রহ করে মেসেজে থাকা সঠিক ৪ সংখ্যার পিন দিন।";
+            if (toEn(document.getElementById("gatePinInp").value).trim() !== String(obj.pin)) {
+              document.getElementById("gateErr").textContent = "ভুল পিন কোড! সঠিক ৪ সংখ্যার পিন দিন।";
               return;
             }
             gate.innerHTML = `<div style="max-width:520px;margin:10px auto;background:#fff;color:#0f172a;padding:18px;border-radius:14px;border:1.5px solid #0a6b6b;">
@@ -4508,15 +3495,10 @@ setInterval(() => {
                 <label style="font-weight:600;">পিতার নাম<input id="f_f" value="${esc(obj.f)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
                 <label style="font-weight:600;">মাতার নাম<input id="f_m" value="${esc(obj.m)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
                 <label style="font-weight:600;">পেশা<input id="f_o" value="${esc(obj.o)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-                <label style="font-weight:600;">রক্তের গ্রুপ
-                  <select id="f_bg" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;">
-                    <option value="">নির্বাচন করুন</option>
-                    ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}
-                  </select>
-                </label>
+                <label style="font-weight:600;">রক্তের গ্রুপ<select id="f_bg" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"><option value="">নির্বাচন করুন</option>${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}</select></label>
                 <label style="font-weight:600;">মোবাইল নম্বর<input id="f_ph" value="${esc(obj.ph)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
                 <label style="font-weight:600;">বর্তমান ঠিকানা<input id="f_addr" value="${esc([obj.b, obj.r ? "রোড " + obj.r : "", obj.h ? "বাড়ি " + obj.h : "", obj.fl ? "ফ্ল্যাট " + obj.fl : ""].filter(Boolean).join(", "))}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;"></label>
-                <button id="f_sub" style="background:#0a6b6b;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:6px;">✅ তথ্য সংরক্ষণ ও পাঠান</button>
+                <button id="f_sub" style="background:#0a6b6b;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;margin-top:6px;">✅ তথ্য সংরক্ষণ ও পাঠান</button>
               </div>
             </div>`;
             document.getElementById("f_sub").onclick = () => {
@@ -4530,8 +3512,52 @@ setInterval(() => {
       }
     } catch(e) {}
   }
+
+  setInterval(() => {
+    document.querySelectorAll(".m, #pv, #list").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        if (n.nodeValue && /[\/\-\.\\]/.test(n.nodeValue)) {
+          const nv = n.nodeValue.replace(/([০-৯\d]{1,4}[\/\-\.\\][০-৯\d]{1,2}[\/\-\.\\][০-৯\d]{1,4})/g, fmtDate);
+          if (nv !== n.nodeValue) n.nodeValue = nv;
+        }
+      }
+    });
+
+    const dlgEl = document.getElementById("dlg");
+    if (dlgEl && dlgEl.open) {
+      const h2 = dlgEl.querySelector("h2");
+      if (h2 && h2.textContent.includes("সেটিংস") && !document.getElementById("secSignWrap")) {
+        const sig = localStorage.getItem("nhs_secretary_sign") || "";
+        const wrap = document.createElement("div");
+        wrap.id = "secSignWrap";
+        wrap.style.cssText = "margin-top:10px;padding:10px;border:1.5px solid #0a6b6b;border-radius:10px;";
+        wrap.innerHTML = `<b style="display:block;margin-bottom:5px;color:#064e4e;">✍️ সম্পাদকের স্বাক্ষর (আইডি কার্ডের জন্য)</b>${sig ? `<img src="${sig}" style="max-height:44px;display:block;margin-bottom:5px;">` : ""}<input type="file" id="sec_sign_inp" accept="image/*">`;
+        dlgEl.appendChild(wrap);
+        document.getElementById("sec_sign_inp").onchange = ev => {
+          const f = ev.target.files && ev.target.files[0]; if (!f) return;
+          const rd = new FileReader();
+          rd.onload = () => { localStorage.setItem("nhs_secretary_sign", rd.result); alert("সম্পাদকের স্বাক্ষর সংরক্ষিত হয়েছে!"); dlgEl.close(); };
+          rd.readAsDataURL(f);
+        };
+      }
+    }
+
+    const idCard = document.getElementById("smartIdCardArea");
+    if (idCard) {
+      const isEn = (typeof curLang !== "undefined" && curLang === "en");
+      const sig = localStorage.getItem("nhs_secretary_sign") || "";
+      const signEl = idCard.querySelector(".smart-id-sign");
+      if (signEl && !signEl.dataset.sigDone) {
+        signEl.dataset.sigDone = "1";
+        signEl.innerHTML = `${sig ? `<img src="${sig}" style="max-height:34px;max-width:100px;display:block;margin:0 auto 2px;">` : ""}<div class="smart-id-sign-line"></div>${isEn ? "Secretary" : "সম্পাদক"}`;
+      }
+    }
+  }, 600);
 })();
 </script>
+
 
 </body>
 </html>
