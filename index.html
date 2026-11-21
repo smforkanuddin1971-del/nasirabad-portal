@@ -3665,6 +3665,26 @@ setInterval(() => {
   });
 }, 250);
 </script>
+<script>
+(function(){
+  const rawOpen = window.open;
+  window.open = function(u, t, f) {
+    if (typeof u === "string" && (u.includes("{ph") || u.includes("whatsapp.com"))) {
+      const toEnD = s => String(s || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+      const cleanU = toEnD(u);
+      const pm = cleanU.match(/(?:88)?(01[3-9]\d{8})/);
+      const ph = pm ? ("88" + pm.at(1)) : "";
+      const tm = u.match(/text=([^&]*)/);
+      const txt = tm ? tm.at(1) : "";
+            u = "https://wa.me/" + ph + (txt ? "?text=" + txt : "");
+
+
+
+    }
+    return rawOpen.call(window, u, t || "_blank", f);
+  };
+})();
+</script>
 
 </body>
 </html>
