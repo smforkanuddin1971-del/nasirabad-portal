@@ -3620,6 +3620,17 @@ setInterval(() => {
       }
     }
   }, 250);
+  const _origWinOpen = window.open;
+  window.open = function(url, target, features) {
+    if (typeof url === "string" && (url.includes("whatsapp.com") || url.includes("{ph"))) {
+      const m = url.match(/text=([^&]*)/);
+      const rawTxt = m ? decodeURIComponent(m.at(1)) : "";
+      const phMatch = url.match(/8801[3-9]\d{8}|01[3-9]\d{8}/);
+      const ph = phMatch ? ("88" + phMatch.at(0).replace(/^88/, "")) : "";
+      url = "https://wa.me" + ph + (rawTxt ? "?text=" + encodeURIComponent(rawTxt) : "");
+    }
+    return _origWinOpen.call(window, url, target || "_blank", features);
+  };
 
 </script>
 
