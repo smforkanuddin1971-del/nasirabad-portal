@@ -4263,6 +4263,44 @@ setInterval(() => {
   }
 }, 250);
 </script>
+<script>
+setInterval(() => {
+  const inp = document.getElementById("waTargetInp") || document.getElementById("finalWaPhoneInp");
+  const ta = document.getElementById("waMsgBox") || document.getElementById("finalWaMsgTa");
+  const oldBtn = document.getElementById("waSendDirectBtn") || document.getElementById("finalWaOpenBtn");
+  if (!inp || !ta || !oldBtn) return;
+
+  const digits = String(inp.value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/\D/g, "");
+  const m = digits.match(/(?:88)?(01[3-9]\d{8})/);
+  const fullPh = m ? ("88" + m.at(1)) : "";
+  const encTxt = encodeURIComponent(ta.value || "");
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  let box = document.getElementById("dualWaBtnGroup");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "dualWaBtnGroup";
+    box.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-bottom:4px;";
+    oldBtn.parentNode.insertBefore(box, oldBtn);
+    oldBtn.style.display = "none";
+  }
+
+  const waUrl = isAndroid
+    ? `intent://send/?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp;end`
+    : `https://whatsapp.com{fullPh}&text=${encTxt}`;
+  const wabUrl = isAndroid
+    ? `intent://send/?phone=${fullPh}&text=${encTxt}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`
+    : `https://whatsapp.com{fullPh}&text=${encTxt}`;
+
+  if (box.dataset.lastHref !== waUrl) {
+    box.dataset.lastHref = waUrl;
+    box.innerHTML = `
+      <a href="${waUrl}" style="background:#16a34a;color:#fff;padding:9px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.85rem;">💬 WhatsApp</a>
+      <a href="${wabUrl}" style="background:#0f766e;color:#fff;padding:9px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.85rem;">💼 WA Business</a>
+    `;
+  }
+}, 250);
+</script>
 
 </body>
 </html>
