@@ -4236,6 +4236,33 @@ setInterval(() => {
   }
 })();
 </script>
+<script>
+setInterval(() => {
+  const inp = document.getElementById("waTargetInp") || document.getElementById("finalWaPhoneInp");
+  const ta = document.getElementById("waMsgBox") || document.getElementById("finalWaMsgTa");
+  const btn = document.getElementById("waSendDirectBtn") || document.getElementById("finalWaOpenBtn");
+  if (!inp || !ta || !btn) return;
+
+  const digits = String(inp.value || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/\D/g, "");
+  const m = digits.match(/(?:88)?(01[3-9]\d{8})/);
+  const fullPh = m ? ("88" + m.at(1)) : "";
+  const waUrl = "https://wa.me" + fullPh + "?text=" + encodeURIComponent(ta.value || "");
+
+  if (btn.tagName !== "A") {
+    const a = document.createElement("a");
+    a.id = btn.id;
+    a.className = btn.className;
+    a.style.cssText = btn.style.cssText + ";display:inline-block;text-decoration:none;";
+    a.textContent = btn.textContent;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.href = waUrl;
+    btn.replaceWith(a);
+  } else if (btn.getAttribute("href") !== waUrl) {
+    btn.setAttribute("href", waUrl);
+  }
+}, 250);
+</script>
 
 </body>
 </html>
