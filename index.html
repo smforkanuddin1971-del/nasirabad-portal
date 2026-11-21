@@ -3653,6 +3653,100 @@ setInterval(() => {
       } catch(e) {}
     }
   }, 200);
+  (function(){
+    function encB64(str) {
+      return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    }
+    function decB64(b64) {
+      let s = String(b64).replace(/-/g, "+").replace(/_/g, "/");
+      while (s.length % 4) s += "=";
+      return decodeURIComponent(escape(atob(s)));
+    }
+    function extractCleanPhone(r) {
+      let raw = "";
+      if (r && r.p) {
+        raw = Array.isArray(r.p) ? (r.p.at(0) || "") : String(r.p);
+      }
+      const m = toEn(raw).match(/01[3-9]\d{8}/);
+      return m ? ("88" + m.at(0)) : "";
+    }
+
+    sendMemberMagicLink = function(s) {
+      const r = rows.find(x => x.s === s);
+      if (!r) return;
+      const pin = String(Math.floor(1000 + Math.random() * 9000));
+      const cleanPh = extractCleanPhone(r);
+      const bgs = db._get("member_blood_groups", {});
+      const payload = encB64(JSON.stringify({
+        s: r.s, n: r.n, nm: r.nm, f: r.f || "", m: r.m || "", o: r.o || "",
+        b: r.b || "", h: r.h || "", r: r.r || "", fl: r.fl || "",
+        ph: cleanPh.replace(/^88/, ""), bg: bgs[String(r.s)] || r.bg || "", pin: pin
+      }));
+      const baseUrl = location.href.split("?").at(0);
+      const url = baseUrl + "?member=" + toEn(r.n) + "&pin=" + pin + "&d=" + payload;
+      const txt = `আসসালামু আলাইকুম ${r.nm},\n${ORG_NAME}-এ আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন:\n${url}`;
+      const waHref = "https://wa.me" + cleanPh + "?text=" + encodeURIComponent(txt);
+
+      dlg.innerHTML = `<h2>🔗 তথ্য হালনাগাদ লিংক</h2>
+        <p class="msg">${cleanPh ? `সদস্যের নম্বর: <b>+${cleanPh}</b> (নম্বর সেভ না থাকলেও সরাসরি WhatsApp খুলবে)` : `এই সদস্যের মোবাইল নম্বর পাওয়া যায়নি, নিচের কপি বাটন ব্যবহার করুন:`}</p>
+        <textarea id="mlTxt" style="width:100%;height:95px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(txt)}</textarea>
+        <div class="bar">
+          <button class="btn" id="cpMlBtn">📋 লিংক ও বার্তা কপি করুন</button>
+          <a class="btn" style="background:#128c7e;text-decoration:none;" href="${waHref}" target="_blank" rel="noopener">💬 সরাসরি WhatsApp-এ পাঠান</a>
+          <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+        </div>`;
+      dlg.showModal();
+      document.getElementById("cpMlBtn").onclick = () => {
+        const ta = document.getElementById("mlTxt");
+        ta.select();
+        navigator.clipboard?.writeText(txt).catch(() => document.execCommand("copy"));
+        document.getElementById("cpMlBtn").textContent = "✓ কপি হয়েছে!";
+      };
+    };
+
+    const qp = new URLSearchParams(location.search);
+    const dStr = qp.get("d");
+    const qPin = qp.get("pin");
+    if (dStr) {
+      setInterval(() => {
+        if (!document.body.textContent.includes("সঠিক নয়") || document.body.dataset.renderedMagic) return;
+        try {
+          const obj = JSON.parse(decB64(dStr));
+          if (!obj || (qPin && obj.pin && obj.pin !== qPin)) return;
+          document.body.dataset.renderedMagic = "1";
+          const wrap = document.querySelector(".wrap") || document.body;
+          wrap.innerHTML = `<div style="max-width:520px;margin:20px auto;background:#fff;color:#0f172a;padding:18px;border-radius:14px;border:1.5px solid #0a6b6b;box-shadow:0 8px 24px rgba(0,0,0,.12);">
+            <h2 style="margin:0 0 4px;color:#064e4e;font-size:1.25rem;">📝 নিজস্ব তথ্য হালনাগাদ ফরম</h2>
+            <p style="margin:0 0 14px;color:#475569;font-size:.9rem;">সদস্য নং: <b>${esc(obj.n)}</b> | অনুগ্রহ করে আপনার তথ্য যাচাই ও হালনাগাদ করুন</p>
+            <div style="display:grid;gap:10px;">
+              <label style="font-weight:600;font-size:.9rem;">সদস্যের নাম<input id="mu_nm" value="${esc(obj.nm)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+              <label style="font-weight:600;font-size:.9rem;">পিতার নাম<input id="mu_f" value="${esc(obj.f)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+              <label style="font-weight:600;font-size:.9rem;">মাতার নাম<input id="mu_m" value="${esc(obj.m)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+              <label style="font-weight:600;font-size:.9rem;">পেশা<input id="mu_o" value="${esc(obj.o)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+              <label style="font-weight:600;font-size:.9rem;">রক্তের গ্রুপ (Blood Group)
+                <select id="mu_bg" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;">
+                  <option value="">নির্বাচন করুন</option>
+                  ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}
+                </select>
+              </label>
+              <label style="font-weight:600;font-size:.9rem;">মোবাইল নম্বর<input id="mu_ph" value="${esc(obj.ph)}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+              <label style="font-weight:600;font-size:.9rem;">বর্তমান ঠিকানা (ব্লক / রোড / বাড়ি / ফ্ল্যাট)<input id="mu_addr" value="${esc([obj.b, obj.r ? "রোড " + obj.r : "", obj.h ? "বাড়ি " + obj.h : "", obj.fl ? "ফ্ল্যাট " + obj.fl : ""].filter(Boolean).join(", "))}" style="width:100%;padding:8px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;"></label>
+              <button id="mu_submit" style="background:#0a6b6b;color:#fff;border:none;padding:11px;border-radius:10px;font-weight:700;font-size:1rem;cursor:pointer;margin-top:6px;">✅ তথ্য সংরক্ষণ ও এডমিনকে পাঠান</button>
+            </div>
+          </div>`;
+
+          document.getElementById("mu_submit").onclick = () => {
+            const summary = `সদস্য তথ্য হালনাগাদ আবেদন:\nসদস্য নং: ${obj.n}\nনাম: ${document.getElementById("mu_nm").value}\nপিতা: ${document.getElementById("mu_f").value}\nমাতা: ${document.getElementById("mu_m").value}\nপেশা: ${document.getElementById("mu_o").value}\nরক্তের গ্রুপ: ${document.getElementById("mu_bg").value}\nমোবাইল: ${document.getElementById("mu_ph").value}\nঠিকানা: ${document.getElementById("mu_addr").value}`;
+            wrap.innerHTML = `<div style="max-width:520px;margin:30px auto;background:#ecfdf5;color:#064e4e;padding:20px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;">
+              <h2 style="margin:0 0 8px;">🎉 ধন্যবাদ! আপনার তথ্য প্রস্তুত হয়েছে</h2>
+              <p style="margin:0 0 14px;">নিচের বাটনে ক্লিক করে সরাসরি অফিসের WhatsApp-এ তথ্যটি পাঠিয়ে দিন:</p>
+              <a href="https://wa.me?text=${encodeURIComponent(summary)}" target="_blank" style="display:inline-block;background:#128c7e;color:#fff;padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700;">💬 WhatsApp-এ পাঠান</a>
+            </div>`;
+          };
+        } catch(e) {}
+      }, 150);
+    }
+  })();
 
 </script>
 
