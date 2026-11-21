@@ -3987,6 +3987,96 @@ setInterval(() => {
 })();
 </script>
 
+<script>
+(function(){
+  function cleanBnEnDigits(v) {
+    return String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  }
+  function extractExactBdPhone(raw) {
+    const digitsOnly = cleanBnEnDigits(raw).replace(/[\s\-\(\)\.]/g, "");
+    const m = digitsOnly.match(/(?:\+?88)?(01[3-9]\d{8})/);
+    return m ? ("88" + m.at(1)) : "";
+  }
+  function toSafeB64(str) {
+    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest("button, a");
+    if (!btn) return;
+    const label = btn.textContent || "";
+
+    if (label.includes("লিংক") && !label.includes("ভোটার") && !label.includes("কপি")) {
+      const card = btn.closest(".m");
+      if (!card) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const cardTxt = card.innerText || card.textContent || "";
+      const numMatch = cleanBnEnDigits(cardTxt).match(/সদস্য নং[:\s]*(\d+)/);
+      const mNo = numMatch ? numMatch.at(1) : "";
+      const nameEl = card.querySelector("b, strong, h3, h4, .nm");
+      const mName = nameEl ? nameEl.textContent.trim() : "সম্মানিত সদস্য";
+
+      let cleanPh = extractExactBdPhone(cardTxt);
+      let rObj = { n: mNo, nm: mName, f: "", m: "", o: "", b: "", h: "", r: "", fl: "", ph: cleanPh.replace(/^88/, ""), bg: "" };
+
+      if (typeof rows !== "undefined" && Array.isArray(rows)) {
+        const found = rows.find(x => cleanBnEnDigits(x.n) === mNo || x.nm === mName);
+        if (found) {
+          if (!cleanPh) cleanPh = extractExactBdPhone(JSON.stringify(found));
+          const bgs = (typeof db !== "undefined" && db._get) ? db._get("member_blood_groups", {}) : {};
+          rObj = {
+            s: found.s, n: found.n, nm: found.nm, f: found.f || "", m: found.m || "", o: found.o || "",
+            b: found.b || "", h: found.h || "", r: found.r || "", fl: found.fl || "",
+            ph: cleanPh.replace(/^88/, ""), bg: bgs[String(found.s)] || found.bg || ""
+          };
+        }
+      }
+
+      const pin = String(Math.floor(1000 + Math.random() * 9000));
+      rObj.pin = pin;
+      const url = location.href.split("?").at(0) + "?member=" + (mNo || "1") + "&pin=" + pin + "&d=" + toSafeB64(JSON.stringify(rObj));
+      const buildMsg = () => `আসসালামু আলাইকুম ${rObj.nm},\nনাসিরাবাদ হাউজিং সোসাইটি-তে আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন:\n${url}`;
+
+      let modal = document.getElementById("waDirectModal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "waDirectModal";
+        modal.style.cssText = "position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:14px;";
+        document.body.appendChild(modal);
+      }
+      modal.style.display = "flex";
+      modal.innerHTML = `<div style="background:#fff;color:#0f172a;max-width:450px;width:100%;padding:18px;border-radius:14px;border:2px solid #0a6b6b;">
+        <h3 style="margin:0 0 8px;color:#064e4e;">💬 WhatsApp-এ লিংক পাঠান</h3>
+        <label style="display:block;font-size:.88rem;font-weight:700;margin-bottom:8px;">প্রাপকের মোবাইল নম্বর (প্রয়োজনে পরিবর্তন করতে পারবেন):
+          <input id="waTargetInp" value="${cleanPh.replace(/^88/, "")}" placeholder="018XXXXXXXX" style="width:100%;padding:9px;margin-top:4px;border:1.5px solid #0a6b6b;border-radius:8px;font-size:1rem;box-sizing:border-box;">
+        </label>
+        <textarea id="waMsgBox" style="width:100%;height:90px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;" readonly>${buildMsg()}</textarea>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+          <button id="waSendDirectBtn" style="background:#128c7e;color:#fff;border:none;padding:10px 15px;border-radius:8px;font-weight:700;cursor:pointer;">💬 সরাসরি WhatsApp খুলুন</button>
+          <button id="waCopyOnlyBtn" style="background:#0a6b6b;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">📋 কপি করুন</button>
+          <button onclick="document.getElementById('waDirectModal').style.display='none'" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;">বন্ধ</button>
+        </div>
+      </div>`;
+
+      document.getElementById("waSendDirectBtn").onclick = () => {
+        const phReady = extractExactBdPhone(document.getElementById("waTargetInp").value);
+        if (!phReady) return alert("অনুগ্রহ করে ১১ সংখ্যার সঠিক মোবাইল নম্বর লিখুন (যেমন: 01819123456)");
+        const finalLink = "https://whatsapp.com" + phReady + "&text=" + encodeURIComponent(buildMsg());
+        window.open(finalLink, "_blank");
+      };
+
+      document.getElementById("waCopyOnlyBtn").onclick = () => {
+        const ta = document.getElementById("waMsgBox");
+        ta.select();
+        navigator.clipboard?.writeText(ta.value).catch(() => document.execCommand("copy"));
+        document.getElementById("waCopyOnlyBtn").textContent = "✓ কপি হয়েছে!";
+      };
+    }
+  }, true);
+})();
+</script>
 
 </body>
 </html>
