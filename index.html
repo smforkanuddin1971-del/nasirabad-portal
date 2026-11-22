@@ -3661,6 +3661,23 @@ body, html, #app, main, .container, .wrap {
   opacity: 1 !important;
 }
 </style>
+<script>
+setInterval(function() {
+  document.querySelectorAll("div, section, aside").forEach(function(el) {
+    if (el.id === "nhsMasterModal" || el.id === "nhsFinalGate" || el.id === "pinGateOverlay") return;
+    const cs = getComputedStyle(el);
+    if ((cs.position === "fixed" || cs.position === "absolute") && cs.display !== "none" && cs.visibility !== "hidden") {
+      const r = el.getBoundingClientRect();
+      if (r.width >= window.innerWidth * 0.9 && r.height >= window.innerHeight * 0.9) {
+        const bg = cs.backgroundColor || "";
+        if (bg.includes("rgba") && !el.querySelector("input, textarea, select, form")) {
+          el.style.setProperty("display", "none", "important");
+        }
+      }
+    }
+  });
+}, 300);
+</script>
 
 </body>
 </html>
