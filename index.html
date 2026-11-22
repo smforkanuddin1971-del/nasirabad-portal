@@ -2579,6 +2579,21 @@ setInterval(function() {
   document.body.style.overflow = "auto";
 }, 500);
 </script>
+<style>
+dialog:not([open]), dialog:not([open])::backdrop {
+  display: none !important;
+  pointer-events: none !important;
+}
+</style>
+<script>
+setInterval(function() {
+  const dlg = document.getElementById("dlg");
+  if (dlg && !dlg.open) {
+    dlg.removeAttribute("style");
+    try { dlg.close(); } catch(e) {}
+  }
+}, 400);
+</script>
 
 </body>
 </html>
