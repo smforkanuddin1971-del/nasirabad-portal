@@ -2531,6 +2531,38 @@ document.addEventListener("click", function(e) {
   }, 700);
 })();
 </script>
+<script>
+setInterval(function() {
+  const linkBtn = document.getElementById("finWaRealLink") || document.getElementById("cfRealWaLink") || document.getElementById("cfSendWa");
+  const phInp = document.getElementById("finWaPhone") || document.getElementById("cfPhone");
+  const msgTa = document.getElementById("finWaMsg") || document.getElementById("cfMsg");
+  if (!linkBtn || !phInp || !msgTa) return;
+
+  const d = String(phInp.value || "").replace(/[০-৯]/g, c => "০১২৩৪৫৬৭৮৯".indexOf(c)).replace(/\D/g, "");
+  const m = d.match(/(?:88)?(01[3-9]\d{8})/);
+  const fullPh = m ? ("88" + m.at(1)) : "";
+  const encTxt = encodeURIComponent(msgTa.value || "");
+
+  let wrap = document.getElementById("dualAppWaWrap");
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "dualAppWaWrap";
+    wrap.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;";
+    linkBtn.parentNode.insertBefore(wrap, linkBtn);
+    linkBtn.style.display = "none";
+  }
+
+  const uNormal = "intent://send?phone=" + fullPh + "&text=" + encTxt + "#Intent;scheme=whatsapp;package=com.whatsapp;end";
+  const uBiz = "intent://send?phone=" + fullPh + "&text=" + encTxt + "#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end";
+
+  if (wrap.dataset.last !== uNormal) {
+    wrap.dataset.last = uNormal;
+    wrap.innerHTML =
+      '<a href="' + uNormal + '" style="background:#16a34a;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">💬 WhatsApp</a>' +
+      '<a href="' + uBiz + '" style="background:#0f766e;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">💼 WA Business</a>';
+  }
+}, 400);
+</script>
 
 </body>
 </html>
