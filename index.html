@@ -4363,6 +4363,18 @@ setInterval(function() {
   }, true);
 })();
 </script>
+<script>
+if (new URLSearchParams(location.search).get("voter") === "1") {
+  setInterval(function() {
+    const extra1 = document.getElementById("publicVoterView");
+    if (extra1) extra1.remove();
+    const extra2 = document.getElementById("cleanRoadVoterView");
+    if (extra2) extra2.remove();
+    const loginBox = document.getElementById("authScreen") || document.getElementById("loginBox") || document.querySelector("[id*='login' i], [id*='auth' i]");
+    if (loginBox) loginBox.style.display = "none";
+  }, 200);
+}
+</script>
 
 </body>
 </html>
