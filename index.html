@@ -2563,6 +2563,22 @@ setInterval(function() {
   }
 }, 400);
 </script>
+<script>
+setInterval(function() {
+  const dlg = document.getElementById("dlg");
+  if (dlg && !dlg.open) {
+    dlg.style.display = "none";
+  }
+  document.querySelectorAll("div").forEach(el => {
+    const st = el.style;
+    if (st && st.position === "fixed" && (st.inset === "0px" || (st.top === "0px" && st.left === "0px"))) {
+      if (!el.innerHTML.trim() || el.offsetHeight === 0) el.remove();
+    }
+  });
+  document.body.style.pointerEvents = "auto";
+  document.body.style.overflow = "auto";
+}, 500);
+</script>
 
 </body>
 </html>
