@@ -3650,6 +3650,17 @@ setInterval(function() {
   });
 }, 300);
 </script>
+<style>
+#lockOverlay, .lock-overlay, .modal-backdrop, .overlay, [id*="lock" i], [class*="lock" i], [id*="backdrop" i] {
+  pointer-events: none !important;
+  background: transparent !important;
+}
+body, html, #app, main, .container, .wrap {
+  pointer-events: auto !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+</style>
 
 </body>
 </html>
