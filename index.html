@@ -3678,6 +3678,26 @@ setInterval(function() {
   });
 }, 300);
 </script>
+<script>
+document.addEventListener("click", function(e) {
+  const a = e.target.closest("a");
+  if (!a) return;
+  const h = a.getAttribute("href") || "";
+  if (h.includes("{ph") || h.includes("whatsapp.com")) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const box = a.closest("#nhsMasterModal, #cleanFinalModal, .m, dialog") || document.body;
+    const inp = box.querySelector("input[type='tel']");
+    const raw = inp ? inp.value : (box.innerText || "");
+    const m = String(raw).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).replace(/\D/g, "").match(/(?:88)?(01[3-9]\d{8})/);
+    const ph = m ? ("88" + m.at(1)) : "";
+    const ta = box.querySelector("textarea");
+    const tm = h.match(/text=([^&]*)/);
+    const txt = ta ? encodeURIComponent(ta.value) : (tm ? tm.at(1) : "");
+    location.href = "https://" + "wa.me/" + ph + (txt ? "?text=" + txt : "");
+  }
+}, true);
+</script>
 
 </body>
 </html>
