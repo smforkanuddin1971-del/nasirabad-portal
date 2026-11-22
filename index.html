@@ -2462,6 +2462,75 @@ document.addEventListener("click", function(e) {
   }
 }, true);
 </script>
+<script>
+(function(){
+  const bnM = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const enM = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const toEn = v => String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const toBn = v => String(v == null ? "" : v).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+  const bnOrd = d => d === 1 ? "১লা" : (d === 2 || d === 3) ? toBn(d) + "রা" : d === 4 ? "৪ঠা" : (d >= 5 && d <= 18) ? toBn(d) + "ই" : toBn(d) + "শে";
+
+  function fmtDateSafe(val) {
+    const p = toEn(val).trim().split(/[\/\-\.\\]+/);
+    if (p.length !== 3) return val;
+    let d = 0, m = 0, y = 0;
+    const p0 = p.at(0) || "", p1 = p.at(1) || "", p2 = p.at(2) || "";
+    if (p0.length === 4) { y = +p0; m = +p1; d = +p2; }
+    else if (p2.length === 4) { d = +p0; m = +p1; y = +p2; }
+    else return val;
+    if (!d || !m || m < 1 || m > 12 || y < 1900 || y > 2100) return val;
+    const isEn = (typeof curLang !== "undefined" && curLang === "en");
+    return isEn ? `${d} ${enM[m - 1]} ${y}` : `${bnOrd(d)} ${bnM[m - 1]} ${toBn(y)}`;
+  }
+
+  // ১. পুরোনো ভাঙা window.open('whatsapp.com{ph...') আটকে সঠিক wa.me লিংক চালানো
+  const origOpen = window.open;
+  window.open = function(u, t, f) {
+    if (typeof u === "string" && (u.includes("{ph") || u.includes("whatsapp.com"))) {
+      const m = toEn(u).match(/(?:88)?(01[3-9]\d{8})/);
+      const ph = m ? ("88" + m.at(1)) : "";
+      const tm = u.match(/text=([^&]*)/);
+      const txt = tm ? tm.at(1) : "";
+      u = "https://" + "wa.me/" + ph + (txt ? "?text=" + txt : "");
+    }
+    return origOpen.call(window, u, t || "_blank", f);
+  };
+
+  // ২. জন্মতারিখ ও সেটিংসে সম্পাদকের স্বাক্ষর আপলোড সচল রাখা
+  setInterval(() => {
+    document.querySelectorAll(".m, #pv, #list").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        if (n.nodeValue && /[\/\-\.\\]/.test(n.nodeValue)) {
+          const nv = n.nodeValue.replace(/([০-৯\d]{1,4}[\/\-\.\\][০-৯\d]{1,2}[\/\-\.\\][০-৯\d]{1,4})/g, fmtDateSafe);
+          if (nv !== n.nodeValue) n.nodeValue = nv;
+        }
+      }
+    });
+
+    const dlg = document.getElementById("dlg");
+    if (dlg && dlg.open) {
+      const h2 = dlg.querySelector("h2");
+      if (h2 && h2.textContent.includes("সেটিংস") && !document.getElementById("secSignWrap")) {
+        const sig = localStorage.getItem("nhs_secretary_sign") || "";
+        const wrap = document.createElement("div");
+        wrap.id = "secSignWrap";
+        wrap.style.cssText = "margin-top:10px;padding:10px;border:1.5px solid #0a6b6b;border-radius:10px;";
+        wrap.innerHTML = `<b style="display:block;margin-bottom:5px;color:#064e4e;">✍️ সম্পাদকের স্বাক্ষর (আইডি কার্ডের জন্য)</b>${sig ? `<img src="${sig}" style="max-height:44px;display:block;margin-bottom:5px;">` : ""}<input type="file" id="sec_sign_inp" accept="image/*">`;
+        dlg.appendChild(wrap);
+        document.getElementById("sec_sign_inp").onchange = ev => {
+          const files = ev.target.files;
+          if (!files || !files.length) return;
+          const rd = new FileReader();
+          rd.onload = () => { localStorage.setItem("nhs_secretary_sign", rd.result); alert("সম্পাদকের স্বাক্ষর সংরক্ষিত হয়েছে!"); dlg.close(); };
+          rd.readAsDataURL(files.item(0));
+        };
+      }
+    }
+  }, 700);
+})();
+</script>
 
 </body>
 </html>
