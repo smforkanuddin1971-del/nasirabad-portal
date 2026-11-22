@@ -3740,6 +3740,95 @@ document.addEventListener("click", function(e) {
   }, true);
 })();
 </script>
+<script>
+(function(){
+  const OFFICE_WA = ""; // অফিসের WhatsApp নম্বর দিতে চাইলে এখানে "88018XXXXXXXX" লিখুন
+  document.addEventListener("click", function(e) {
+    const sub = e.target.closest("#uf_sub");
+    if (!sub) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const lines = [
+      "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ",
+      "সদস্য তথ্য হালনাগাদ কপি",
+      "--------------------------------",
+      "সদস্যের নাম: " + (document.getElementById("uf_nm")?.value || ""),
+      "পিতার নাম: " + (document.getElementById("uf_f")?.value || ""),
+      "মাতার নাম: " + (document.getElementById("uf_m")?.value || ""),
+      "পেশা: " + (document.getElementById("uf_o")?.value || ""),
+      "রক্তের গ্রুপ: " + (document.getElementById("uf_bg")?.value || ""),
+      "মোবাইল নম্বর: " + (document.getElementById("uf_ph")?.value || ""),
+      "বর্তমান ঠিকানা: " + (document.getElementById("uf_addr")?.value || "")
+    ];
+    const enc = encodeURIComponent(lines.join("\n"));
+    window.top.location.href = "https://" + "wa.me/" + OFFICE_WA + "?text=" + enc;
+  }, true);
+})();
+</script>
+<script>
+setInterval(function() {
+  const addrInp = document.getElementById("uf_addr");
+  if (!addrInp || document.getElementById("uf_photo_box")) return;
+
+  const box = document.createElement("div");
+  box.id = "uf_photo_box";
+  box.style.cssText = "display:grid;gap:8px;padding:10px;background:#f8fafc;border:1.5px dashed #0a6b6b;border-radius:10px;";
+  box.innerHTML = `
+    <label style="font-weight:700;color:#064e4e;">📷 নতুন ছবি আপলোড করুন (ঐচ্ছিক)
+      <input type="file" id="uf_photo_inp" accept="image/*" style="display:block;margin-top:4px;font-size:.85rem;">
+    </label>
+    <img id="uf_photo_prev" style="display:none;max-height:110px;border-radius:8px;border:1px solid #cbd5e1;">
+    <label style="font-weight:700;color:#064e4e;">🪪 এনআইডি (NID) কার্ডের ছবি (ঐচ্ছিক)
+      <input type="file" id="uf_nid_inp" accept="image/*" style="display:block;margin-top:4px;font-size:.85rem;">
+    </label>
+    <img id="uf_nid_prev" style="display:none;max-height:110px;border-radius:8px;border:1px solid #cbd5e1;">
+  `;
+  addrInp.closest("label").insertAdjacentElement("afterend", box);
+
+  let photoData = "", nidData = "";
+  const readPreview = (inpId, imgId, cb) => {
+    document.getElementById(inpId).onchange = ev => {
+      const f = ev.target.files && ev.target.files.item(0);
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        const img = document.getElementById(imgId);
+        img.src = rd.result;
+        img.style.display = "block";
+        cb(rd.result);
+      };
+      rd.readAsDataURL(f);
+    };
+  };
+  readPreview("uf_photo_inp", "uf_photo_prev", d => photoData = d);
+  readPreview("uf_nid_inp", "uf_nid_prev", d => nidData = d);
+
+  const dlBtn = document.getElementById("uf_dl");
+  if (dlBtn) {
+    dlBtn.textContent = "📥 ছবিসহ পূর্ণাঙ্গ তথ্য সংরক্ষণ (ডাউনলোড) করুন";
+    dlBtn.onclick = () => {
+      const htmlDoc = `<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><title>সদস্য হালনাগাদ কপি</title></head><body style="font-family:sans-serif;padding:20px;max-width:520px;margin:auto;border:2px solid #0a6b6b;border-radius:12px;">
+        <h2 style="color:#064e4e;margin-top:0;">নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ</h2>
+        <h3>সদস্য তথ্য হালনাগাদ কপি</h3><hr>
+        ${photoData ? `<p><b>সদস্যের ছবি:</b><br><img src="${photoData}" style="max-height:140px;border-radius:8px;border:1px solid #ccc;"></p>` : ""}
+        <p><b>সদস্যের নাম:</b> ${document.getElementById("uf_nm")?.value || ""}</p>
+        <p><b>পিতার নাম:</b> ${document.getElementById("uf_f")?.value || ""}</p>
+        <p><b>মাতার নাম:</b> ${document.getElementById("uf_m")?.value || ""}</p>
+        <p><b>পেশা:</b> ${document.getElementById("uf_o")?.value || ""}</p>
+        <p><b>রক্তের গ্রুপ:</b> ${document.getElementById("uf_bg")?.value || ""}</p>
+        <p><b>মোবাইল নম্বর:</b> ${document.getElementById("uf_ph")?.value || ""}</p>
+        <p><b>বর্তমান ঠিকানা:</b> ${document.getElementById("uf_addr")?.value || ""}</p>
+        ${nidData ? `<p><b>এনআইডি (NID) কপি:</b><br><img src="${nidData}" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #ccc;"></p>` : ""}
+      </body></html>`;
+      const blob = new Blob([htmlDoc], { type: "text/html;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "Member_Update_With_Photo.html";
+      a.click();
+    };
+  }
+}, 500);
+</script>
 
 </body>
 </html>
