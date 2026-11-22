@@ -2421,55 +2421,947 @@ setInterval(() => {
   }, 600);
 })();
 </script>
-<script src="addon.js"></script>
 <script>
-document.addEventListener("click", function(e) {
-  const b = e.target.closest("button");
-  if (!b) return;
-  const t = (b.textContent || "").trim();
-  if (t.includes("লিংক") && !t.includes("ভোটার") && !t.includes("কপি")) {
-    const card = b.closest(".m");
-    if (!card) return;
-    setTimeout(() => {
-      const dlg = document.getElementById("dlg");
-      const ta = dlg ? dlg.querySelector("textarea") : null;
-      const waBtn = dlg ? Array.from(dlg.querySelectorAll("button, a")).find(x => x.textContent.includes("WhatsApp")) : null;
-      if (!dlg || !ta || !waBtn || document.getElementById("optTabWrap")) return;
+(function(){
+  let pendingNidData = null;
 
-      const origMsg = ta.value;
-      const d = (card.innerText || "").replace(/[০-৯]/g, c => "০১২৩৪৫৬৭৮৯".indexOf(c)).replace(/\D/g, "");
-      const m = d.match(/(?:88)?(01[3-9]\d{8})/);
-      const ph = m ? ("88" + m.at(1)) : "";
-      const nm = (card.querySelector("b, strong, .nm")?.textContent || "সদস্য").trim();
+  const extraCss = document.createElement("style");
+  extraCss.textContent = `
+    #pv .pvp, .pdfpage .pvp {
+      width: 135px !important; height: 165px !important; object-fit: cover !important;
+      object-position: top center !important; float: none !important; display: block !important;
+      margin: 10px auto 12px !important; border: 2px solid #0a6b6b !important;
+      border-radius: 8px !important; padding: 3px !important; background: #fff !important;
+    }
+    .qr-bottom { float: none !important; clear: both !important; text-align: center !important; margin: 14px auto 6px !important; }
+    .hdr-split {
+      display: flex !important; justify-content: space-between !important; align-items: center !important;
+      width: 100% !important; margin: 12px 0 6px !important; padding-bottom: 5px !important;
+      border-bottom: 1.5px solid #0a6b6b !important; font-size: 11pt !important; font-weight: 700 !important; color: #0f172a !important;
+    }
+    .smart-id-wrap {
+      width: 340px; margin: 8px auto; background: #ffffff; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 10px 28px rgba(6,78,59,0.18); border: 1.5px solid #10b981;
+      font-family: 'Hind Siliguri', sans-serif; color: #0f172a; position: relative;
+    }
+    .smart-id-top {
+      background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
+      padding: 16px 14px 44px; text-align: center; color: #ffffff; position: relative;
+      clip-path: polygon(0 0, 100% 0, 100% 76%, 50% 100%, 0 76%);
+    }
+    .smart-id-logo {
+      width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+      border: 2px solid #fde047; background: #fff; margin: 0 auto 5px; display: block;
+    }
+    .smart-id-org { font-size: 15px; font-weight: 700; line-height: 1.25; letter-spacing: 0.2px; }
+    .smart-id-sub { font-size: 11px; opacity: 0.92; margin-top: 2px; letter-spacing: 0.8px; }
+    .smart-id-photo-box {
+      width: 104px; height: 104px; border-radius: 50%; margin: -38px auto 8px;
+      border: 4px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.16);
+      overflow: hidden; background: #ecfdf5; position: relative; z-index: 2;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .smart-id-photo-box img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    .smart-id-name { text-align: center; font-size: 18px; font-weight: 700; color: #064e3b; padding: 0 12px; }
+    .smart-id-pill {
+      display: inline-flex; align-items: center; margin: 6px auto 13px; border-radius: 99px;
+      overflow: hidden; font-size: 13px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .pill-life { border: 1.5px solid #f59e0b; background: #fef3c7; color: #92400e; }
+    .pill-life .pill-num { background: #b45309; color: #ffffff; padding: 3px 12px; }
+    .pill-gen { border: 1.5px solid #10b981; background: #d1fae5; color: #065f46; }
+    .pill-gen .pill-num { background: #065f46; color: #ffffff; padding: 3px 12px; }
+    .pill-txt { padding: 3px 12px; }
+    .smart-id-info { padding: 0 20px 10px; font-size: 13px; }
+    .smart-id-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e2e8f0; gap: 8px; }
+    .smart-id-row span:first-child { color: #475569; font-weight: 600; white-space: nowrap; }
+    .smart-id-row span:last-child { color: #0f172a; font-weight: 700; text-align: right; }
+    .smart-id-bottom {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding: 8px 20px 12px;
+    }
+    .smart-id-qr img { width: 74px; height: 74px; border: 1px solid #cbd5e1; padding: 2px; border-radius: 6px; background: #fff; display: block; }
+    .smart-id-sign { text-align: center; font-size: 11px; color: #334155; }
+    .smart-id-sign-line { width: 105px; border-top: 1.5px solid #065f46; margin-bottom: 3px; }
+    .smart-id-foot {
+      background: #065f46; color: #ffffff; text-align: center; font-size: 10.5px;
+      padding: 7px 10px; font-weight: 500;
+    }
+  `;
+  document.head.appendChild(extraCss);
 
-      const tabs = document.createElement("div");
-      tabs.id = "optTabWrap";
-      tabs.style.cssText = "display:flex;gap:6px;margin-bottom:8px;";
-      tabs.innerHTML = `<button type="button" id="tOpt1" style="flex:1;background:#0a6b6b;color:#fff;border:none;padding:7px;border-radius:7px;font-weight:700;">🔗 তথ্য হালনাগাদ লিংক</button><button type="button" id="tOpt2" style="flex:1;background:#e2e8f0;color:#0f172a;border:none;padding:7px;border-radius:7px;font-weight:700;">✍️ একক বার্তা লিখুন</button>`;
-      ta.parentNode.insertBefore(tabs, ta);
-
-      const a = document.createElement("a");
-      a.target = "_blank"; a.rel = "noopener";
-      a.style.cssText = "background:#16a34a;color:#fff;padding:9px 14px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;";
-      a.textContent = "💬 WhatsApp / WA Business পাঠান";
-      const sync = () => { a.href = "https://" + "wa.me/" + ph + "?text=" + encodeURIComponent(ta.value); };
-      sync(); ta.addEventListener("input", sync);
-      waBtn.replaceWith(a);
-
-      document.getElementById("tOpt1").onclick = () => { ta.readOnly = true; ta.value = origMsg; sync(); document.getElementById("tOpt1").style.cssText += ";background:#0a6b6b;color:#fff;"; document.getElementById("tOpt2").style.cssText += ";background:#e2e8f0;color:#0f172a;"; };
-      document.getElementById("tOpt2").onclick = () => { ta.readOnly = false; ta.value = "আসসালামু আলাইকুম " + nm + ",\n"; ta.focus(); sync(); document.getElementById("tOpt2").style.cssText += ";background:#0a6b6b;color:#fff;"; document.getElementById("tOpt1").style.cssText += ";background:#e2e8f0;color:#0f172a;"; };
-    }, 60);
+  function buildOfflineQr(text) {
+    const c = document.createElement("canvas");
+    c.width = 160; c.height = 160;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 160, 160);
+    ctx.fillStyle = "#000000";
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const sz = 25, cell = 5, off = 17;
+    const finder = (gx, gy) => {
+      ctx.fillRect(off + gx * cell, off + gy * cell, 7 * cell, 7 * cell);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(off + (gx + 1) * cell, off + (gy + 1) * cell, 5 * cell, 5 * cell);
+      ctx.fillStyle = "#000000"; ctx.fillRect(off + (gx + 2) * cell, off + (gy + 2) * cell, 3 * cell, 3 * cell);
+    };
+    finder(0, 0); finder(sz - 7, 0); finder(0, sz - 7);
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        if ((x < 8 && y < 8) || (x > sz - 9 && y < 8) || (x < 8 && y > sz - 9)) continue;
+        h = (Math.imul(h ^ (x * 31 + y * 17), 16777619)) >>> 0;
+        if (h % 2 === 0) ctx.fillRect(off + x * cell, off + y * cell, cell, cell);
+      }
+    }
+    return c.toDataURL("image/png");
   }
-}, true);
+
+  function resolveImgUrl(val) {
+    if (!val) return "";
+    if (val.startsWith("data:")) return val;
+    const raw = localStorage.getItem("nhs_blob_" + val) || localStorage.getItem(val);
+    if (raw && raw.startsWith("data:")) return raw;
+    return "/_blob/" + val;
+  }
+
+  openIdCard = function(s) {
+    const r = rows.find(x => x.s === s);
+    if (!r) return;
+    const bgStore = db._get("member_blood_groups", {});
+    const bloodVal = bgStore[String(r.s)] || r.bg || "-";
+    const logoUrl = resolveImgUrl(typeof ORGLOGO !== "undefined" ? ORGLOGO : "");
+    const photoUrl = resolveImgUrl(r.ph);
+    const qrUrl = buildOfflineQr([ORG_NAME, "No:" + r.n, r.nm, "BG:" + bloodVal, (r.p && r.p.at(0)) || ""].join("|"));
+    const addrTxt = [r.b, r.h ? "বাড়ী " + r.h : "", r.r ? "রোড " + r.r : "", r.fl ? "ফ্ল্যাট " + r.fl : ""].filter(Boolean).join(", ") || "-";
+    const phTxt = (r.p || []).map(fmtPhone).join(", ") || "-";
+    const orgAddrTxt = (typeof ORGADDR !== "undefined" && ORGADDR) ? ORGADDR : (typeof DEFADDR !== "undefined" ? DEFADDR : "");
+    const typeText = r.l ? "★ আজীবন সদস্য" : "● সাধারণ সদস্য";
+
+    dlg.innerHTML = `<h2>🪪 ডিজিটাল পরিচয়পত্র</h2>
+      <div id="smartIdCardArea" class="smart-id-wrap">
+        <div class="smart-id-top">
+          ${logoUrl ? `<img class="smart-id-logo" src="${logoUrl}">` : ""}
+          <div class="smart-id-org">${esc(ORG_NAME)}</div>
+          <div class="smart-id-sub">সদস্য পরিচয়পত্র • MEMBER ID CARD</div>
+        </div>
+        <div class="smart-id-photo-box">
+          ${photoUrl ? `<img src="${photoUrl}">` : `<span style="font-size:38px;">👤</span>`}
+        </div>
+        <div class="smart-id-name">${esc(r.nm)}</div>
+        <div style="text-align:center;">
+          <div class="smart-id-pill ${r.l ? "pill-life" : "pill-gen"}">
+            <span class="pill-txt">${typeText}</span>
+            <span class="pill-num">${esc(r.n)}</span>
+          </div>
+        </div>
+        <div class="smart-id-info">
+          <div class="smart-id-row"><span>পিতার নাম :</span><span>${esc(r.f || "-")}</span></div>
+          <div class="smart-id-row"><span>রক্তের গ্রুপ :</span><span style="color:#b91c1c;">${esc(bloodVal)}</span></div>
+          <div class="smart-id-row"><span>ঠিকানা :</span><span>${esc(addrTxt)}</span></div>
+          <div class="smart-id-row"><span>মোবাইল :</span><span>${esc(phTxt)}</span></div>
+        </div>
+        <div class="smart-id-bottom">
+          <div class="smart-id-qr"><img src="${qrUrl}"></div>
+          <div class="smart-id-sign"><div class="smart-id-sign-line"></div>অনুমোদিত স্বাক্ষর</div>
+        </div>
+        <div class="smart-id-foot">${esc(orgAddrTxt)}</div>
+      </div>
+      <div class="bar">
+        <button class="btn" id="dlSmartIdBtn">📥 ডাউনলোড (HD PNG)</button>
+        <button class="btn ghost" onclick="window.print()">🖨️ প্রিন্ট</button>
+        <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+      </div>`;
+    dlg.showModal();
+
+    document.getElementById("dlSmartIdBtn").onclick = () => {
+      const c = document.createElement("canvas");
+      c.width = 680; c.height = 1060;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 680, 1060);
+
+      const grad = ctx.createLinearGradient(0, 0, 680, 260);
+      grad.addColorStop(0, "#065f46"); grad.addColorStop(1, "#10b981");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(0, 0); ctx.lineTo(680, 0); ctx.lineTo(680, 220); ctx.lineTo(340, 290); ctx.lineTo(0, 220);
+      ctx.closePath(); ctx.fill();
+
+      ctx.fillStyle = "#ffffff"; ctx.textAlign = "center";
+      ctx.font = "bold 30px sans-serif";
+      ctx.fillText(ORG_NAME, 340, 95);
+      ctx.font = "20px sans-serif";
+      ctx.fillText("সদস্য পরিচয়পত্র • MEMBER ID CARD", 340, 132);
+
+      ctx.fillStyle = "#064e3b"; ctx.font = "bold 34px sans-serif";
+      ctx.fillText(r.nm, 340, 465);
+
+      ctx.fillStyle = r.l ? "#fef3c7" : "#d1fae5";
+      ctx.fillRect(160, 485, 250, 44);
+      ctx.fillStyle = r.l ? "#b45309" : "#065f46";
+      ctx.fillRect(410, 485, 110, 44);
+
+      ctx.fillStyle = r.l ? "#92400e" : "#065f46";
+      ctx.font = "bold 22px sans-serif";
+      ctx.fillText(r.l ? "★ আজীবন সদস্য" : "● সাধারণ সদস্য", 285, 514);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(String(r.n), 465, 514);
+
+      const rowsData = [
+        ["পিতার নাম :", r.f || "-"],
+        ["রক্তের গ্রুপ :", bloodVal],
+        ["ঠিকানা :", addrTxt],
+        ["মোবাইল :", phTxt]
+      ];
+      let yPos = 580;
+      rowsData.forEach(([k, v]) => {
+        ctx.textAlign = "left"; ctx.fillStyle = "#475569"; ctx.font = "bold 23px sans-serif";
+        ctx.fillText(k, 48, yPos);
+        ctx.textAlign = "right"; ctx.fillStyle = k.includes("রক্ত") ? "#b91c1c" : "#0f172a";
+        ctx.fillText(String(v).slice(0, 34), 632, yPos);
+        ctx.strokeStyle = "#e2e8f0"; ctx.beginPath(); ctx.moveTo(48, yPos + 14); ctx.lineTo(632, yPos + 14); ctx.stroke();
+        yPos += 54;
+      });
+
+      ctx.strokeStyle = "#065f46"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(430, 930); ctx.lineTo(632, 930); ctx.stroke();
+      ctx.textAlign = "center"; ctx.fillStyle = "#334155"; ctx.font = "20px sans-serif";
+      ctx.fillText("অনুমোদিত স্বাক্ষর", 531, 958);
+
+      ctx.fillStyle = "#065f46"; ctx.fillRect(0, 995, 680, 65);
+      ctx.fillStyle = "#ffffff"; ctx.font = "19px sans-serif";
+      ctx.fillText(orgAddrTxt, 340, 1035);
+
+      const finishSave = () => {
+        const qImg = new Image();
+        qImg.onload = () => {
+          ctx.drawImage(qImg, 48, 825, 145, 145);
+          const a = document.createElement("a");
+          a.href = c.toDataURL("image/png");
+          a.download = "ID_Card_" + toEn(r.n) + ".png";
+          a.click();
+        };
+        qImg.src = qrUrl;
+      };
+
+      if (photoUrl) {
+        const pImg = new Image();
+        pImg.crossOrigin = "anonymous";
+        pImg.onload = () => {
+          ctx.save();
+          ctx.beginPath(); ctx.arc(340, 295, 105, 0, Math.PI * 2); ctx.closePath();
+          ctx.fillStyle = "#ffffff"; ctx.fill();
+          ctx.beginPath(); ctx.arc(340, 295, 97, 0, Math.PI * 2); ctx.clip();
+          ctx.drawImage(pImg, 243, 198, 194, 194);
+          ctx.restore();
+          finishSave();
+        };
+        pImg.onerror = finishSave;
+        pImg.src = photoUrl;
+      } else {
+        finishSave();
+      }
+    };
+  };
+
+  sendMemberMagicLink = function(s) {
+    const r = rows.find(x => x.s === s); if (!r) return;
+    const pin = String(Math.floor(1000 + Math.random() * 9000));
+    const pins = db._get("member_pins", {}); pins[toEn(r.n)] = pin; db._set("member_pins", pins);
+    const url = location.href.split("?").at(0) + "?member=" + toEn(r.n) + "&pin=" + pin;
+    const txt = `আসসালামু আলাইকুম ${r.nm},\n${ORG_NAME}-এ আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন (গোপন পিন: ${pin}):\n${url}`;
+    const ph = (r.p && r.p.at(0)) || "";
+    dlg.innerHTML = `<h2>🔗 তথ্য হালনাগাদ লিংক (পিন: ${pin})</h2>
+      <p class="msg">নিচের কপি বাটনে ক্লিক করে বার্তা ও লিংক কপি করুন অথবা সরাসরি WhatsApp-এ পাঠান:</p>
+      <textarea id="mlTxt" style="width:100%;height:95px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(txt)}</textarea>
+      <div class="bar">
+        <button class="btn" id="cpMlBtn">📋 লিংক ও বার্তা কপি করুন</button>
+        ${ph ? `<a class="btn" style="background:#128c7e;text-decoration:none;" href="https://wa.me{ph}?text=${encodeURIComponent(txt)}" target="_blank">💬 WhatsApp</a>` : ""}
+        <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+      </div>`;
+    dlg.showModal();
+    document.getElementById("cpMlBtn").onclick = () => {
+      const ta = document.getElementById("mlTxt"); ta.select();
+      navigator.clipboard?.writeText(txt).catch(() => document.execCommand("copy"));
+      document.getElementById("cpMlBtn").textContent = "✓ কপি হয়েছে!";
+    };
+  };
+
+  const bnM = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const enM = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  function bnOrd(d) {
+    if (d === 1) return "১লা";
+    if (d === 2 || d === 3) return toBn(d) + "রা";
+    if (d === 4) return "৪ঠা";
+    if (d >= 5 && d <= 18) return toBn(d) + "ই";
+    return toBn(d) + "শে";
+  }
+
+  function fmtAllDate(val, lang) {
+    const s = toEn(String(val)).trim();
+    const m1 = s.match(/^(\d{1,2})[\/\-\.\\](\d{1,2})[\/\-\.\\](\d{4})$/);
+    const m2 = s.match(/^(\d{4})[\/\-\.\\](\d{1,2})[\/\-\.\\](\d{1,2})$/);
+    let d, m, y;
+    if (m1) { d = Number(m1.at(1)); m = Number(m1.at(2)); y = Number(m1.at(3)); }
+    else if (m2) { y = Number(m2.at(1)); m = Number(m2.at(2)); d = Number(m2.at(3)); }
+    else return val;
+    if (!d || !m || m < 1 || m > 12 || !y) return val;
+    return lang === "en" ? (d + " " + enM[m - 1] + " " + y) : (bnOrd(d) + " " + bnM[m - 1] + " " + toBn(y));
+  }
+
+  function openNidViewer(title, dataUrl) {
+    const isPdf = dataUrl.startsWith("data:application/pdf");
+    dlg.innerHTML = `<h2>🪪 ${esc(title)}</h2>
+      ${isPdf
+        ? `<iframe src="${dataUrl}" style="width:100%;height:65vh;border:1px solid var(--line);border-radius:8px;"></iframe>`
+        : `<img src="${dataUrl}" style="max-width:100%;max-height:65vh;display:block;margin:auto;border-radius:8px;border:1px solid var(--line);">`
+      }
+      <div class="bar">
+        <a class="btn" href="${dataUrl}" download="NID_Passport_Doc.${isPdf ? "pdf" : "png"}" style="text-decoration:none;">📥 ডাউনলোড করুন</a>
+        <button class="btn ghost" onclick="dlg.close()">বন্ধ করুন</button>
+      </div>`;
+    dlg.showModal();
+  }
+
+  function runSafeEnhancements() {
+    document.querySelectorAll(".m, #pv, .pdfpage, #list").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        if (!n.nodeValue || !/[\/\-\.\\]/.test(n.nodeValue)) continue;
+        n.nodeValue = n.nodeValue.replace(/\b([০-৯\d]{1,4}[\/\-\.\\][০-৯\d]{1,2}[\/\-\.\\][০-৯\d]{1,4})\b/g, full => fmtAllDate(full, typeof curLang !== "undefined" ? curLang : "bn"));
+      }
+    });
+
+    const dlgInputs = [...document.querySelectorAll("#dlg input[type='file']")];
+    dlgInputs.forEach((inp, i) => {
+      if (i >= 1 && inp.id !== "f_nid_file" && inp.nextElementSibling && inp.nextElementSibling.tagName === "SMALL") {
+        inp.nextElementSibling.textContent = "যেকোনো সাইজের ছবি বা পিডিএফ ফাইল (সর্বোচ্চ ৫ মেগাবাইট)";
+      }
+    });
+
+    const formBox = document.querySelector("#dlg .fg");
+    const saveBtn = [...document.querySelectorAll("#dlg .bar .btn")].find(b => b.textContent.includes("সংরক্ষণ"));
+    if (formBox && saveBtn && !document.getElementById("nidUploadBox")) {
+      pendingNidData = null;
+
+      const noVal0 = document.getElementById("f_n")?.value || "";
+      const nmVal0 = document.getElementById("f_nm")?.value || "";
+      const existingMember = rows.find(x => toEn(x.n) === toEn(noVal0)) || rows.find(x => x.nm === nmVal0);
+      const bgStore = db._get("member_blood_groups", {});
+      const curBg = existingMember ? (bgStore[String(existingMember.s)] || existingMember.bg || "") : "";
+
+      const bgLbl = document.createElement("label");
+      bgLbl.id = "bloodGroupField";
+      bgLbl.innerHTML = `রক্তের গ্রুপ (Blood Group)
+        <select id="f_blood_group">
+          <option value="">নির্বাচন করুন</option>
+          ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${curBg === g ? "selected" : ""}>${g}</option>`).join("")}
+        </select>`;
+      const firstFileLbl = formBox.querySelector("input[type='file']")?.closest("label");
+      if (firstFileLbl) formBox.insertBefore(bgLbl, firstFileLbl);
+      else formBox.appendChild(bgLbl);
+
+      const lbl = document.createElement("label");
+      lbl.className = "w";
+      lbl.id = "nidUploadBox";
+      lbl.innerHTML = `জাতীয় পরিচয়পত্র (NID) / পাসপোর্ট / জন্মনিবন্ধন (ছবি বা পিডিএফ)
+        <input type="file" id="f_nid_file" accept="image/*,application/pdf">
+        <small style="display:block;color:var(--muted);margin-top:3px;">যেকোনো সাইজের ছবি বা পিডিএফ ফাইল (সর্বোচ্চ ৫ মেগাবাইট)</small>`;
+      formBox.appendChild(lbl);
+
+      const nidInp = document.getElementById("f_nid_file");
+      nidInp.onchange = () => {
+        const f = nidInp.files && nidInp.files.item(0);
+        if (!f) { pendingNidData = null; return; }
+        if (f.size > 5 * 1024 * 1024) { alert("ফাইলের সাইজ ৫ মেগাবাইটের কম হতে হবে।"); nidInp.value = ""; pendingNidData = null; return; }
+        const rd = new FileReader();
+        rd.onload = () => { pendingNidData = rd.result; };
+        rd.readAsDataURL(f);
+      };
+
+      saveBtn.addEventListener("click", () => {
+        const noVal = document.getElementById("f_n")?.value || "";
+        const nmVal = document.getElementById("f_nm")?.value || "";
+        const selBg = document.getElementById("f_blood_group")?.value || "";
+        setTimeout(() => {
+          const target = rows.find(x => toEn(x.n) === toEn(noVal)) || rows.find(x => x.nm === nmVal);
+          if (target) {
+            const bgs = db._get("member_blood_groups", {});
+            bgs[String(target.s)] = selBg;
+            db._set("member_blood_groups", bgs);
+            if (pendingNidData) {
+              const store = db._get("member_nid_docs", {});
+              store[String(target.s)] = pendingNidData;
+              db._set("member_nid_docs", store);
+              pendingNidData = null;
+            }
+          }
+        }, 120);
+      }, true);
+    }
+
+    const store = db._get("member_nid_docs", {});
+    document.querySelectorAll(".m.open").forEach(card => {
+      const s = Number(card.dataset.s);
+      const bar = card.querySelector(".more .bar");
+      if (store[String(s)] && bar && !bar.querySelector(".nid-view-btn")) {
+        const b = document.createElement("button");
+        b.className = "btn ghost nid-view-btn";
+        b.textContent = "🪪 NID / পাসপোর্ট দেখুন";
+        b.onclick = () => openNidViewer("NID / পাসপোর্ট / জন্মনিবন্ধন", store[String(s)]);
+        bar.insertBefore(b, bar.firstChild);
+      }
+    });
+
+    const allPgs = [...document.querySelectorAll("#pv .pdfpage, .pdfpage")];
+    const targetPgs = allPgs.length ? allPgs : [...document.querySelectorAll("#pv")];
+    targetPgs.forEach((pg, idx) => {
+      const tbl = pg.querySelector("table");
+      if (!tbl || pg.dataset.smartDone) return;
+      pg.dataset.smartDone = "1";
+      const sub = pg.querySelector(".sub");
+      const todayBn = fmtAllDate(new Date().toLocaleDateString("en-GB"), "bn");
+      let leftTxt = "", rightTxt = "তারিখ: " + todayBn;
+      if (sub) {
+        const raw = sub.textContent.trim();
+        if (raw.includes("তারিখ")) {
+          const pts = raw.split(/,?\s*তারিখ[:\s]*/);
+          leftTxt = "সদস্যের নাম: " + (pts.at(0) || "").trim();
+          rightTxt = "তারিখ: " + ((pts.at(1) || "").trim() || todayBn);
+        } else {
+          const trs = [...tbl.querySelectorAll("tr")].slice(1);
+          const fNo = trs.at(0)?.children?.item(1)?.textContent?.trim() || "";
+          const lNo = trs.at(-1)?.children?.item(1)?.textContent?.trim() || "";
+          leftTxt = raw + ((fNo && lNo && trs.length > 1) ? ` | পৃষ্ঠা ${toBn(idx + 1)}: সদস্য নং ${fNo} থেকে ${lNo} পর্যন্ত` : "");
+        }
+        sub.style.display = "none";
+      }
+      const oldQr = pg.querySelector(".qr-center, div[style*='float:right']");
+      const qrSrc = oldQr ? oldQr.querySelector("img")?.src : "";
+      if (oldQr) oldQr.remove();
+      const hdr = document.createElement("div");
+      hdr.className = "hdr-split";
+      hdr.innerHTML = `<span>${leftTxt}</span><span>${rightTxt}</span>`;
+      tbl.parentNode.insertBefore(hdr, tbl);
+      if (qrSrc) {
+        const qDiv = document.createElement("div");
+        qDiv.className = "qr-bottom";
+        qDiv.innerHTML = `<img src="${qrSrc}" style="width:94px;height:94px;border:1px solid #334155;padding:3px;border-radius:6px;background:#fff;display:inline-block;"><small style="display:block;font-size:8.5pt;font-weight:700;margin-top:2px;">QR যাচাই</small>`;
+        tbl.parentNode.insertBefore(qDiv, tbl.nextSibling);
+      }
+    });
+
+    if (typeof barEl !== "undefined" && barEl && !document.getElementById("vLinkBtn")) {
+      const btn = document.createElement("button");
+      btn.id = "vLinkBtn"; btn.className = "btn ghost"; btn.textContent = "🗳️ ভোটার লিংক";
+      btn.onclick = () => {
+        const vUrl = location.href.split("?").at(0) + "?view=voters";
+        const msg = `আসসালামু আলাইকুম,\n${ORG_NAME}-এর নির্বাচনের চূড়ান্ত ভোটার তালিকা দেখতে ও PDF ডাউনলোড করতে নিচের লিংকে ক্লিক করুন:\n${vUrl}`;
+        dlg.innerHTML = `<h2>🗳️ পাবলিক ভোটার তালিকা লিংক</h2>
+          <textarea id="vlTxt" style="width:100%;height:90px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(msg)}</textarea>
+          <div class="bar">
+            <button class="btn" id="cpVlBtn">📋 লিংক ও বার্তা কপি করুন</button>
+            <a class="btn" style="background:#128c7e;text-decoration:none;" href="https://wa.me{encodeURIComponent(msg)}" target="_blank">💬 WhatsApp-এ শেয়ার</a>
+            <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+          </div>`;
+        dlg.showModal();
+        document.getElementById("cpVlBtn").onclick = () => { navigator.clipboard?.writeText(msg); document.getElementById("cpVlBtn").textContent = "✓ কপি হয়েছে!"; };
+      };
+      const sb = document.getElementById("setBtn");
+      if (sb) barEl.insertBefore(btn, sb); else barEl.appendChild(btn);
+    }
+  }
+  setInterval(runSafeEnhancements, 400);
+
+  if (new URLSearchParams(location.search).get("view") === "voters") {
+    const stV = document.createElement("style");
+    stV.textContent = `#bar, #tabs, .act, .more .bar, #reqBtn, #setBtn, #xlBtn, #ntcBtn, #vLinkBtn { display: none !important; }`;
+    document.head.appendChild(stV);
+    setTimeout(() => {
+      if (typeof tab !== "undefined") { tab = "v"; render(); }
+      const top = document.querySelector(".wrap");
+      if (top && !document.getElementById("vPubBar")) {
+        const b = document.createElement("div");
+        b.id = "vPubBar";
+        b.style.cssText = "background:#e2efed;border:1px solid #0a6b6b;border-radius:10px;padding:10px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;";
+        b.innerHTML = `<b style="color:#064e4e;">🗳️ চূড়ান্ত ভোটার তালিকা (শুধুমাত্র দেখার ও ডাউনলোডের জন্য)</b><div><button class="btn" onclick="act('pdf','voters',this)">📥 ভোটার তালিকা ডাউনলোড (PDF)</button> <button class="btn ghost" onclick="doPrint()">🖨️ প্রিন্ট</button></div>`;
+        top.insertBefore(b, top.children.item(1));
+      }
+    }, 500);
+  }
+})();
+  setInterval(() => {
+    const selfForm = document.querySelector(".wrap .card .fg, .card form .fg");
+    const selfSaveBtn = [...document.querySelectorAll(".wrap .card .btn")].find(b => b.textContent.includes("সংরক্ষণ"));
+    if (selfForm && selfSaveBtn && !document.getElementById("self_blood_group")) {
+      const mNo = new URLSearchParams(location.search).get("member");
+      const r = rows.find(x => toEn(x.n) === toEn(mNo || ""));
+      const bgStore = db._get("member_blood_groups", {});
+      const curBg = r ? (bgStore[String(r.s)] || r.bg || "") : "";
+
+      const lbl = document.createElement("label");
+      lbl.innerHTML = `রক্তের গ্রুপ (Blood Group)
+        <select id="self_blood_group">
+          <option value="">নির্বাচন করুন</option>
+          ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${curBg === g ? "selected" : ""}>${g}</option>`).join("")}
+        </select>`;
+      const photoLbl = selfForm.querySelector("input[type='file']")?.closest("label");
+      if (photoLbl) selfForm.insertBefore(lbl, photoLbl);
+      else selfForm.appendChild(lbl);
+
+      selfSaveBtn.addEventListener("click", () => {
+        const val = document.getElementById("self_blood_group")?.value || "";
+        if (r) {
+          const store = db._get("member_blood_groups", {});
+          store[String(r.s)] = val;
+          db._set("member_blood_groups", store);
+        }
+      }, true);
+    }
+  }, 400);
+  setInterval(() => {
+    const pvBox = document.getElementById("pv");
+    if (pvBox) {
+      pvBox.querySelectorAll("div, p, span").forEach(el => {
+        if (el.children.length === 0 && /,\s*তারিখ[:\s]/.test(el.textContent)) {
+          const raw = el.textContent.trim();
+          const nmPart = raw.split(/,\s*তারিখ[:\s]*/).at(0).trim();
+          el.style.display = "none";
+          const hdr = pvBox.querySelector(".hdr-split");
+          if (hdr && hdr.children.item(0)) {
+            hdr.children.item(0).textContent = "সদস্যের নাম: " + nmPart;
+          }
+        }
+      });
+    }
+  }, 250);
+  document.addEventListener("click", function(e) {
+    const el = e.target.closest("a, button");
+    if (!el) return;
+    const href = el.getAttribute("href") || "";
+    if (href.includes("whatsapp.com") || href.includes("wa.me") || el.textContent.includes("WhatsApp")) {
+      const m = href.match(/text=([^&]*)/);
+      const rawTxt = m ? decodeURIComponent(m.at(1)) : "";
+      const card = el.closest(".m");
+      let ph = "";
+      if (card) {
+        const phMatch = toEn(card.textContent).match(/01[3-9]\d{8}/);
+        if (phMatch) ph = "88" + phMatch.at(0);
+      }
+      if (href.includes("{ph") || !href.startsWith("https://wa.me")) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const fixedUrl = "https://wa.me" + ph + (rawTxt ? "?text=" + encodeURIComponent(rawTxt) : "");
+        window.open(fixedUrl, "_blank");
+      }
+    }
+  }, true);
+  setInterval(() => {
+    const dlgH2 = document.querySelector("#dlg h2");
+    const dlgGrid = document.querySelector("#dlg .fg, #dlg div[style*='grid']");
+    if (dlgH2 && dlgH2.textContent.includes("সেটিংস") && !document.getElementById("subAdminBtn")) {
+      const btn = document.createElement("button");
+      btn.id = "subAdminBtn";
+      btn.className = "btn ghost";
+      btn.style.cssText = "width:100%;margin-top:8px;border:1.5px solid #0a6b6b;font-weight:700;";
+      btn.textContent = "👥 এডমিন ব্যবস্থাপনা (কর্মকর্তা যোগ ও পাসওয়ার্ড)";
+      btn.onclick = () => window.openSubAdminManager();
+      const closeBtn = [...document.querySelectorAll("#dlg .btn")].find(b => b.textContent.trim() === "বন্ধ");
+      if (closeBtn && closeBtn.parentNode) closeBtn.parentNode.insertBefore(btn, closeBtn);
+      else document.getElementById("dlg").appendChild(btn);
+    }
+  }, 350);
+
+  window.openSubAdminManager = function() {
+    const list = db._get("sub_admins_list", []);
+    const itemsHtml = list.length ? list.map((u, i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px;margin-top:6px;background:var(--bg);">
+        <div>
+          <b>${esc(u.name)}</b> <small style="color:#0a6b6b;">(${esc(u.role)})</small><br>
+          <small>ইমেইল: <b>${esc(u.email)}</b> | পাসওয়ার্ড: <b>${esc(u.pass)}</b></small>
+        </div>
+        <div style="display:flex;gap:5px;">
+          <button class="btn ghost" onclick="window._copySubAdmin(${i})">📋 কপি</button>
+          <button class="btn ghost" style="color:#b42318;" onclick="window._delSubAdmin(${i})">🗑️</button>
+        </div>
+      </div>`).join("") : `<p class="msg">এখনো কোনো কর্মকর্তা বা সহ-এডমিন যোগ করা হয়নি।</p>`;
+
+    dlg.innerHTML = `<h2>👥 এডমিন ব্যবস্থাপনা (কর্মকর্তা যোগ)</h2>
+      <div class="fg" style="background:var(--bg);padding:10px;border-radius:10px;border:1px solid var(--line);">
+        <label>কর্মকর্তার নাম<input type="text" id="sa_name" placeholder="যেমন: মোঃ কামাল উদ্দিন"></label>
+        <label>ইমেইল এড্রেস<input type="email" id="sa_email" placeholder="example@gmail.com"></label>
+        <label>পাসওয়ার্ড নির্ধারণ করুন<input type="text" id="sa_pass" placeholder="কমপক্ষে ৬ অক্ষর"></label>
+        <label>কাজের অনুমতি<select id="sa_role">
+          <option value="তথ্য এন্ট্রি ও সংশোধন">তথ্য এন্ট্রি ও সংশোধন</option>
+          <option value="শুধুমাত্র দেখা ও প্রিন্ট">শুধুমাত্র দেখা ও প্রিন্ট</option>
+          <option value="সহ-এডমিন (পূর্ণ ক্ষমতা)">সহ-এডমিন (পূর্ণ ক্ষমতা)</option>
+        </select></label>
+      </div>
+      <div class="bar"><button class="btn" id="sa_save_btn">➕ কর্মকর্তা যোগ করুন</button></div>
+      <div style="margin-top:10px;"><b>অনুমোদিত কর্মকর্তাদের তালিকা (${toBn(list.length)} জন):</b>${itemsHtml}</div>
+      <div class="bar"><button class="btn ghost" onclick="dlg.close()">বন্ধ</button></div>`;
+    dlg.showModal();
+
+    document.getElementById("sa_save_btn").onclick = () => {
+      const name = document.getElementById("sa_name").value.trim();
+      const email = document.getElementById("sa_email").value.trim();
+      const pass = document.getElementById("sa_pass").value.trim();
+      const role = document.getElementById("sa_role").value;
+      if (!name || !email || !pass) return alert("অনুগ্রহ করে নাম, ইমেইল এবং পাসওয়ার্ড লিখুন।");
+      const cur = db._get("sub_admins_list", []);
+      cur.push({ name, email, pass, role });
+      db._set("sub_admins_list", cur);
+      window.openSubAdminManager();
+    };
+  };
+
+  window._copySubAdmin = function(idx) {
+    const u = db._get("sub_admins_list", []).at(idx);
+    if (!u) return;
+    const msg = `আসসালামু আলাইকুম ${u.name},\n${ORG_NAME} পোর্টালে কাজ করার জন্য আপনার লগইন তথ্য:\nলিংক: ${location.href.split("?").at(0)}\nইমেইল: ${u.email}\nপাসওয়ার্ড: ${u.pass}\nদায়িত্ব: ${u.role}`;
+    navigator.clipboard?.writeText(msg);
+    alert("কর্মকর্তার লগইন বার্তা ও লিংক কপি হয়েছে! এখন WhatsApp বা ইমেইলে পেস্ট করে পাঠিয়ে দিন।");
+  };
+
+  window._delSubAdmin = function(idx) {
+    if (!confirm("এই কর্মকর্তার অনুমতি বাতিল করবেন?")) return;
+    const cur = db._get("sub_admins_list", []);
+    cur.splice(idx, 1);
+    db._set("sub_admins_list", cur);
+    window.openSubAdminManager();
+  };
+
+  setInterval(() => {
+    const passInp = document.querySelector("#login input[type='password'], #gate input[type='password']");
+    const loginBtn = document.querySelector("#login .btn, #gate .btn");
+    if (passInp && loginBtn && !passInp.dataset.subHooked) {
+      passInp.dataset.subHooked = "1";
+      loginBtn.addEventListener("click", () => {
+        const val = passInp.value.trim();
+        const subs = db._get("sub_admins_list", []);
+        const found = subs.find(u => u.pass === val || (u.email + ":" + u.pass) === val);
+        if (found) {
+          passInp.value = typeof ADMIN_PASS !== "undefined" ? ADMIN_PASS : (db._get("admin_pass", "1234"));
+          sessionStorage.setItem("active_sub_admin", JSON.stringify(found));
+        }
+      }, true);
+    }
+  }, 400);
+  const baseOpenIdCard = openIdCard;
+  openIdCard = function(s) {
+    baseOpenIdCard(s);
+    const r = rows.find(x => x.s === s);
+    if (!r) return;
+    const isEn = (typeof curLang !== "undefined" && curLang === "en");
+    const card = document.getElementById("smartIdCardArea");
+    if (!card) return;
+
+    const pillTxt = card.querySelector(".pill-txt");
+    const pillNum = card.querySelector(".pill-num");
+    if (pillTxt) pillTxt.textContent = isEn ? (r.l ? "Life Member" : "General Member") : (r.l ? "আজীবন সদস্য" : "সাধারণ সদস্য");
+    if (pillNum) pillNum.textContent = isEn ? toEn(r.n) : toBn(r.n);
+
+    if (isEn) {
+      const orgEl = card.querySelector(".smart-id-org");
+      if (orgEl && typeof ORGEN !== "undefined" && ORGEN) orgEl.textContent = ORGEN;
+      const subEl = card.querySelector(".smart-id-sub");
+      if (subEl) subEl.textContent = "MEMBER IDENTITY CARD";
+      const nmEl = card.querySelector(".smart-id-name");
+      if (nmEl && r.nme) nmEl.textContent = r.nme;
+
+      const rSpans = [...card.querySelectorAll(".smart-id-row")];
+      if (rSpans[0]) { rSpans[0].children[0].textContent = "Father's Name :"; if (r.fe) rSpans[0].children[1].textContent = r.fe; }
+      if (rSpans[1]) { rSpans[1].children[0].textContent = "Blood Group :"; }
+      if (rSpans[2]) {
+        rSpans[2].children[0].textContent = "Address :";
+        const enAddr = [r.be, r.h ? "House " + toEn(r.h) : "", r.r ? "Road " + toEn(r.r) : "", r.fl ? "Flat " + toEn(r.fl) : ""].filter(Boolean).join(", ");
+        if (enAddr) rSpans[2].children[1].textContent = enAddr;
+      }
+      if (rSpans[3]) {
+        rSpans[3].children[0].textContent = "Mobile :";
+        rSpans[3].children[1].textContent = toEn(rSpans[3].children[1].textContent);
+      }
+      const signEl = card.querySelector(".smart-id-sign");
+      if (signEl) signEl.innerHTML = `<div class="smart-id-sign-line"></div>Authorized Signature`;
+      const footEl = card.querySelector(".smart-id-foot");
+      if (footEl && typeof ADDRE !== "undefined" && ADDRE) footEl.textContent = ADDRE;
+    }
+
+    const prBtn = [...document.querySelectorAll("#dlg .bar .btn")].find(b => b.textContent.includes("প্রিন্ট") || b.textContent.includes("Print"));
+    if (prBtn) {
+      prBtn.onclick = () => {
+        const cloneHtml = card.outerHTML;
+        dlg.close();
+        const pvBox = document.getElementById("pv");
+        if (pvBox && typeof showPv === "function") {
+          showPv(`<div style="padding:18px;display:flex;justify-content:center;align-items:center;">${cloneHtml}</div>`);
+        } else {
+          window.print();
+        }
+      };
+    }
+  };
+  setInterval(() => {
+    const dlgH2 = document.querySelector("#dlg h2");
+    if (dlgH2 && dlgH2.textContent.includes("সেটিংস") && !document.getElementById("subAdminBtn")) {
+      const btn = document.createElement("button");
+      btn.id = "subAdminBtn";
+      btn.className = "btn ghost";
+      btn.style.cssText = "width:100%;margin-top:8px;border:1.5px solid #0a6b6b;font-weight:700;";
+      btn.textContent = "👥 এডমিন ব্যবস্থাপনা (কর্মকর্তা যোগ ও পাসওয়ার্ড)";
+      btn.onclick = () => window.openSubAdminManager();
+      const closeBtn = [...document.querySelectorAll("#dlg .btn")].find(b => b.textContent.trim() === "বন্ধ");
+      if (closeBtn && closeBtn.parentNode) closeBtn.parentNode.insertBefore(btn, closeBtn);
+      else document.getElementById("dlg").appendChild(btn);
+    }
+
+    const passInp = document.querySelector("#login input[type='password'], #gate input[type='password']");
+    const loginBtn = document.querySelector("#login .btn, #gate .btn");
+    if (passInp && loginBtn && !passInp.dataset.subHooked) {
+      passInp.dataset.subHooked = "1";
+      loginBtn.addEventListener("click", () => {
+        const val = passInp.value.trim();
+        const subs = db._get("sub_admins_list", []);
+        const found = subs.find(u => u.pass === val || (u.email + ":" + u.pass) === val);
+        if (found) {
+          passInp.value = typeof ADMIN_PASS !== "undefined" ? ADMIN_PASS : (db._get("admin_pass", "1234"));
+          sessionStorage.setItem("active_sub_admin", JSON.stringify(found));
+        }
+      }, true);
+    }
+  }, 350);
+
+  window.openSubAdminManager = function() {
+    const list = db._get("sub_admins_list", []);
+    const itemsHtml = list.length ? list.map((u, i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid var(--line);border-radius:8px;margin-top:6px;background:var(--bg);">
+        <div>
+          <b>${esc(u.name)}</b> <small style="color:#0a6b6b;">(${esc(u.role)})</small><br>
+          <small>ইমেইল: <b>${esc(u.email)}</b> | পাসওয়ার্ড: <b>${esc(u.pass)}</b></small>
+        </div>
+        <div style="display:flex;gap:5px;">
+          <button class="btn ghost" onclick="window._copySubAdmin(${i})">📋 কপি</button>
+          <button class="btn ghost" style="color:#b42318;" onclick="window._delSubAdmin(${i})">🗑️</button>
+        </div>
+      </div>`).join("") : `<p class="msg">এখনো কোনো কর্মকর্তা বা সহ-এডমিন যোগ করা হয়নি।</p>`;
+
+    dlg.innerHTML = `<h2>👥 এডমিন ব্যবস্থাপনা (কর্মকর্তা যোগ)</h2>
+      <div class="fg" style="background:var(--bg);padding:10px;border-radius:10px;border:1px solid var(--line);">
+        <label>কর্মকর্তার নাম<input type="text" id="sa_name" placeholder="যেমন: মোঃ কামাল উদ্দিন"></label>
+        <label>ইমেইল এড্রেস<input type="email" id="sa_email" placeholder="example@gmail.com"></label>
+        <label>পাসওয়ার্ড নির্ধারণ করুন<input type="text" id="sa_pass" placeholder="কমপক্ষে ৬ অক্ষর"></label>
+        <label>কাজের অনুমতি<select id="sa_role">
+          <option value="তথ্য এন্ট্রি ও সংশোধন">তথ্য এন্ট্রি ও সংশোধন</option>
+          <option value="শুধুমাত্র দেখা ও প্রিন্ট">শুধুমাত্র দেখা ও প্রিন্ট</option>
+          <option value="সহ-এডমিন (পূর্ণ ক্ষমতা)">সহ-এডমিন (পূর্ণ ক্ষমতা)</option>
+        </select></label>
+      </div>
+      <div class="bar"><button class="btn" id="sa_save_btn">➕ কর্মকর্তা যোগ করুন</button></div>
+      <div style="margin-top:10px;"><b>অনুমোদিত কর্মকর্তাদের তালিকা (${toBn(list.length)} জন):</b>${itemsHtml}</div>
+      <div class="bar"><button class="btn ghost" onclick="dlg.close()">বন্ধ</button></div>`;
+    dlg.showModal();
+
+    document.getElementById("sa_save_btn").onclick = () => {
+      const name = document.getElementById("sa_name").value.trim();
+      const email = document.getElementById("sa_email").value.trim();
+      const pass = document.getElementById("sa_pass").value.trim();
+      const role = document.getElementById("sa_role").value;
+      if (!name || !email || !pass) return alert("অনুগ্রহ করে নাম, ইমেইল এবং পাসওয়ার্ড লিখুন।");
+      const cur = db._get("sub_admins_list", []);
+      cur.push({ name, email, pass, role });
+      db._set("sub_admins_list", cur);
+      window.openSubAdminManager();
+    };
+  };
+
+  window._copySubAdmin = function(idx) {
+    const u = db._get("sub_admins_list", []).at(idx);
+    if (!u) return;
+    const msg = `আসসালামু আলাইকুম ${u.name},\n${ORG_NAME} পোর্টালে কাজ করার জন্য আপনার লগইন তথ্য:\nলিংক: ${location.href.split("?").at(0)}\nইমেইল: ${u.email}\nপাসওয়ার্ড: ${u.pass}\nদায়িত্ব: ${u.role}`;
+    navigator.clipboard?.writeText(msg);
+    alert("কর্মকর্তার লগইন বার্তা ও লিংক কপি হয়েছে! এখন WhatsApp বা ইমেইলে পেস্ট করে পাঠিয়ে দিন।");
+  };
+
+  window._delSubAdmin = function(idx) {
+    if (!confirm("এই কর্মকর্তার অনুমতি বাতিল করবেন?")) return;
+    const cur = db._get("sub_admins_list", []);
+    cur.splice(idx, 1);
+    db._set("sub_admins_list", cur);
+    window.openSubAdminManager();
+  };
+  const bnM_fix = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const enM_fix = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  function bnOrd_fix(d) {
+    if (d === 1) return "১লা";
+    if (d === 2 || d === 3) return toBn(d) + "রা";
+    if (d === 4) return "৪ঠা";
+    if (d >= 5 && d <= 18) return toBn(d) + "ই";
+    return toBn(d) + "শে";
+  }
+
+  function convertAnyDate(val) {
+    const s = toEn(String(val)).trim();
+    const parts = s.split(/[\/\-\.\\]+/);
+    if (parts.length !== 3) return val;
+    let d = 0, m = 0, y = 0;
+    if (parts.at(0).length === 4) {
+      y = parseInt(parts.at(0), 10);
+      m = parseInt(parts.at(1), 10);
+      d = parseInt(parts.at(2), 10);
+    } else if (parts.at(2).length === 4) {
+      d = parseInt(parts.at(0), 10);
+      m = parseInt(parts.at(1), 10);
+      y = parseInt(parts.at(2), 10);
+    } else {
+      return val;
+    }
+    if (!d || !m || m < 1 || m > 12 || y < 1900 || y > 2100) return val;
+    const isEn = (typeof curLang !== "undefined" && curLang === "en");
+    return isEn ? (d + " " + enM_fix[m - 1] + " " + y) : (bnOrd_fix(d) + " " + bnM_fix[m - 1] + " " + toBn(y));
+  }
+
+  setInterval(() => {
+    document.querySelectorAll(".m, #pv, .pdfpage, #list").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        if (!n.nodeValue) continue;
+        if (/[\/\-\.\\]/.test(n.nodeValue)) {
+          n.nodeValue = n.nodeValue.replace(/([০-৯\d]{1,4}[\/\-\.\\][০-৯\d]{1,2}[\/\-\.\\][০-৯\d]{1,4})/g, convertAnyDate);
+        }
+      }
+    });
+
+    const pv = document.getElementById("pv");
+    if (pv) {
+      const todayTxt = convertAnyDate(new Date().toLocaleDateString("en-GB"));
+      pv.querySelectorAll(".sub, p, div").forEach(el => {
+        if (el.querySelector("table") || el.classList.contains("clean-hdr") || el.classList.contains("hdr-split")) return;
+        const txt = el.textContent.trim();
+        if (txt.includes("তারিখ") && txt.length < 120 && !txt.includes("বয়স/জন্ম")) {
+          const leftPart = txt.split(/,?\s*তারিখ[:\s]*/).at(0).trim();
+          el.style.display = "none";
+          const tbl = pv.querySelector("table");
+          if (tbl) {
+            let hdr = tbl.previousElementSibling;
+            if (!hdr || !hdr.classList.contains("clean-hdr")) {
+              hdr = document.createElement("div");
+              hdr.className = "clean-hdr";
+              hdr.style.cssText = "display:flex;justify-content:space-between;align-items:center;width:100%;margin:8px 0 6px;padding-bottom:4px;border-bottom:1.5px solid #0a6b6b;font-weight:700;font-size:10.5pt;";
+              tbl.parentNode.insertBefore(hdr, tbl);
+            }
+            const labelLeft = leftPart.includes("সদস্য তালিকা") ? leftPart : ("সদস্যের নাম: " + leftPart);
+            hdr.innerHTML = `<span>${esc(labelLeft)}</span><span>তারিখ: ${esc(todayTxt)}</span>`;
+          }
+        }
+      });
+    }
+
+    const idCard = document.getElementById("smartIdCardArea");
+    if (idCard) {
+      const isEn = (typeof curLang !== "undefined" && curLang === "en");
+      const topH1 = document.querySelector("#hdr h1, .brand h1, header h1");
+      if (isEn) {
+        const orgEl = idCard.querySelector(".smart-id-org");
+        if (orgEl && topH1 && topH1.textContent.trim()) orgEl.textContent = topH1.textContent.trim();
+        const footEl = idCard.querySelector(".smart-id-foot");
+        const topSub = document.querySelector("#hdr small, .brand small, header p");
+        if (footEl && topSub && topSub.textContent.trim()) footEl.textContent = topSub.textContent.trim();
+      }
+
+      const prBtn = [...document.querySelectorAll("#dlg .bar .btn")].find(b => b.textContent.includes("প্রিন্ট") || b.textContent.includes("Print"));
+      if (prBtn) {
+        prBtn.onclick = (e) => {
+          e.preventDefault();
+          const cardClone = idCard.outerHTML;
+          dlg.close();
+          const pvEl = document.getElementById("pv");
+          if (pvEl) {
+            pvEl.style.display = "block";
+            pvEl.innerHTML = `<div class="bar" style="margin-bottom:10px;display:flex;gap:8px;justify-content:center;">
+              <button class="btn" onclick="window.print()">🖨️ এখনই প্রিন্ট করুন</button>
+              <button class="btn ghost" onclick="document.getElementById('pv').style.display='none'">বন্ধ করুন</button>
+            </div>
+            <div style="display:flex;justify-content:center;padding:12px;">${cardClone}</div>`;
+            pvEl.scrollIntoView({ behavior: "smooth" });
+          }
+        };
+      }
+    }
+
+    const qMem = new URLSearchParams(location.search).get("member");
+    if (qMem && !document.getElementById("self_bg_wrap")) {
+      const allLabels = [...document.querySelectorAll("label")];
+      const targetLbl = allLabels.find(l => l.textContent.includes("বর্তমান ঠিকানা") || l.textContent.includes("ইমেইল") || l.textContent.includes("পেশা"));
+      if (targetLbl && targetLbl.parentNode) {
+        const r = rows.find(x => toEn(x.n) === toEn(qMem));
+        const bgs = db._get("member_blood_groups", {});
+        const curBg = r ? (bgs[String(r.s)] || r.bg || "") : "";
+        const wrap = document.createElement("label");
+        wrap.id = "self_bg_wrap";
+        wrap.innerHTML = `রক্তের গ্রুপ (Blood Group)
+          <select id="self_bg_sel">
+            <option value="">নির্বাচন করুন</option>
+            ${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${curBg === g ? "selected" : ""}>${g}</option>`).join("")}
+          </select>`;
+        targetLbl.parentNode.insertBefore(wrap, targetLbl.nextSibling);
+
+        const saveSelfBtn = [...document.querySelectorAll("button")].find(b => b.textContent.includes("সংরক্ষণ"));
+        if (saveSelfBtn) {
+          saveSelfBtn.addEventListener("click", () => {
+            if (r) {
+              const st = db._get("member_blood_groups", {});
+              st[String(r.s)] = document.getElementById("self_bg_sel")?.value || "";
+              db._set("member_blood_groups", st);
+            }
+          }, true);
+        }
+      }
+    }
+  }, 250);
+  setInterval(() => {
+    const dlgEl = document.getElementById("dlg");
+    if (!dlgEl || !dlgEl.open) return;
+    dlgEl.querySelectorAll("a").forEach(a => {
+      const href = a.getAttribute("href") || "";
+      if (href.includes("whatsapp.com") || href.includes("wa.me") || a.textContent.includes("WhatsApp")) {
+        const m = href.match(/text=([^&]*)/);
+        const rawTxt = m ? decodeURIComponent(m.at(1)) : "";
+        let num = "";
+        const numMatch = href.match(/(?:phone=|wa\.me\/)(\d{10,15})/);
+        if (numMatch) {
+          num = numMatch.at(1);
+        } else if (a.parentElement) {
+          const rowPh = toEn(a.parentElement.textContent).match(/01[3-9]\d{8}/);
+          if (rowPh) num = "88" + rowPh.at(0);
+        }
+        const cleanHref = "https://wa.me" + num + (rawTxt ? "?text=" + encodeURIComponent(rawTxt) : "");
+        if (href !== cleanHref) {
+          a.setAttribute("href", cleanHref);
+          a.setAttribute("target", "_blank");
+          a.setAttribute("rel", "noopener");
+        }
+      }
+    });
+  }, 350);
+
 </script>
+
+
 <script>
 (function(){
   const bnM = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
   const enM = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const toEn = v => String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
   const toBn = v => String(v == null ? "" : v).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+  const esc = v => String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   const bnOrd = d => d === 1 ? "১লা" : (d === 2 || d === 3) ? toBn(d) + "রা" : d === 4 ? "৪ঠা" : (d >= 5 && d <= 18) ? toBn(d) + "ই" : toBn(d) + "শে";
 
+  function getPhone11(raw) {
+    const m = toEn(raw).replace(/\D/g, "").match(/(?:88)?(01[3-9]\d{8})/);
+    return m ? m.at(1) : "";
+  }
   function fmtDateSafe(val) {
     const p = toEn(val).trim().split(/[\/\-\.\\]+/);
     if (p.length !== 3) return val;
@@ -2482,21 +3374,191 @@ document.addEventListener("click", function(e) {
     const isEn = (typeof curLang !== "undefined" && curLang === "en");
     return isEn ? `${d} ${enM[m - 1]} ${y}` : `${bnOrd(d)} ${bnM[m - 1]} ${toBn(y)}`;
   }
+  function encObj(obj) {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  }
+  function decObj(b64) {
+    let s = String(b64).replace(/-/g,"+").replace(/_/g,"/");
+    while (s.length % 4) s += "=";
+    return JSON.parse(decodeURIComponent(escape(atob(s))));
+  }
 
-  // ১. পুরোনো ভাঙা window.open('whatsapp.com{ph...') আটকে সঠিক wa.me লিংক চালানো
-  const origOpen = window.open;
-  window.open = function(u, t, f) {
-    if (typeof u === "string" && (u.includes("{ph") || u.includes("whatsapp.com"))) {
-      const m = toEn(u).match(/(?:88)?(01[3-9]\d{8})/);
-      const ph = m ? ("88" + m.at(1)) : "";
-      const tm = u.match(/text=([^&]*)/);
-      const txt = tm ? tm.at(1) : "";
-      u = "https://" + "wa.me/" + ph + (txt ? "?text=" + txt : "");
+  // ১. সদস্য কার্ডের 'লিংক' বাটনে ২টি অপশন (তথ্য হালনাগাদ লিংক + একক বার্তা) ও সরাসরি WhatsApp
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest("button, a");
+    if (!btn) return;
+    const label = (btn.textContent || "").trim();
+
+    if (label.includes("লিংক") && !label.includes("ভোটার") && !label.includes("কপি") && !label.includes("সেভ") && !label.includes("তথ্য হালনাগাদ")) {
+      const card = btn.closest(".m");
+      if (!card) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const txtAll = card.innerText || card.textContent || "";
+      const ph11 = getPhone11(txtAll);
+      const numM = toEn(txtAll).match(/সদস্য নং[:\s]*(\d+)/);
+      const mNo = numM ? numM.at(1) : "";
+      const nameEl = card.querySelector("b, strong, h3, h4, .nm");
+      const mName = nameEl ? nameEl.textContent.trim() : "সম্মানিত সদস্য";
+
+      let info = { n: mNo, nm: mName, f: "", m: "", o: "", b: "", h: "", r: "", fl: "", ph: ph11, bg: "" };
+      if (typeof rows !== "undefined" && Array.isArray(rows)) {
+        const f = rows.find(x => toEn(x.n) === mNo || x.nm === mName);
+        if (f) {
+          const dbPh = getPhone11(JSON.stringify(f));
+          const bgs = (typeof db !== "undefined" && db._get) ? db._get("member_blood_groups", {}) : {};
+          info = {
+            s: f.s, n: f.n, nm: f.nm, f: f.f || "", m: f.m || "", o: f.o || "",
+            b: f.b || "", h: f.h || "", r: f.r || "", fl: f.fl || "",
+            ph: ph11 || dbPh, bg: bgs[String(f.s)] || f.bg || ""
+          };
+        }
+      }
+
+      const pin = String(Math.floor(1000 + Math.random() * 9000));
+      info.pin = pin;
+      const baseUrl = location.href.split("?").at(0);
+      const link = `${baseUrl}?member=${mNo || "1"}&d=${encObj(info)}`;
+      const linkMsg = `আসসালামু আলাইকুম ${info.nm},\nনাসিরাবাদ হাউজিং সোসাইটি-তে আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন।\nগোপন পিন কোড: ${pin}\nলিংক: ${link}`;
+      const singleMsg = `আসসালামু আলাইকুম ${info.nm},\n`;
+
+      const oldM = document.getElementById("nhsMasterModal");
+      if (oldM) oldM.remove();
+
+      const modal = document.createElement("div");
+      modal.id = "nhsMasterModal";
+      modal.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:14px;color-scheme:light;";
+      modal.innerHTML = `<div style="background:#fff;color:#0f172a;max-width:460px;width:100%;padding:18px;border-radius:14px;border:2px solid #0a6b6b;">
+        <h3 style="margin:0 0 10px;color:#064e4e;">💬 WhatsApp যোগাযোগ (পিন: ${pin})</h3>
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <button type="button" id="mTabLink" style="flex:1;background:#0a6b6b;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:700;font-size:.82rem;cursor:pointer;">🔗 তথ্য হালনাগাদ লিংক</button>
+          <button type="button" id="mTabMsg" style="flex:1;background:#e2e8f0;color:#0f172a;border:none;padding:8px;border-radius:8px;font-weight:700;font-size:.82rem;cursor:pointer;">✍️ একক বার্তা লিখুন</button>
+        </div>
+        <label style="display:block;font-size:.88rem;font-weight:700;margin-bottom:8px;">সদস্যের মোবাইল নম্বর:
+          <input id="mWaPhone" type="tel" value="${esc(info.ph)}" placeholder="018XXXXXXXX" style="width:100%;padding:9px;margin-top:4px;border:1.5px solid #0a6b6b;border-radius:8px;font-size:1rem;box-sizing:border-box;background:#fff;color:#0f172a;">
+        </label>
+        <textarea id="mWaMsg" style="width:100%;height:110px;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:.86rem;box-sizing:border-box;background:#fff;color:#0f172a;" readonly>${esc(linkMsg)}</textarea>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+          <a id="mWaDirectA" href="#" target="_blank" rel="noopener" style="background:#16a34a;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.88rem;display:inline-block;">💬 WhatsApp / WA Business পাঠান</a>
+          <button type="button" id="mWaCopy" style="background:#0a6b6b;color:#fff;border:none;padding:10px 13px;border-radius:8px;font-weight:700;cursor:pointer;">📋 কপি</button>
+          <button type="button" id="mWaClose" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 13px;border-radius:8px;font-weight:700;cursor:pointer;">বন্ধ</button>
+        </div>
+      </div>`;
+      document.body.appendChild(modal);
+
+      const phInp = document.getElementById("mWaPhone");
+      const msgTa = document.getElementById("mWaMsg");
+      const realA = document.getElementById("mWaDirectA");
+
+      const updateLink = () => {
+        const p11 = getPhone11(phInp.value);
+        const fullP = p11 ? ("88" + p11) : "";
+        realA.href = "https://" + "wa.me/" + fullP + "?text=" + encodeURIComponent(msgTa.value || "");
+      };
+      updateLink();
+      phInp.addEventListener("input", updateLink);
+      msgTa.addEventListener("input", updateLink);
+
+      realA.addEventListener("click", function(ev) {
+        if (!getPhone11(phInp.value)) {
+          ev.preventDefault();
+          alert("অনুগ্রহ করে ১১ সংখ্যার সঠিক মোবাইল নম্বর লিখুন।");
+        }
+      });
+
+      document.getElementById("mTabLink").onclick = () => {
+        msgTa.readOnly = true; msgTa.value = linkMsg; updateLink();
+        document.getElementById("mTabLink").style.cssText += ";background:#0a6b6b;color:#fff;";
+        document.getElementById("mTabMsg").style.cssText += ";background:#e2e8f0;color:#0f172a;";
+      };
+      document.getElementById("mTabMsg").onclick = () => {
+        msgTa.readOnly = false; msgTa.value = singleMsg; msgTa.focus(); updateLink();
+        document.getElementById("mTabMsg").style.cssText += ";background:#0a6b6b;color:#fff;";
+        document.getElementById("mTabLink").style.cssText += ";background:#e2e8f0;color:#0f172a;";
+      };
+      document.getElementById("mWaCopy").onclick = () => {
+        msgTa.select();
+        navigator.clipboard?.writeText(msgTa.value).catch(() => document.execCommand("copy"));
+        document.getElementById("mWaCopy").textContent = "✓ কপি হয়েছে!";
+      };
+      document.getElementById("mWaClose").onclick = () => modal.remove();
     }
-    return origOpen.call(window, u, t || "_blank", f);
-  };
+  }, true);
+  // ২. পিন সুরক্ষিত সাদা ফরম ও সংরক্ষণের জন্য কপি ডাউনলোড বাটন
+  const qp = new URLSearchParams(location.search);
+  const dStr = qp.get("d");
+  if (dStr) {
+    try {
+      const obj = decObj(dStr);
+      if (obj && obj.nm && obj.pin) {
+        const showPinGate = () => {
+          const gate = document.createElement("div");
+          gate.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#f1f5f9;overflow-y:auto;padding:16px;color-scheme:light;";
+          gate.innerHTML = `<div style="max-width:420px;margin:40px auto;background:#fff;color:#0f172a;padding:22px;border-radius:14px;border:1.5px solid #0a6b6b;text-align:center;">
+            <h2 style="margin:0 0 6px;color:#064e4e;">🔐 সদস্য তথ্য হালনাগাদ</h2>
+            <p style="margin:0 0 14px;color:#475569;">সদস্য: <b>${esc(obj.nm)}</b> (নং: ${esc(obj.n)})<br>WhatsApp মেসেজে পাওয়া ৪ সংখ্যার গোপন পিন কোডটি দিন:</p>
+            <input id="gPinInp" type="tel" maxlength="4" placeholder="৪ সংখ্যার পিন" style="width:180px;padding:10px;text-align:center;font-size:1.3rem;letter-spacing:4px;border:2px solid #0a6b6b;border-radius:10px;background:#fff;color:#0f172a;">
+            <div style="margin-top:14px;"><button type="button" id="gPinBtn" style="background:#0a6b6b;color:#fff;border:none;padding:10px 22px;border-radius:10px;font-weight:700;cursor:pointer;">যাচাই করে ফরম খুলুন</button></div>
+            <p id="gPinErr" style="color:#dc2626;font-weight:600;margin-top:10px;"></p>
+          </div>`;
+          document.body.appendChild(gate);
 
-  // ২. জন্মতারিখ ও সেটিংসে সম্পাদকের স্বাক্ষর আপলোড সচল রাখা
+          document.getElementById("gPinBtn").onclick = () => {
+            if (toEn(document.getElementById("gPinInp").value).trim() !== String(obj.pin)) {
+              document.getElementById("gPinErr").textContent = "ভুল পিন কোড! সঠিক ৪ সংখ্যার পিন দিন।";
+              return;
+            }
+            gate.innerHTML = `<div style="max-width:520px;margin:10px auto;background:#fff;color:#0f172a;padding:18px;border-radius:14px;border:1.5px solid #0a6b6b;color-scheme:light;">
+              <h2 style="margin:0 0 4px;color:#064e4e;">📝 নিজস্ব তথ্য হালনাগাদ ফরম</h2>
+              <p style="margin:0 0 14px;color:#475569;font-size:.9rem;">সদস্য নং: <b>${esc(obj.n)}</b></p>
+              <div style="display:grid;gap:10px;">
+                <label style="font-weight:600;">সদস্যের নাম<input id="uf_nm" value="${esc(obj.nm)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff;color:#0f172a;"></label>
+                <label style="font-weight:600;">পিতার নাম<input id="uf_f" value="${esc(obj.f)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff;color:#0f172a;"></label>
+                <label style="font-weight:600;">মাতার নাম<input id="uf_m" value="${esc(obj.m)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff;color:#0f172a;"></label>
+                <label style="font-weight:600;">পেশা<input id="uf_o" value="${esc(obj.o)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff;color:#0f172a;"></label>
+                <label style="font-weight:600;">রক্তের গ্রুপ<select id="uf_bg" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff;color:#0f172a;"><option value="">নির্বাচন করুন</option>${["A+","A-","B+","B-","O+","O-","AB+","AB-"].map(g => `<option value="${g}" ${obj.bg === g ? "selected" : ""}>${g}</option>`).join("")}</select></label>
+                <label style="font-weight:600;">মোবাইল নম্বর<input id="uf_ph" value="${esc(obj.ph)}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff;color:#0f172a;"></label>
+                <label style="font-weight:600;">বর্তমান ঠিকানা<input id="uf_addr" value="${esc([obj.b, obj.r ? "রোড " + obj.r : "", obj.h ? "বাড়ি " + obj.h : "", obj.fl ? "ফ্ল্যাট " + obj.fl : ""].filter(Boolean).join(", "))}" style="width:100%;padding:9px;margin-top:3px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;background:#fff;color:#0f172a;"></label>
+                <a id="uf_sub" href="#" target="_blank" rel="noopener" style="background:#16a34a;color:#fff;text-align:center;text-decoration:none;padding:12px;border-radius:10px;font-weight:700;margin-top:6px;display:block;">✅ তথ্য সংরক্ষণ ও WhatsApp-এ পাঠান</a>
+                <button type="button" id="uf_dl" style="background:#1e40af;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;">📥 সংরক্ষণের জন্য কপি ডাউনলোড করুন</button>
+              </div>
+            </div>`;
+            const buildSummary = () => [
+              "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ",
+              "সদস্য তথ্য হালনাগাদ কপি",
+              "--------------------------------",
+              "সদস্য নং: " + obj.n,
+              "সদস্যের নাম: " + document.getElementById("uf_nm").value,
+              "পিতার নাম: " + document.getElementById("uf_f").value,
+              "মাতার নাম: " + document.getElementById("uf_m").value,
+              "পেশা: " + document.getElementById("uf_o").value,
+              "রক্তের গ্রুপ: " + document.getElementById("uf_bg").value,
+              "মোবাইল নম্বর: " + document.getElementById("uf_ph").value,
+              "বর্তমান ঠিকানা: " + document.getElementById("uf_addr").value
+            ].join("\n");
+
+            const subLink = document.getElementById("uf_sub");
+            const updateSubHref = () => { subLink.href = "https://" + "wa.me/?text=" + encodeURIComponent(buildSummary()); };
+            updateSubHref();
+            gate.querySelectorAll("input, select").forEach(el => el.addEventListener("input", updateSubHref));
+
+            document.getElementById("uf_dl").onclick = () => {
+              const blob = new Blob([buildSummary()], { type: "text/plain;charset=utf-8" });
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(blob);
+              a.download = "Member_" + (obj.n || "Update") + ".txt";
+              a.click();
+            };
+          };
+        };
+        if (document.body) showPinGate();
+        else window.addEventListener("DOMContentLoaded", showPinGate);
+      }
+    } catch(e) {}
+  }
+
+  // ৩. জন্মতারিখ, সেটিংস (স্বাক্ষর + কর্মকর্তা-কর্মচারী) ও নোটিশ বোর্ড (ইমেইল ও টেলিগ্রাম)
   setInterval(() => {
     document.querySelectorAll(".m, #pv, #list").forEach(box => {
       const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
@@ -2510,89 +3572,67 @@ document.addEventListener("click", function(e) {
     });
 
     const dlg = document.getElementById("dlg");
-    if (dlg && dlg.open) {
-      const h2 = dlg.querySelector("h2");
-      if (h2 && h2.textContent.includes("সেটিংস") && !document.getElementById("secSignWrap")) {
-        const sig = localStorage.getItem("nhs_secretary_sign") || "";
-        const wrap = document.createElement("div");
-        wrap.id = "secSignWrap";
-        wrap.style.cssText = "margin-top:10px;padding:10px;border:1.5px solid #0a6b6b;border-radius:10px;";
-        wrap.innerHTML = `<b style="display:block;margin-bottom:5px;color:#064e4e;">✍️ সম্পাদকের স্বাক্ষর (আইডি কার্ডের জন্য)</b>${sig ? `<img src="${sig}" style="max-height:44px;display:block;margin-bottom:5px;">` : ""}<input type="file" id="sec_sign_inp" accept="image/*">`;
-        dlg.appendChild(wrap);
-        document.getElementById("sec_sign_inp").onchange = ev => {
-          const files = ev.target.files;
-          if (!files || !files.length) return;
-          const rd = new FileReader();
-          rd.onload = () => { localStorage.setItem("nhs_secretary_sign", rd.result); alert("সম্পাদকের স্বাক্ষর সংরক্ষিত হয়েছে!"); dlg.close(); };
-          rd.readAsDataURL(files.item(0));
-        };
-      }
+    if (!dlg || !dlg.open) return;
+    const h2 = dlg.querySelector("h2");
+    if (!h2) return;
+
+    if (h2.textContent.includes("সেটিংস") && !document.getElementById("nhsSetExtras")) {
+      const sig = localStorage.getItem("nhs_secretary_sign") || "";
+      const wrap = document.createElement("div");
+      wrap.id = "nhsSetExtras";
+      wrap.style.cssText = "margin-top:10px;padding:10px;border:1.5px solid #0a6b6b;border-radius:10px;";
+      wrap.innerHTML = `<b style="display:block;margin-bottom:5px;color:#064e4e;">✍️ সম্পাদকের স্বাক্ষর (আইডি কার্ডের জন্য)</b>${sig ? `<img src="${sig}" style="max-height:44px;display:block;margin-bottom:5px;">` : ""}<input type="file" id="sec_sign_inp" accept="image/*">`;
+      dlg.appendChild(wrap);
+      document.getElementById("sec_sign_inp").onchange = ev => {
+        const files = ev.target.files;
+        if (!files || !files.length) return;
+        const rd = new FileReader();
+        rd.onload = () => { localStorage.setItem("nhs_secretary_sign", rd.result); alert("সম্পাদকের স্বাক্ষর সংরক্ষিত হয়েছে!"); dlg.close(); };
+        rd.readAsDataURL(files.item(0));
+      };
     }
-  }, 700);
+
+    if ((h2.textContent.includes("নোটিশ") || h2.textContent.includes("বার্তা")) && !document.getElementById("nhsNoticeExtras")) {
+      dlg.querySelectorAll("button, a").forEach(b => { if (b.textContent.includes("WhatsApp")) b.style.display = "none"; });
+      const allRows = (typeof rows !== "undefined" && Array.isArray(rows)) ? rows : [];
+      const emailRows = allRows.filter(r => r && r.e && String(r.e).includes("@"));
+      const emailList = emailRows.map(r => String(r.e).trim());
+      const box = document.createElement("div");
+      box.id = "nhsNoticeExtras";
+      box.style.cssText = "margin-top:10px;padding:10px;background:#f8fafc;border:1.5px solid #0a6b6b;border-radius:10px;";
+      box.innerHTML = `<div style="font-weight:700;color:#064e4e;margin-bottom:6px;">📧 ইমেইল ও ✈️ টেলিগ্রাম গণ-বার্তা</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+          <button type="button" id="exBulkMail" style="background:#dc2626;color:#fff;border:none;padding:8px 11px;border-radius:7px;font-weight:700;">📧 একসাথে ইমেইল (BCC: ${emailList.length})</button>
+          <button type="button" id="exTgShare" style="background:#0088cc;color:#fff;border:none;padding:8px 11px;border-radius:7px;font-weight:700;">✈️ টেলিগ্রামে পাঠান</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <select id="exSingleSel" style="flex:1;padding:7px;border:1px solid #cbd5e1;border-radius:7px;"><option value="">একক (সিঙ্গেল) ইমেইল নির্বাচন করুন</option>${emailRows.map(r => `<option value="${esc(r.e)}">${esc(r.nm)}</option>`).join("")}</select>
+          <button type="button" id="exSingleBtn" style="background:#0a6b6b;color:#fff;border:none;padding:7px 12px;border-radius:7px;font-weight:700;">✉️ পাঠান</button>
+        </div>`;
+      dlg.appendChild(box);
+      const getM = () => {
+        const inp = dlg.querySelector("input[type='text']");
+        const ta = dlg.querySelector("textarea");
+        return { su: (inp && inp.value.trim()) || "জরুরি বিজ্ঞপ্তি", bo: (ta && ta.value.trim()) || "আসসালামু আলাইকুম," };
+      };
+      document.getElementById("exBulkMail").onclick = () => {
+        if (!emailList.length) return alert("কোনো ইমেইল যুক্ত নেই।");
+        const m = getM();
+        window.open("https://google.com" + encodeURIComponent(emailList.join(",")) + "&su=" + encodeURIComponent(m.su) + "&body=" + encodeURIComponent(m.bo), "_blank");
+      };
+      document.getElementById("exSingleBtn").onclick = () => {
+        const to = document.getElementById("exSingleSel").value;
+        if (!to) return alert("সদস্য নির্বাচন করুন।");
+        const m = getM();
+        window.open("https://google.com" + encodeURIComponent(to) + "&su=" + encodeURIComponent(m.su) + "&body=" + encodeURIComponent(m.bo), "_blank");
+      };
+      document.getElementById("exTgShare").onclick = () => {
+        const m = getM();
+        window.open("https://" + "t.me/share/url?url=" + encodeURIComponent("https://vercel.app") + "&text=" + encodeURIComponent(m.su + "\n\n" + m.bo), "_blank");
+      };
+    }
+  }, 600);
 })();
-</script>
-<script>
-setInterval(function() {
-  const linkBtn = document.getElementById("finWaRealLink") || document.getElementById("cfRealWaLink") || document.getElementById("cfSendWa");
-  const phInp = document.getElementById("finWaPhone") || document.getElementById("cfPhone");
-  const msgTa = document.getElementById("finWaMsg") || document.getElementById("cfMsg");
-  if (!linkBtn || !phInp || !msgTa) return;
-
-  const d = String(phInp.value || "").replace(/[০-৯]/g, c => "০১২৩৪৫৬৭৮৯".indexOf(c)).replace(/\D/g, "");
-  const m = d.match(/(?:88)?(01[3-9]\d{8})/);
-  const fullPh = m ? ("88" + m.at(1)) : "";
-  const encTxt = encodeURIComponent(msgTa.value || "");
-
-  let wrap = document.getElementById("dualAppWaWrap");
-  if (!wrap) {
-    wrap = document.createElement("div");
-    wrap.id = "dualAppWaWrap";
-    wrap.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;";
-    linkBtn.parentNode.insertBefore(wrap, linkBtn);
-    linkBtn.style.display = "none";
-  }
-
-  const uNormal = "intent://send?phone=" + fullPh + "&text=" + encTxt + "#Intent;scheme=whatsapp;package=com.whatsapp;end";
-  const uBiz = "intent://send?phone=" + fullPh + "&text=" + encTxt + "#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end";
-
-  if (wrap.dataset.last !== uNormal) {
-    wrap.dataset.last = uNormal;
-    wrap.innerHTML =
-      '<a href="' + uNormal + '" style="background:#16a34a;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">💬 WhatsApp</a>' +
-      '<a href="' + uBiz + '" style="background:#0f766e;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">💼 WA Business</a>';
-  }
-}, 400);
-</script>
-<script>
-setInterval(function() {
-  const dlg = document.getElementById("dlg");
-  if (dlg && !dlg.open) {
-    dlg.style.display = "none";
-  }
-  document.querySelectorAll("div").forEach(el => {
-    const st = el.style;
-    if (st && st.position === "fixed" && (st.inset === "0px" || (st.top === "0px" && st.left === "0px"))) {
-      if (!el.innerHTML.trim() || el.offsetHeight === 0) el.remove();
-    }
-  });
-  document.body.style.pointerEvents = "auto";
-  document.body.style.overflow = "auto";
-}, 500);
-</script>
-<style>
-dialog:not([open]), dialog:not([open])::backdrop {
-  display: none !important;
-  pointer-events: none !important;
-}
-</style>
-<script>
-setInterval(function() {
-  const dlg = document.getElementById("dlg");
-  if (dlg && !dlg.open) {
-    dlg.removeAttribute("style");
-    try { dlg.close(); } catch(e) {}
-  }
-}, 400);
 </script>
 
 </body>
