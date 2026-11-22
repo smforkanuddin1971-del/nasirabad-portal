@@ -3829,6 +3829,174 @@ setInterval(function() {
   }
 }, 500);
 </script>
+<script>
+(function(){
+  const origAlert = window.alert;
+  window.alert = function(msg) {
+    if (String(msg).includes("১১ সংখ্যার সঠিক মোবাইল নম্বর")) return;
+    return origAlert.call(window, msg);
+  };
+
+  document.addEventListener("click", function(e) {
+    const sub = e.target.closest("#uf_sub");
+    if (!sub) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const lines = [
+      "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ",
+      "সদস্য তথ্য হালনাগাদ কপি",
+      "--------------------------------",
+      "সদস্যের নাম: " + (document.getElementById("uf_nm")?.value || ""),
+      "পিতার নাম: " + (document.getElementById("uf_f")?.value || ""),
+      "মাতার নাম: " + (document.getElementById("uf_m")?.value || ""),
+      "পেশা: " + (document.getElementById("uf_o")?.value || ""),
+      "রক্তের গ্রুপ: " + (document.getElementById("uf_bg")?.value || ""),
+      "মোবাইল নম্বর: " + (document.getElementById("uf_ph")?.value || ""),
+      "বর্তমান ঠিকানা: " + (document.getElementById("uf_addr")?.value || "")
+    ];
+    const enc = encodeURIComponent(lines.join("\n"));
+    location.href = "https://" + "wa.me/?text=" + enc;
+  }, true);
+})();
+</script>
+<script>
+(function(){
+  const origAlert = window.alert;
+  window.alert = function(msg) {
+    if (String(msg).includes("১১ সংখ্যার সঠিক মোবাইল নম্বর")) return;
+    return origAlert.call(window, msg);
+  };
+
+  document.addEventListener("click", function(e) {
+    const sub = e.target.closest("#uf_sub");
+    if (!sub) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const lines = [
+      "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ",
+      "সদস্য তথ্য হালনাগাদ কপি",
+      "--------------------------------",
+      "সদস্যের নাম: " + (document.getElementById("uf_nm")?.value || ""),
+      "পিতার নাম: " + (document.getElementById("uf_f")?.value || ""),
+      "মাতার নাম: " + (document.getElementById("uf_m")?.value || ""),
+      "পেশা: " + (document.getElementById("uf_o")?.value || ""),
+      "রক্তের গ্রুপ: " + (document.getElementById("uf_bg")?.value || ""),
+      "মোবাইল নম্বর: " + (document.getElementById("uf_ph")?.value || ""),
+      "বর্তমান ঠিকানা: " + (document.getElementById("uf_addr")?.value || "")
+    ];
+    const enc = encodeURIComponent(lines.join("\n"));
+    location.href = "https://" + "wa.me/?text=" + enc;
+  }, true);
+})();
+</script>
+<script>
+setInterval(function() {
+  const box = document.getElementById("uf_photo_box");
+  if (!box || box.dataset.smartV2) return;
+  box.dataset.smartV2 = "1";
+
+  const qp = new URLSearchParams(location.search);
+  let mNo = (qp.get("member") || "").trim();
+  if (!mNo) {
+    const pTxt = document.body.innerText.match(/সদস্য নং[:\s]*([০-৯\d]+)/);
+    if (pTxt) mNo = pTxt.at(1);
+  }
+
+  box.innerHTML = `
+    <label style="font-weight:700;color:#064e4e;">📷 নতুন ছবি আপলোড করুন (ঐচ্ছিক)
+      <input type="file" id="uf_p_inp" accept="image/*" style="display:block;margin-top:4px;font-size:.85rem;">
+    </label>
+    <img id="uf_p_prev" style="display:none;max-height:110px;border-radius:8px;border:1.5px solid #0a6b6b;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+      <label style="font-weight:700;color:#064e4e;font-size:.84rem;">🪪 NID সামনের পিঠ (Front)
+        <input type="file" id="uf_nid_f" accept="image/*" style="display:block;margin-top:4px;font-size:.78rem;width:100%;">
+        <img id="uf_nid_f_prev" style="display:none;max-height:85px;max-width:100%;margin-top:4px;border-radius:6px;border:1px solid #94a3b8;">
+      </label>
+      <label style="font-weight:700;color:#064e4e;font-size:.84rem;">🪪 NID পেছনের পিঠ (Back)
+        <input type="file" id="uf_nid_b" accept="image/*" style="display:block;margin-top:4px;font-size:.78rem;width:100%;">
+        <img id="uf_nid_b_prev" style="display:none;max-height:85px;max-width:100%;margin-top:4px;border-radius:6px;border:1px solid #94a3b8;">
+      </label>
+    </div>
+  `;
+
+  let pData = "", nidFData = "", nidBData = "";
+  const bindImg = (iId, pId, setter) => {
+    document.getElementById(iId).onchange = ev => {
+      const f = ev.target.files && ev.target.files.item(0);
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        const im = document.getElementById(pId);
+        im.src = rd.result; im.style.display = "block";
+        setter(rd.result);
+      };
+      rd.readAsDataURL(f);
+    };
+  };
+  bindImg("uf_p_inp", "uf_p_prev", v => pData = v);
+  bindImg("uf_nid_f", "uf_nid_f_prev", v => nidFData = v);
+  bindImg("uf_nid_b", "uf_nid_b_prev", v => nidBData = v);
+
+  const dlBtn = document.getElementById("uf_dl");
+  if (dlBtn) {
+    dlBtn.textContent = "📥 সদস্য তথ্য ও ছবি কপি ডাউনলোড করুন";
+    dlBtn.onclick = () => {
+      const docHtml = `<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><title>সদস্য হালনাগাদ কপি - ${mNo}</title></head><body style="font-family:sans-serif;background:#f1f5f9;padding:20px;">
+        <div style="max-width:560px;margin:auto;background:#fff;border:2px solid #0a6b6b;border-radius:14px;padding:22px;box-shadow:0 4px 12px rgba(0,0,0,.08);">
+          <div style="text-align:center;border-bottom:2px solid #0a6b6b;padding-bottom:10px;margin-bottom:14px;">
+            <h2 style="margin:0;color:#064e4e;font-size:1.25rem;">নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ</h2>
+            <div style="color:#0f766e;font-weight:700;margin-top:4px;">সদস্য তথ্য হালনাগাদ রেকর্ড কপি</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:14px;">
+            <div style="font-size:1rem;"><b>সদস্য নং:</b> <span style="background:#0a6b6b;color:#fff;padding:2px 10px;border-radius:6px;font-weight:700;">${mNo || "উল্লেখ নেই"}</span><br><span style="font-size:.82rem;color:#64748b;">তারিখ: ${new Date().toLocaleDateString("bn-BD")}</span></div>
+            ${pData ? `<img src="${pData}" style="width:95px;height:115px;object-fit:cover;border-radius:8px;border:2px solid #0a6b6b;">` : ""}
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:.95rem;">
+            <tr><td style="padding:8px;border:1px solid #cbd5e1;background:#f8fafc;width:36%;"><b>সদস্যের নাম</b></td><td style="padding:8px;border:1px solid #cbd5e1;">${document.getElementById("uf_nm")?.value || ""}</td></tr>
+            <tr><td style="padding:8px;border:1px solid #cbd5e1;background:#f8fafc;"><b>পিতার নাম</b></td><td style="padding:8px;border:1px solid #cbd5e1;">${document.getElementById("uf_f")?.value || ""}</td></tr>
+            <tr><td style="padding:8px;border:1px solid #cbd5e1;background:#f8fafc;"><b>মাতার নাম</b></td><td style="padding:8px;border:1px solid #cbd5e1;">${document.getElementById("uf_m")?.value || ""}</td></tr>
+            <tr><td style="padding:8px;border:1px solid #cbd5e1;background:#f8fafc;"><b>পেশা</b></td><td style="padding:8px;border:1px solid #cbd5e1;">${document.getElementById("uf_o")?.value || ""}</td></tr>
+            <tr><td style="padding:8px;border:1px solid #cbd5e1;background:#f8fafc;"><b>রক্তের গ্রুপ</b></td><td style="padding:8px;border:1px solid #cbd5e1;">${document.getElementById("uf_bg")?.value || ""}</td></tr>
+            <tr><td style="padding:8px;border:1px solid #cbd5e1;background:#f8fafc;"><b>মোবাইল নম্বর</b></td><td style="padding:8px;border:1px solid #cbd5e1;">${document.getElementById("uf_ph")?.value || ""}</td></tr>
+            <tr><td style="padding:8px;border:1px solid #cbd5e1;background:#f8fafc;"><b>বর্তমান ঠিকানা</b></td><td style="padding:8px;border:1px solid #cbd5e1;">${document.getElementById("uf_addr")?.value || ""}</td></tr>
+          </table>
+        </div>
+      </body></html>`;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([docHtml], { type: "text/html;charset=utf-8" }));
+      a.download = "Member_" + (mNo || "Info") + "_Copy.html";
+      a.click();
+    };
+
+    if (!document.getElementById("uf_nid_dl")) {
+      const nidDlBtn = document.createElement("button");
+      nidDlBtn.id = "uf_nid_dl";
+      nidDlBtn.type = "button";
+      nidDlBtn.style.cssText = "background:#0f766e;color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;";
+      nidDlBtn.textContent = "🪪 NID কপি (উভয় পিঠ এক পাতায়) ডাউনলোড করুন";
+      dlBtn.insertAdjacentElement("afterend", nidDlBtn);
+
+      nidDlBtn.onclick = () => {
+        if (!nidFData && !nidBData) return alert("অনুগ্রহ করে আগে এনআইডি-র সামনের বা পেছনের পিঠের ছবি আপলোড করুন।");
+        const nidHtml = `<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><title>NID কপি - সদস্য নং ${mNo}</title></head><body style="font-family:sans-serif;background:#f1f5f9;padding:20px;">
+          <div style="max-width:640px;margin:auto;background:#fff;border:2px solid #0a6b6b;border-radius:12px;padding:20px;text-align:center;">
+            <h3 style="margin:0 0 4px;color:#064e4e;">নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ</h3>
+            <p style="margin:0 0 14px;color:#334155;font-size:.92rem;"><b>সদস্য নং:</b> ${mNo || "উল্লেখ নেই"} | <b>নাম:</b> ${document.getElementById("uf_nm")?.value || ""}</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1.5px dashed #94a3b8;padding-top:14px;">
+              <div><div style="font-weight:700;margin-bottom:6px;color:#0f172a;">সামনের পিঠ (Front Side)</div>${nidFData ? `<img src="${nidFData}" style="width:100%;max-height:220px;object-fit:contain;border:1px solid #cbd5e1;border-radius:8px;">` : "<div style='padding:40px;border:1px dashed #ccc;'>সংযুক্ত করা হয়নি</div>"}</div>
+              <div><div style="font-weight:700;margin-bottom:6px;color:#0f172a;">পেছনের পিঠ (Back Side)</div>${nidBData ? `<img src="${nidBData}" style="width:100%;max-height:220px;object-fit:contain;border:1px solid #cbd5e1;border-radius:8px;">` : "<div style='padding:40px;border:1px dashed #ccc;'>সংযুক্ত করা হয়নি</div>"}</div>
+            </div>
+          </div>
+        </body></html>`;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([nidHtml], { type: "text/html;charset=utf-8" }));
+        a.download = "Member_" + (mNo || "NID") + "_Both_Sides.html";
+        a.click();
+      };
+    }
+  }
+}, 500);
+</script>
 
 </body>
 </html>
