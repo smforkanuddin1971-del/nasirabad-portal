@@ -2422,6 +2422,46 @@ setInterval(() => {
 })();
 </script>
 <script src="addon.js"></script>
+<script>
+document.addEventListener("click", function(e) {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const t = (b.textContent || "").trim();
+  if (t.includes("লিংক") && !t.includes("ভোটার") && !t.includes("কপি")) {
+    const card = b.closest(".m");
+    if (!card) return;
+    setTimeout(() => {
+      const dlg = document.getElementById("dlg");
+      const ta = dlg ? dlg.querySelector("textarea") : null;
+      const waBtn = dlg ? Array.from(dlg.querySelectorAll("button, a")).find(x => x.textContent.includes("WhatsApp")) : null;
+      if (!dlg || !ta || !waBtn || document.getElementById("optTabWrap")) return;
+
+      const origMsg = ta.value;
+      const d = (card.innerText || "").replace(/[০-৯]/g, c => "০১২৩৪৫৬৭৮৯".indexOf(c)).replace(/\D/g, "");
+      const m = d.match(/(?:88)?(01[3-9]\d{8})/);
+      const ph = m ? ("88" + m.at(1)) : "";
+      const nm = (card.querySelector("b, strong, .nm")?.textContent || "সদস্য").trim();
+
+      const tabs = document.createElement("div");
+      tabs.id = "optTabWrap";
+      tabs.style.cssText = "display:flex;gap:6px;margin-bottom:8px;";
+      tabs.innerHTML = `<button type="button" id="tOpt1" style="flex:1;background:#0a6b6b;color:#fff;border:none;padding:7px;border-radius:7px;font-weight:700;">🔗 তথ্য হালনাগাদ লিংক</button><button type="button" id="tOpt2" style="flex:1;background:#e2e8f0;color:#0f172a;border:none;padding:7px;border-radius:7px;font-weight:700;">✍️ একক বার্তা লিখুন</button>`;
+      ta.parentNode.insertBefore(tabs, ta);
+
+      const a = document.createElement("a");
+      a.target = "_blank"; a.rel = "noopener";
+      a.style.cssText = "background:#16a34a;color:#fff;padding:9px 14px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;";
+      a.textContent = "💬 WhatsApp / WA Business পাঠান";
+      const sync = () => { a.href = "https://" + "wa.me/" + ph + "?text=" + encodeURIComponent(ta.value); };
+      sync(); ta.addEventListener("input", sync);
+      waBtn.replaceWith(a);
+
+      document.getElementById("tOpt1").onclick = () => { ta.readOnly = true; ta.value = origMsg; sync(); document.getElementById("tOpt1").style.cssText += ";background:#0a6b6b;color:#fff;"; document.getElementById("tOpt2").style.cssText += ";background:#e2e8f0;color:#0f172a;"; };
+      document.getElementById("tOpt2").onclick = () => { ta.readOnly = false; ta.value = "আসসালামু আলাইকুম " + nm + ",\n"; ta.focus(); sync(); document.getElementById("tOpt2").style.cssText += ";background:#0a6b6b;color:#fff;"; document.getElementById("tOpt1").style.cssText += ";background:#e2e8f0;color:#0f172a;"; };
+    }, 60);
+  }
+}, true);
+</script>
 
 </body>
 </html>
