@@ -4268,6 +4268,101 @@ setInterval(function() {
   }, true);
 })();
 </script>
+<script>
+(function(){
+  const esc = v => String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const baseUrl = location.href.split("?").at(0);
+  const voterUrl = baseUrl + "?voter=1";
+
+  // ১. কেউ ?voter=1 লিংকটি খুললে সরাসরি পরিচ্ছন্ন ভোটার তালিকা দেখানো
+  if (new URLSearchParams(location.search).get("voter") === "1") {
+    const showVoterPage = () => {
+      const list = (typeof rows !== "undefined" && Array.isArray(rows)) ? rows : [];
+      const wrap = document.createElement("div");
+      wrap.id = "publicVoterView";
+      wrap.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#f8fafc;overflow-y:auto;padding:14px;color-scheme:light;font-family:sans-serif;";
+      wrap.innerHTML = `
+        <div style="max-width:720px;margin:0 auto;background:#fff;border:2px solid #0a6b6b;border-radius:14px;padding:16px;">
+          <h2 style="margin:0 0 4px;color:#064e4e;text-align:center;">নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ</h2>
+          <div style="text-align:center;color:#0f766e;font-weight:700;margin-bottom:12px;">📋 চূড়ান্ত ভোটার তালিকা (মোট: ${list.length} জন)</div>
+          <input id="vSearchInp" type="text" placeholder="🔍 সদস্য নং, নাম বা ঠিকানা লিখে খুঁজুন..." style="width:100%;padding:10px;border:1.5px solid #0a6b6b;border-radius:8px;box-sizing:border-box;margin-bottom:12px;font-size:.95rem;">
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:.88rem;">
+              <thead>
+                <tr style="background:#0a6b6b;color:#fff;">
+                  <th style="padding:8px;border:1px solid #cbd5e1;">সদস্য নং</th>
+                  <th style="padding:8px;border:1px solid #cbd5e1;">ভোটারের নাম</th>
+                  <th style="padding:8px;border:1px solid #cbd5e1;">পিতা/স্বামীর নাম</th>
+                  <th style="padding:8px;border:1px solid #cbd5e1;">ঠিকানা</th>
+                </tr>
+              </thead>
+              <tbody id="vTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(wrap);
+
+      const renderRows = (q) => {
+        const key = String(q || "").trim().toLowerCase();
+        const filtered = key ? list.filter(r => JSON.stringify(r).toLowerCase().includes(key)) : list;
+        document.getElementById("vTableBody").innerHTML = filtered.map(r => `
+          <tr>
+            <td style="padding:7px;border:1px solid #cbd5e1;text-align:center;font-weight:700;">${esc(r.n)}</td>
+            <td style="padding:7px;border:1px solid #cbd5e1;font-weight:600;">${esc(r.nm)}</td>
+            <td style="padding:7px;border:1px solid #cbd5e1;">${esc(r.f)}</td>
+            <td style="padding:7px;border:1px solid #cbd5e1;">${esc([r.b, r.r ? "রোড " + r.r : "", r.h ? "বাড়ি " + r.h : ""].filter(Boolean).join(", "))}</td>
+          </tr>
+        `).join("");
+      };
+      renderRows("");
+      document.getElementById("vSearchInp").oninput = e => renderRows(e.target.value);
+    };
+    if (document.body) showVoterPage();
+    else window.addEventListener("DOMContentLoaded", showVoterPage);
+  }
+
+  // ২. পোর্টালে "ভোটার লিংক" বাটনে চাপলে কপিযোগ্য পপআপ দেখানো
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest("button, a");
+    if (!btn) return;
+    const t = (btn.textContent || "").trim();
+    if (t.includes("ভোটার") && t.includes("লিংক")) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const old = document.getElementById("nhsVoterLinkBox");
+      if (old) old.remove();
+
+      const box = document.createElement("div");
+      box.id = "nhsVoterLinkBox";
+      box.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:14px;color-scheme:light;";
+      box.innerHTML = `
+        <div style="background:#fff;color:#0f172a;max-width:420px;width:100%;padding:18px;border-radius:14px;border:2px solid #0a6b6b;">
+          <h3 style="margin:0 0 8px;color:#064e4e;">🗳️ ভোটার তালিকা শেয়ার লিংক</h3>
+          <input id="vLinkField" type="text" readonly value="${voterUrl}" style="width:100%;padding:9px;border:1.5px solid #0a6b6b;border-radius:8px;box-sizing:border-box;font-size:.9rem;background:#f8fafc;color:#0f172a;">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            <button type="button" id="vCopyNowBtn" style="flex:1;background:#0a6b6b;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">📋 লিংক কপি করুন</button>
+            <a href="https://wa.me{encodeURIComponent("নাসিরাবাদ হাউজিং সোসাইটি ভোটার তালিকা:\n" + voterUrl)}" target="_blank" rel="noopener" style="background:#16a34a;color:#fff;padding:10px 12px;border-radius:8px;text-decoration:none;font-weight:700;">💬 WhatsApp</a>
+            <button type="button" id="vCloseBoxBtn" style="background:#e2e8f0;color:#0f172a;border:none;padding:10px 12px;border-radius:8px;font-weight:700;cursor:pointer;">বন্ধ</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(box);
+
+      document.getElementById("vCopyNowBtn").onclick = () => {
+        const inp = document.getElementById("vLinkField");
+        inp.focus();
+        inp.select();
+        inp.setSelectionRange(0, 99999);
+        document.execCommand("copy");
+        if (navigator.clipboard) navigator.clipboard.writeText(voterUrl).catch(() => {});
+        document.getElementById("vCopyNowBtn").textContent = "✓ কপি হয়েছে!";
+      };
+      document.getElementById("vCloseBoxBtn").onclick = () => box.remove();
+    }
+  }, true);
+})();
+</script>
 
 </body>
 </html>
