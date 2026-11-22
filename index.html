@@ -3997,6 +3997,215 @@ setInterval(function() {
   }
 }, 500);
 </script>
+<script>
+(function(){
+  const OFFICE_WA = "8801XXXXXXXXX"; // <-- এখানে আপনার অফিসের ১১ সংখ্যার WhatsApp নম্বর লিখুন (যেমন: 8801819123456)
+
+  setInterval(function() {
+    const subBtn = document.getElementById("uf_sub");
+    if (!subBtn) return;
+
+    const qp = new URLSearchParams(location.search);
+    let mNo = (qp.get("member") || "").trim();
+    if (!mNo) {
+      const pTxt = document.body.innerText.match(/সদস্য নং[:\s]*([০-৯\d]+)/);
+      if (pTxt) mNo = pTxt.at(1);
+    }
+
+    const buildWaUrl = () => {
+      const lines = [
+        "*নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ*",
+        "সদস্য তথ্য হালনাগাদ আবেদন",
+        "--------------------------------",
+        "সদস্য নং: " + (mNo || "উল্লেখ নেই"),
+        "সদস্যের নাম: " + (document.getElementById("uf_nm")?.value || ""),
+        "পিতার নাম: " + (document.getElementById("uf_f")?.value || ""),
+        "মাতার নাম: " + (document.getElementById("uf_m")?.value || ""),
+        "পেশা: " + (document.getElementById("uf_o")?.value || ""),
+        "রক্তের গ্রুপ: " + (document.getElementById("uf_bg")?.value || ""),
+        "মোবাইল নম্বর: " + (document.getElementById("uf_ph")?.value || ""),
+        "বর্তমান ঠিকানা: " + (document.getElementById("uf_addr")?.value || "")
+      ];
+      const cleanPh = String(OFFICE_WA).replace(/\D/g, "");
+      const targetPh = cleanPh.startsWith("01") ? ("88" + cleanPh) : cleanPh;
+      return "https://" + "wa.me/" + (targetPh.includes("X") ? "" : targetPh) + "?text=" + encodeURIComponent(lines.join("\n"));
+    };
+
+    if (subBtn.tagName === "A") {
+      subBtn.href = buildWaUrl();
+      subBtn.target = "_blank";
+      subBtn.rel = "noopener";
+    }
+
+    const nidBtn = document.getElementById("uf_nid_dl");
+    if (nidBtn && !nidBtn.dataset.photocopyV3) {
+      nidBtn.dataset.photocopyV3 = "1";
+      nidBtn.onclick = () => {
+        const fImg = document.getElementById("uf_nid_f_prev")?.src || "";
+        const bImg = document.getElementById("uf_nid_b_prev")?.src || "";
+        if (!fImg.startsWith("data:") && !bImg.startsWith("data:")) {
+          return alert("অনুগ্রহ করে আগে এনআইডি-র সামনের বা পেছনের পিঠের ছবি আপলোড করুন।");
+        }
+        const nidHtml = `<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><title>NID ফটোকপি - সদস্য নং ${mNo}</title></head><body style="font-family:sans-serif;background:#e2e8f0;padding:20px;">
+          <div style="max-width:480px;margin:auto;background:#fff;border:2px solid #0f172a;border-radius:10px;padding:22px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.1);">
+            <div style="border-bottom:2px solid #0a6b6b;padding-bottom:8px;margin-bottom:14px;">
+              <h3 style="margin:0;color:#064e4e;font-size:1.15rem;">নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ</h3>
+              <div style="font-size:.88rem;color:#334155;margin-top:3px;">জাতীয় পরিচয়পত্র (NID) সংযুক্তি কপি</div>
+            </div>
+            <div style="background:#f8fafc;padding:7px;border-radius:6px;margin-bottom:16px;font-size:.9rem;border:1px solid #cbd5e1;">
+              <b>সদস্য নং:</b> ${mNo || "উল্লেখ নেই"} &nbsp;|&nbsp; <b>নাম:</b> ${document.getElementById("uf_nm")?.value || ""}
+            </div>
+            <div style="margin-bottom:18px;">
+              <div style="font-size:.82rem;font-weight:700;color:#475569;margin-bottom:6px;text-transform:uppercase;">▲ সামনের পিঠ (Front Side)</div>
+              ${fImg.startsWith("data:") ? `<img src="${fImg}" style="width:100%;max-width:360px;height:auto;border:1.5px solid #334155;border-radius:8px;padding:4px;background:#fff;">` : `<div style="padding:35px;border:1.5px dashed #94a3b8;border-radius:8px;color:#64748b;">সামনের পিঠ সংযুক্ত করা হয়নি</div>`}
+            </div>
+            <div style="border-top:1.5px dashed #cbd5e1;padding-top:16px;">
+              <div style="font-size:.82rem;font-weight:700;color:#475569;margin-bottom:6px;text-transform:uppercase;">▼ পেছনের পিঠ (Back Side)</div>
+              ${bImg.startsWith("data:") ? `<img src="${bImg}" style="width:100%;max-width:360px;height:auto;border:1.5px solid #334155;border-radius:8px;padding:4px;background:#fff;">` : `<div style="padding:35px;border:1.5px dashed #94a3b8;border-radius:8px;color:#64748b;">পেছনের পিঠ সংযুক্ত করা হয়নি</div>`}
+            </div>
+          </div>
+        </body></html>`;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([nidHtml], { type: "text/html;charset=utf-8" }));
+        a.download = "NID_Photocopy_Member_" + (mNo || "Copy") + ".html";
+        a.click();
+      };
+    }
+  }, 500);
+})();
+</script>
+<script>
+(function(){
+  const toEn = s => String(s || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+
+  setInterval(function() {
+    // ১. অফিস পোর্টালের লিংক পপআপে Email, Telegram ও ফিরতি ঠিকানা যুক্ত করা
+    const phInp = document.getElementById("mWaPhone");
+    const msgTa = document.getElementById("mWaMsg");
+    const waLink = document.getElementById("mWaDirectA");
+
+    if (phInp && msgTa && waLink && !document.getElementById("nhsMultiReplyBox")) {
+      const sWa = localStorage.getItem("nhs_reply_wa") || "";
+      const sEm = localStorage.getItem("nhs_reply_em") || "";
+      const sTg = localStorage.getItem("nhs_reply_tg") || "";
+
+      const rBox = document.createElement("div");
+      rBox.id = "nhsMultiReplyBox";
+      rBox.style.cssText = "background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:8px;margin-bottom:8px;display:grid;gap:6px;font-size:.82rem;";
+      rBox.innerHTML = `
+        <div style="font-weight:700;color:#0369a1;">↩️ অফিসের ফিরতি ঠিকানা (একবার সেট করলে স্থায়ী থাকবে):</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+          <input id="setRepWa" type="tel" value="${sWa}" placeholder="অফিস WhatsApp (018...)" style="padding:6px;border:1px solid #93c5fd;border-radius:6px;width:100%;box-sizing:border-box;">
+          <input id="setRepTg" type="text" value="${sTg}" placeholder="অফিস Telegram (@user)" style="padding:6px;border:1px solid #93c5fd;border-radius:6px;width:100%;box-sizing:border-box;">
+        </div>
+        <input id="setRepEm" type="email" value="${sEm}" placeholder="অফিসের ফিরতি Email (যেমন: office@gmail.com)" style="padding:6px;border:1px solid #93c5fd;border-radius:6px;width:100%;box-sizing:border-box;">
+      `;
+      phInp.closest("label").insertAdjacentElement("afterend", rBox);
+
+      // পাঠানোর জন্য অতিরিক্ত Telegram ও Email বাটন যুক্ত করা
+      const extraSendRow = document.createElement("div");
+      extraSendRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;width:100%;";
+      extraSendRow.innerHTML = `
+        <a id="sendViaTgA" href="#" target="_blank" rel="noopener" style="background:#0088cc;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.84rem;">✈️ Telegram-এ পাঠান</a>
+        <a id="sendViaEmA" href="#" target="_blank" rel="noopener" style="background:#dc2626;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:700;font-size:.84rem;">📧 Email-এ পাঠান</a>
+      `;
+      waLink.parentNode.appendChild(extraSendRow);
+
+      const syncAllChannels = () => {
+        const wVal = toEn(document.getElementById("setRepWa").value).replace(/\D/g, "");
+        const tVal = document.getElementById("setRepTg").value.trim().replace(/^@/, "");
+        const eVal = document.getElementById("setRepEm").value.trim();
+        localStorage.setItem("nhs_reply_wa", wVal);
+        localStorage.setItem("nhs_reply_tg", tVal);
+        localStorage.setItem("nhs_reply_em", eVal);
+
+        const m11 = wVal.match(/(?:88)?(01[3-9]\d{8})/);
+        const wFull = m11 ? ("88" + m11.at(1)) : "";
+
+        if (msgTa.value.includes("http")) {
+          let cleanMsg = msgTa.value.replace(/(&(rwa|rem|rtg)=[^&\s]*)/g, "");
+          let params = "";
+          if (wFull) params += "&rwa=" + wFull;
+          if (eVal) params += "&rem=" + encodeURIComponent(eVal);
+          if (tVal) params += "&rtg=" + encodeURIComponent(tVal);
+          if (params) cleanMsg = cleanMsg.replace(/(https?:\/\/[^\s]+)/, "$1" + params);
+          if (msgTa.value !== cleanMsg) {
+            msgTa.value = cleanMsg;
+            msgTa.dispatchEvent(new Event("input"));
+          }
+        }
+
+        const encBody = encodeURIComponent(msgTa.value || "");
+        const urlMatch = (msgTa.value || "").match(/(https?:\/\/[^\s]+)/);
+        const shareUrl = encodeURIComponent(urlMatch ? urlMatch.at(1) : location.href);
+        document.getElementById("sendViaTgA").href = "https://" + "t.me/share/url?url=" + shareUrl + "&text=" + encBody;
+        document.getElementById("sendViaEmA").href = "https://google.com" + encodeURIComponent("তথ্য হালনাগাদ লিংক - নাসিরাবাদ হাউজিং সোসাইটি") + "&body=" + encBody;
+      };
+
+      syncAllChannels();
+      ["setRepWa", "setRepTg", "setRepEm"].forEach(id => document.getElementById(id).addEventListener("input", syncAllChannels));
+      msgTa.addEventListener("input", syncAllChannels);
+    }
+
+    // ২. সদস্য ফরমে WhatsApp, Telegram ও Email—তিনটি মাধ্যমেই অফিসে তথ্য ব্যাক পাঠানোর বাটন
+    const subBtn = document.getElementById("uf_sub");
+    if (subBtn && !document.getElementById("memberMultiReturnBar")) {
+      const qp = new URLSearchParams(location.search);
+      const rwa = (qp.get("rwa") || "").replace(/\D/g, "");
+      const rem = (qp.get("rem") || "").trim();
+      const rtg = (qp.get("rtg") || "").trim().replace(/^@/, "");
+      let mNo = (qp.get("member") || "").trim();
+      if (!mNo) {
+        const pTxt = document.body.innerText.match(/সদস্য নং[:\s]*([০-৯\d]+)/);
+        if (pTxt) mNo = pTxt.at(1);
+      }
+
+      const getSummaryText = () => [
+        "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ",
+        "সদস্য তথ্য হালনাগাদ আবেদন",
+        "--------------------------------",
+        "সদস্য নং: " + (mNo || "উল্লেখ নেই"),
+        "সদস্যের নাম: " + (document.getElementById("uf_nm")?.value || ""),
+        "পিতার নাম: " + (document.getElementById("uf_f")?.value || ""),
+        "মাতার নাম: " + (document.getElementById("uf_m")?.value || ""),
+        "পেশা: " + (document.getElementById("uf_o")?.value || ""),
+        "রক্তের গ্রুপ: " + (document.getElementById("uf_bg")?.value || ""),
+        "মোবাইল নম্বর: " + (document.getElementById("uf_ph")?.value || ""),
+        "বর্তমান ঠিকানা: " + (document.getElementById("uf_addr")?.value || "")
+      ].join("\n");
+
+      const bar = document.createElement("div");
+      bar.id = "memberMultiReturnBar";
+      bar.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;";
+      bar.innerHTML = `
+        <a id="retTgBtn" href="#" target="_blank" rel="noopener" style="background:#0088cc;color:#fff;text-align:center;text-decoration:none;padding:11px 8px;border-radius:10px;font-weight:700;font-size:.88rem;">✈️ Telegram-এ পাঠান</a>
+        <a id="retEmBtn" href="#" target="_blank" rel="noopener" style="background:#dc2626;color:#fff;text-align:center;text-decoration:none;padding:11px 8px;border-radius:10px;font-weight:700;font-size:.88rem;">📧 Email-এ পাঠান</a>
+        <button type="button" id="retCopyBtn" style="grid-column:1/-1;background:#475569;color:#fff;border:none;padding:10px;border-radius:10px;font-weight:700;font-size:.88rem;cursor:pointer;">📋 সম্পূর্ণ তথ্য কপি করুন (যেকোনো অ্যাপের জন্য)</button>
+      `;
+      subBtn.insertAdjacentElement("afterend", bar);
+
+      const updateReturnLinks = () => {
+        const txt = getSummaryText();
+        const enc = encodeURIComponent(txt);
+        subBtn.href = "https://" + "wa.me/" + rwa + "?text=" + enc;
+        document.getElementById("retTgBtn").href = rtg
+          ? ("https://" + "t.me/" + rtg + "?text=" + enc)
+          : ("https://" + "t.me/share/url?url=" + encodeURIComponent(location.href.split("?").at(0)) + "&text=" + enc);
+        const subLine = encodeURIComponent("সদস্য তথ্য হালনাগাদ (সদস্য নং: " + (mNo || "") + ")");
+        document.getElementById("retEmBtn").href = "https://google.com" + encodeURIComponent(rem) + "&su=" + subLine + "&body=" + enc;
+      };
+      updateReturnLinks();
+      document.querySelectorAll("input, select").forEach(el => el.addEventListener("input", updateReturnLinks));
+
+      document.getElementById("retCopyBtn").onclick = () => {
+        const t = getSummaryText();
+        navigator.clipboard?.writeText(t).catch(() => {});
+        alert("তথ্য কপি হয়েছে! এখন আপনি SMS, Messenger, Imo বা যেকোনো মাধ্যমে পেস্ট করে পাঠাতে পারবেন।");
+      };
+    }
+  }, 500);
+})();
+</script>
 
 </body>
 </html>
