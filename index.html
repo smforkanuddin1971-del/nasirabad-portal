@@ -3634,6 +3634,22 @@ setInterval(() => {
   }, 600);
 })();
 </script>
+<script>
+setInterval(function() {
+  const dlg = document.getElementById("dlg");
+  if (dlg && dlg.open && dlg.innerText.trim() === "") {
+    dlg.close();
+  }
+  document.querySelectorAll("div").forEach(function(el) {
+    const cs = getComputedStyle(el);
+    if (cs.position === "fixed" && cs.display !== "none" && el.offsetWidth > 250 && el.offsetHeight > 400) {
+      if (el.innerText.trim() === "" && !el.querySelector("input, textarea, select, img")) {
+        el.style.display = "none";
+      }
+    }
+  });
+}, 300);
+</script>
 
 </body>
 </html>
