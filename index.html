@@ -3698,6 +3698,48 @@ document.addEventListener("click", function(e) {
   }
 }, true);
 </script>
+<script>
+(function(){
+  const toEn = s => String(s || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const fixAllWa = () => {
+    document.querySelectorAll("a[href]").forEach(a => {
+      const h = a.getAttribute("href") || "";
+      if (h.includes("{ph") || h.includes("whatsapp.com")) {
+        const box = a.closest("#nhsMasterModal, .m, dialog") || document.body;
+        const inp = box.querySelector("input[type='tel']");
+        const raw = inp ? inp.value : (box.innerText || "");
+        const m = toEn(raw).replace(/\D/g, "").match(/(?:88)?(01[3-9]\d{8})/);
+        const ph = m ? ("88" + m.at(1)) : "";
+        const ta = box.querySelector("textarea");
+        const txt = ta ? encodeURIComponent(ta.value) : "";
+        a.href = "https://" + "wa.me/" + ph + (txt ? "?text=" + txt : "");
+      }
+    });
+  };
+  setInterval(fixAllWa, 400);
+
+  document.addEventListener("click", function(e) {
+    const el = e.target.closest("button, a");
+    if (!el) return;
+    const h = el.getAttribute("href") || "";
+    const oc = el.getAttribute("onclick") || "";
+    const tx = el.textContent || "";
+    if (h.includes("{ph") || h.includes("whatsapp.com") || oc.includes("{ph") || oc.includes("whatsapp.com") || (tx.includes("WhatsApp") && !tx.includes("তালিকা"))) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const box = el.closest("#nhsMasterModal, .m, dialog") || document.body;
+      const inp = box.querySelector("input[type='tel']");
+      const raw = inp ? inp.value : (box.innerText || "");
+      const m = toEn(raw).replace(/\D/g, "").match(/(?:88)?(01[3-9]\d{8})/);
+      const ph = m ? ("88" + m.at(1)) : "";
+      if (!ph) return alert("অনুগ্রহ করে ১১ সংখ্যার সঠিক মোবাইল নম্বর দিন।");
+      const ta = box.querySelector("textarea");
+      const txt = ta ? encodeURIComponent(ta.value) : "";
+      window.top.location.href = "https://" + "wa.me/" + ph + (txt ? "?text=" + txt : "");
+    }
+  }, true);
+})();
+</script>
 
 </body>
 </html>
