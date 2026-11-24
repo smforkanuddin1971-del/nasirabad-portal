@@ -4426,6 +4426,106 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   }, 500);
 })();
 </script>
+<script>
+(function(){
+  if (new URLSearchParams(location.search).get("voter") === "1" || new URLSearchParams(location.search).get("member")) return;
+
+  const THEMES = {
+    clean: { bg: "#f1f5f9", card: "#ffffff", primary: "#0a6b6b", accent: "#064e4e", text: "#0f172a" },
+    bkash: { bg: "#fdf2f8", card: "#ffffff", primary: "#e2136e", accent: "#9d174d", text: "#1e1b4b" },
+    royal: { bg: "#eff6ff", card: "#ffffff", primary: "#1d4ed8", accent: "#1e3a8a", text: "#0f172a" },
+    dark:  { bg: "#0f172a", card: "#1e293b", primary: "#0d9488", accent: "#14b8a6", text: "#f8fafc" }
+  };
+
+  function applySmartTheme(key) {
+    const t = THEMES[key] || THEMES.clean;
+    localStorage.setItem("nhs_smart_theme", key);
+    let st = document.getElementById("nhsSmartThemeStyle");
+    if (!st) {
+      st = document.createElement("style");
+      st.id = "nhsSmartThemeStyle";
+      document.head.appendChild(st);
+    }
+    st.textContent = `
+      #nhsThemeBar { display: none !important; }
+      body { background: ${t.bg} !important; color: ${t.text} !important; transition: background .25s ease; }
+      header, .topbar, .hdr { background: linear-gradient(135deg, ${t.primary}, ${t.accent}) !important; color: #fff !important; border-radius: 0 0 16px 16px !important; box-shadow: 0 4px 14px rgba(0,0,0,.12) !important; }
+      .card, .box, .panel, [class*="card"] { background: ${t.card} !important; color: ${t.text} !important; border-radius: 14px !important; box-shadow: 0 2px 10px rgba(0,0,0,.06) !important; }
+      #nhsMoreMenuBtn { background: ${t.primary} !important; color: #fff !important; }
+      #nhsMoreDrawer { background: ${t.card} !important; border: 1.5px solid ${t.primary} !important; }
+    `;
+  }
+
+  applySmartTheme(localStorage.getItem("nhs_smart_theme") || "clean");
+
+  setInterval(function() {
+    // ১. থিম পরিবর্তনের অপশনটি কেবল "⚙️ সেটিংস" পপআপের ভেতরে যুক্ত করা
+    const dlg = document.getElementById("dlg");
+    if (dlg && dlg.open) {
+      const h2 = dlg.querySelector("h2");
+      if (h2 && h2.textContent.includes("সেটিংস") && !document.getElementById("nhsSettingsThemeBox")) {
+        const tBox = document.createElement("div");
+        tBox.id = "nhsSettingsThemeBox";
+        tBox.style.cssText = "margin:10px 0;padding:10px;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;";
+        tBox.innerHTML = `
+          <span style="font-size:.88rem;font-weight:700;color:#0f172a;">🎨 অ্যাপ কালার থিম:</span>
+          <select id="nhsSettingsThemeSel" style="padding:6px 10px;border-radius:8px;border:1.5px solid #0a6b6b;font-size:.86rem;font-weight:700;cursor:pointer;background:#fff;color:#0f172a;">
+            <option value="clean">✨ স্মার্ট টিল (ডিফল্ট)</option>
+            <option value="bkash">🌸 স্মার্ট পিঙ্ক (বিকাশ স্টাইল)</option>
+            <option value="royal">👑 রাজকীয় নীল</option>
+            <option value="dark">🌙 ডার্ক মোড</option>
+          </select>
+        `;
+        h2.insertAdjacentElement("afterend", tBox);
+        const sel = document.getElementById("nhsSettingsThemeSel");
+        sel.value = localStorage.getItem("nhs_smart_theme") || "clean";
+        sel.onchange = () => applySmartTheme(sel.value);
+      }
+    }
+
+    // ২. ড্যাশবোর্ডের অতিরিক্ত বাটনগুলো "📂 আরও মেনু ▾" বক্সের ভেতরে গোছানো
+    const allBtns = Array.from(document.querySelectorAll("button, a")).filter(b => {
+      const r = b.getBoundingClientRect();
+      return r.top > 20 && r.top < 320 && r.height > 24 && r.width > 40 && !b.closest("#nhsMoreDrawer") && b.id !== "nhsMoreMenuBtn";
+    });
+
+    if (allBtns.length >= 6 && !document.getElementById("nhsMoreMenuBtn")) {
+      const keepWords = ["সদস্য", "বাড়ি", "বাড়ি", "নোটিশ", "আবেদন", "খুঁজুন", "সার্চ"];
+      const extraBtns = allBtns.filter(b => {
+        const tx = (b.textContent || "").trim();
+        return tx && !keepWords.some(w => tx.includes(w));
+      });
+
+      if (extraBtns.length >= 2) {
+        const anchorBtn = extraBtns.at(0);
+        const moreBtn = document.createElement("button");
+        moreBtn.id = "nhsMoreMenuBtn";
+        moreBtn.type = "button";
+        moreBtn.style.cssText = "padding:8px 14px;border:none;border-radius:10px;font-weight:700;font-size:.86rem;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);";
+        moreBtn.textContent = "📂 আরও মেনু ▾";
+
+        const drawer = document.createElement("div");
+        drawer.id = "nhsMoreDrawer";
+        drawer.style.cssText = "display:none;flex-wrap:wrap;gap:8px;padding:12px;margin:8px 0;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.12);width:100%;box-sizing:border-box;";
+
+        anchorBtn.parentNode.insertBefore(moreBtn, anchorBtn);
+        anchorBtn.parentNode.insertAdjacentElement("afterend", drawer);
+
+        extraBtns.forEach(b => {
+          b.style.margin = "0";
+          drawer.appendChild(b);
+        });
+
+        moreBtn.onclick = () => {
+          const isOpen = drawer.style.display === "flex";
+          drawer.style.display = isOpen ? "none" : "flex";
+          moreBtn.textContent = isOpen ? "📂 আরও মেনু ▾" : "📂 মেনু বন্ধ করুন ▴";
+        };
+      }
+    }
+  }, 500);
+})();
+</script>
 
 </body>
 </html>
