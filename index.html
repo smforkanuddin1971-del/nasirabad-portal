@@ -4375,6 +4375,57 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   }, 200);
 }
 </script>
+<script>
+(function(){
+  const CLOUD_NAME = "dmwkhiad";
+  const UPLOAD_PRESET = "nhs-photos";
+
+  async function uploadToCloudinary(file) {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", UPLOAD_PRESET);
+    fd.append("folder", "nasirabad_members");
+    const res = await fetch(`https://cloudinary.com{CLOUD_NAME}/image/upload`, {
+      method: "POST",
+      body: fd
+    });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error(data.error?.message || "Upload failed");
+    return data.secure_url;
+  }
+
+  document.addEventListener("change", async function(e) {
+    const inp = e.target;
+    if (!inp || inp.type !== "file" || !inp.files || !inp.files.length) return;
+    const file = inp.files[0];
+    if (!file.type.startsWith("image/")) return;
+
+    try {
+      const hdUrl = await uploadToCloudinary(file);
+      inp.dataset.cloudUrl = hdUrl;
+
+      if (inp.id === "uf_p_inp" || inp.id === "uf_photo_inp") {
+        window.__nhsUploadedPhotoUrl = hdUrl;
+        const prev = document.getElementById("uf_p_prev") || document.getElementById("uf_photo_prev");
+        if (prev) { prev.src = hdUrl; prev.style.display = "block"; }
+      }
+    } catch (err) {
+      console.warn("Cloud upload fallback:", err);
+    }
+  }, true);
+
+  setInterval(function() {
+    const curWrap = document.getElementById("uf_cur_photo_wrap");
+    if (!curWrap || curWrap.dataset.cloudChecked) return;
+    curWrap.dataset.cloudChecked = "1";
+    const qp = new URLSearchParams(location.search);
+    const oldPhoto = qp.get("photo") || "";
+    if (oldPhoto.startsWith("http")) {
+      curWrap.innerHTML = `<div style="font-size:.85rem;font-weight:700;color:#064e4e;margin-bottom:6px;">🖼️ পোর্টালে সংরক্ষিত বর্তমান ছবি</div><img src="${oldPhoto}" style="max-height:115px;border-radius:8px;border:1.5px solid #0a6b6b;">`;
+    }
+  }, 500);
+})();
+</script>
 
 </body>
 </html>
