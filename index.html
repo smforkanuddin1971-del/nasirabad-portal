@@ -4526,6 +4526,68 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   }, 500);
 })();
 </script>
+<script>
+(function(){
+  if (new URLSearchParams(location.search).get("voter") === "1" || new URLSearchParams(location.search).get("member")) return;
+
+  // কোনো ডিফল্ট রঙ পরিবর্তন নয়—কেবল সেটিংস থেকে ইচ্ছা করে সিলেক্ট করলেই থিম কাজ করবে
+  const OPTIONAL_THEMES = {
+    default: "",
+    navy: "header, .topbar, .hdr { background: linear-gradient(135deg, #1e3a8a, #0f172a) !important; }",
+    emerald: "header, .topbar, .hdr { background: linear-gradient(135deg, #065f46, #022c22) !important; }",
+    dark: "body { background: #0f172a !important; color: #f1f5f9 !important; } header, .topbar, .hdr { background: #1e293b !important; }"
+  };
+
+  function applyOptionalTheme(k) {
+    localStorage.setItem("nhs_opt_th", k);
+    let st = document.getElementById("nhsOptThStyle");
+    if (!st) { st = document.createElement("style"); st.id = "nhsOptThStyle"; document.head.appendChild(st); }
+    st.textContent = (k && k !== "default") ? (OPTIONAL_THEMES[k] || "") : "";
+  }
+  applyOptionalTheme(localStorage.getItem("nhs_opt_th") || "default");
+
+  setInterval(function() {
+    // ১. মেনু বাটন খোলা ও বন্ধ করা
+    const btn = document.getElementById("nhsSingleMenuBtn");
+    const panel = document.getElementById("nhsSingleMenuPanel");
+    if (btn && panel && !btn.dataset.ready) {
+      btn.dataset.ready = "1";
+      let nxt = panel.nextElementSibling;
+      while (nxt) { const m = nxt; nxt = nxt.nextElementSibling; panel.appendChild(m); }
+      btn.onclick = function(e) {
+        e.preventDefault();
+        const isClosed = (panel.style.display === "none" || getComputedStyle(panel).display === "none");
+        panel.style.setProperty("display", isClosed ? "block" : "none", "important");
+        btn.textContent = isClosed ? "✕ মেনু বন্ধ করুন ▴" : "☰ সকল মেনু ও ফিল্টার দেখুন ▾";
+      };
+    }
+
+    // ২. কেবল সেটিংস পপআপের ভেতরে ঐচ্ছিক থিম রাখা
+    const dlg = document.getElementById("dlg");
+    if (dlg && dlg.open) {
+      const oldBox = document.getElementById("nhsSettingsThemeBox");
+      if (oldBox) oldBox.remove();
+      const h2 = dlg.querySelector("h2");
+      if (h2 && h2.textContent.includes("সেটিংস") && !document.getElementById("nhsCleanThBox")) {
+        const box = document.createElement("div");
+        box.id = "nhsCleanThBox";
+        box.style.cssText = "margin:10px 0;padding:8px 10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;display:flex;justify-content:space-between;align-items:center;";
+        box.innerHTML = `<span style="font-weight:700;font-size:.86rem;color:#0f172a;">🎨 ঐচ্ছিক কালার থিম:</span>
+          <select id="nhsCleanThSel" style="padding:5px 8px;border-radius:6px;border:1px solid #0a6b6b;font-weight:700;font-size:.84rem;background:#fff;color:#0f172a;">
+            <option value="default">🌿 আসল রঙ (অপরিবর্তিত)</option>
+            <option value="navy">🌊 নেভি ব্লু</option>
+            <option value="emerald">🌲 গাঢ় পান্না সবুজ</option>
+            <option value="dark">🌙 ডার্ক মোড</option>
+          </select>`;
+        h2.insertAdjacentElement("afterend", box);
+        const sel = document.getElementById("nhsCleanThSel");
+        sel.value = localStorage.getItem("nhs_opt_th") || "default";
+        sel.onchange = () => applyOptionalTheme(sel.value);
+      }
+    }
+  }, 400);
+})();
+</script>
 
 </body>
 </html>
