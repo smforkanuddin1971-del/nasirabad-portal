@@ -5278,6 +5278,68 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   }, 200);
 })();
 </script>
+<style>
+  /* ১. ব্যাগ/আইকন চিহ্ন, সদস্য তালিকা, বাড়ি অনুযায়ী ও মেনুবার স্পষ্ট রাখা */
+  header button, .topbar button, .hdr button, header svg, .topbar svg, .hdr svg, header span, .topbar span, .hdr span {
+    color: #064e3b !important; fill: currentColor !important; opacity: 1 !important;
+  }
+  header button.active, .topbar button.active, .hdr button.active, header button[aria-selected="true"], .topbar button[aria-selected="true"], #nhsFinalMenuToggle {
+    background-color: #065f46 !important; color: #ffffff !important; border: 1.5px solid #064e3b !important;
+  }
+  #nhsFinalMenuWrap button { color: #0f172a !important; background-color: #ffffff !important; border: 1px solid #cbd5e1 !important; }
+  #nhsFinalMenuWrap button.active { background-color: #065f46 !important; color: #ffffff !important; }
+
+  /* ২. পর্দা খোলার মতো মসৃণ অ্যানিমেশন */
+  @keyframes nhsCurtainOpen {
+    0% { opacity: 0; transform: translateY(-14px) scaleY(0.92); }
+    100% { opacity: 1; transform: translateY(0) scaleY(1); }
+  }
+  #nhsFinalMenuWrap.nhs-curtain-active, dialog[open], #nhsApproveModal {
+    animation: nhsCurtainOpen 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+</style>
+<script>
+(function(){
+  if (new URLSearchParams(location.search).get("member") || new URLSearchParams(location.search).get("voter") === "1") return;
+
+  setTimeout(function() {
+    const mBtn = document.getElementById("nhsFinalMenuToggle");
+    const mWrap = document.getElementById("nhsFinalMenuWrap");
+    if (mBtn && mWrap) {
+      mBtn.onclick = function(e) {
+        e.preventDefault();
+        const isClosed = (mWrap.style.display === "none" || getComputedStyle(mWrap).display === "none");
+        if (isClosed) {
+          mWrap.classList.remove("nhs-curtain-active");
+          mWrap.style.display = "block";
+          void mWrap.offsetWidth;
+          mWrap.classList.add("nhs-curtain-active");
+          mBtn.textContent = "✕ মেনু বন্ধ করুন ▴";
+        } else {
+          mWrap.style.transition = "opacity 0.35s ease, transform 0.35s ease";
+          mWrap.style.opacity = "0";
+          mWrap.style.transform = "translateY(-10px) scaleY(0.94)";
+          setTimeout(() => { mWrap.style.display = "none"; mWrap.style.opacity = ""; mWrap.style.transform = ""; }, 350);
+          mBtn.textContent = "☰ মেনু ও ফিল্টার দেখুন ▾";
+        }
+      };
+    }
+  }, 300);
+
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest("button");
+    if (!btn || btn.id === "nhsFinalMenuToggle") return;
+    const tx = (btn.textContent || "").trim();
+    if (["সদস্য তালিকা", "বাড়ি অনুযায়ী", "বাড়ি অনুযায়ী", "নোটিশ", "সেটিংস", "নতুন সদস্য"].some(w => tx.includes(w))) {
+      const mainArea = document.querySelector("main, #list, .grid, .cards") || document.body;
+      mainArea.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+      mainArea.style.opacity = "0.2";
+      mainArea.style.transform = "translateY(10px)";
+      setTimeout(() => { mainArea.style.opacity = "1"; mainArea.style.transform = "translateY(0)"; }, 300);
+    }
+  }, true);
+})();
+</script>
 
 
 </body>
