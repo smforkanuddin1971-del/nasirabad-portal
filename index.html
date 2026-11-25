@@ -5340,6 +5340,118 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   }, true);
 })();
 </script>
+<script>
+(function(){
+  function enhanceAndResizeLogos() {
+    const curLogo = localStorage.getItem("nhs_custom_org_logo") || "";
+    if (!curLogo || !curLogo.startsWith("data:image")) return;
+
+    // ১. অ্যাপ খোলার ওয়েলকাম পর্দায় (Splash Screen) বড় ও রাজকীয় লোগো (১৩০px) বসানো
+    const splash = document.getElementById("nhsCurtainSplash");
+    if (splash) {
+      let spImg = splash.querySelector("img");
+      if (!spImg) {
+        const iconBox = splash.firstElementChild;
+        if (iconBox) {
+          spImg = document.createElement("img");
+          iconBox.replaceWith(spImg);
+        }
+      }
+      if (spImg) {
+        spImg.src = curLogo;
+        spImg.style.cssText = "display:block;width:130px;height:130px;object-fit:contain;border-radius:50%;background:#ffffff;padding:8px;margin:0 auto 16px;border:3px solid #fde047;box-shadow:0 10px 28px rgba(0,0,0,0.38);";
+      }
+    }
+
+    // ২. মূল ড্যাশবোর্ডের হেডারে বড় ও মাধুর্যপূর্ণ লোগো (৮৬px) বসানো
+    const hdr = document.querySelector("header, .topbar, .hdr");
+    if (hdr) {
+      let topImg = document.getElementById("nhsTopLogoImg");
+      if (!topImg) {
+        const h1 = hdr.querySelector("h1");
+        if (h1) {
+          topImg = document.createElement("img");
+          topImg.id = "nhsTopLogoImg";
+          h1.insertAdjacentElement("beforebegin", topImg);
+        }
+      }
+      if (topImg) {
+        topImg.src = curLogo;
+        topImg.style.cssText = "display:block;width:86px;height:86px;object-fit:contain;border-radius:50%;background:#ffffff;padding:5px;margin:0 auto 8px;border:2.5px solid #064e3b;box-shadow:0 4px 12px rgba(0,0,0,0.18);";
+      }
+    }
+
+    // ৩. ডাইনামিক ব্র্যান্ড হেডারের লোগোটিও বড় (৮৬px) রাখা
+    document.querySelectorAll("#nhsDynamicBrandHeader img").forEach(im => {
+      im.src = curLogo;
+      im.style.cssText = "display:block;width:86px;height:86px;object-fit:contain;border-radius:50%;background:#ffffff;padding:5px;margin:0 auto 8px;border:2.5px solid #064e3b;box-shadow:0 4px 12px rgba(0,0,0,0.18);";
+    });
+  }
+
+  enhanceAndResizeLogos();
+  setTimeout(enhanceAndResizeLogos, 120);
+  setTimeout(enhanceAndResizeLogos, 400);
+
+  // সেটিংস থেকে যেকোনো সময় নতুন লোগো আপলোড করলে উচ্চমানের (260x260) সাইজে সেভ করে সাথে সাথে বড় দেখানো
+  document.addEventListener("change", function(e) {
+    if (e.target && (e.target.id === "nhsDirectLogoInp" || e.target.id === "inpOrgLogo")) {
+      const file = e.target.files && e.target.files.at(0);
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const tempImg = new Image();
+        tempImg.onload = function() {
+          const canvas = document.createElement("canvas");
+          canvas.width = 260;
+          canvas.height = 260;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(tempImg, 0, 0, 260, 260);
+          localStorage.setItem("nhs_custom_org_logo", canvas.toDataURL("image/png", 0.95));
+          enhanceAndResizeLogos();
+        };
+        tempImg.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }, true);
+})();
+</script>
+<style>
+  /* ১. ড্যাশবোর্ড মেনুবার থেকে সব বাড়তি লোগো/নাম/থিম বক্স বাতিল ও সেটিংসের মূল কর্মকর্তা/কর্মচারী অপশনগুলো দৃশ্যমান রাখা */
+  #nhsOrgCustomBox, #nhsCleanThBox, #nhsSettingsThemeBox, #nhsThemeBar {
+    display: none !important;
+  }
+  #dlg > *, #dlg div, #dlg section, #dlg details, #dlg fieldset {
+    display: block;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  #nhsLogoUploadBox {
+    order: 99 !important;
+    margin-top: 14px !important;
+  }
+</style>
+<script>
+(function(){
+  // ২. সেটিংস খুললে কর্মকর্তা/কর্মচারীদের মূল অপশনগুলো সবার ওপরে পরিষ্কার রাখা এবং আমাদের লোগো-ঠিকানা বক্সটি একদম নিচে পাঠানো
+  document.addEventListener("click", function(e) {
+    if ((e.target.textContent || "").includes("সেটিংস")) {
+      setTimeout(function() {
+        const dlg = document.getElementById("dlg");
+        if (!dlg) return;
+        ["nhsOrgCustomBox", "nhsCleanThBox", "nhsSettingsThemeBox"].forEach(id => {
+          const old = document.getElementById(id);
+          if (old) old.remove();
+        });
+        const logoBox = document.getElementById("nhsLogoUploadBox");
+        if (logoBox) {
+          dlg.appendChild(logoBox);
+        }
+      }, 220);
+    }
+  });
+})();
+</script>
 
 
 </body>
