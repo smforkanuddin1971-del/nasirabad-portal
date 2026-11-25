@@ -5109,6 +5109,110 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   }, 300);
 })();
 </script>
+<script>
+(function(){
+  const esc = v => String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+  // ১. পর্দা যেন কখনোই ২.৫ সেকেন্ডের বেশি আটকে না থাকে তা নিশ্চিত করা
+  function closeSplashSafely() {
+    const sp = document.getElementById("nhsCurtainSplash");
+    if (!sp) return;
+    sp.style.opacity = "0";
+    sp.style.transform = "scale(1.04)";
+    sp.style.pointerEvents = "none";
+    setTimeout(() => { if (sp && sp.parentNode) sp.remove(); }, 600);
+  }
+  setTimeout(closeSplashSafely, 2500);
+
+  // ২. প্রতিষ্ঠানের লোগো ওয়েলকাম পর্দা ও মূল হেডারে বসানো
+  function syncBrandLogo() {
+    let logo = localStorage.getItem("nhs_custom_org_logo") || localStorage.getItem("org_logo") || localStorage.getItem("logo") || "";
+    if (!logo) {
+      const imgs = Array.from(document.querySelectorAll("header img, .topbar img, .hdr img, #dlg img"));
+      const valid = imgs.find(im => im.src && (im.src.startsWith("data:image") || im.src.startsWith("http")));
+      if (valid) {
+        logo = valid.src;
+        localStorage.setItem("nhs_custom_org_logo", logo);
+      }
+    }
+
+    const splash = document.getElementById("nhsCurtainSplash");
+    if (splash) {
+      splash.onclick = closeSplashSafely;
+      if (logo) {
+        const iconBox = splash.firstElementChild;
+        if (iconBox && iconBox.tagName !== "IMG") {
+          const img = document.createElement("img");
+          img.src = logo;
+          img.style.cssText = "width:88px;height:88px;object-fit:contain;border-radius:50%;background:#ffffff;padding:6px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);";
+          iconBox.replaceWith(img);
+        }
+      }
+    }
+
+    const hdr = document.querySelector("header, .topbar, .hdr");
+    if (hdr && logo && !document.getElementById("nhsTopLogoImg")) {
+      const h1 = hdr.querySelector("h1");
+      if (h1) {
+        const topImg = document.createElement("img");
+        topImg.id = "nhsTopLogoImg";
+        topImg.src = logo;
+        topImg.style.cssText = "display:block;width:54px;height:54px;object-fit:contain;border-radius:50%;background:#ffffff;padding:3px;margin:0 auto 6px;box-shadow:0 2px 6px rgba(0,0,0,.25);";
+        h1.insertAdjacentElement("beforebegin", topImg);
+      }
+    }
+  }
+
+  syncBrandLogo();
+  setTimeout(syncBrandLogo, 150);
+
+  // ৩. সেটিংসের ভেতরে লোগো, নাম ও ঠিকানা সেভ করার বক্স (কোনো কাঁপাকাঁপি ছাড়াই)
+  document.addEventListener("click", function(e) {
+    if ((e.target.textContent || "").includes("সেটিংস")) {
+      setTimeout(function() {
+        const dlg = document.getElementById("dlg");
+        if (!dlg || !dlg.open || document.getElementById("nhsLogoUploadBox")) return;
+        const h2 = dlg.querySelector("h2");
+        if (!h2) return;
+        const box = document.createElement("div");
+        box.id = "nhsLogoUploadBox";
+        box.style.cssText = "margin:10px 0;padding:10px;background:#f0fdf4;border:1.5px solid #0a6b6b;border-radius:10px;display:grid;gap:7px;font-size:.85rem;color:#0f172a;";
+        box.innerHTML = `
+          <div style="font-weight:700;color:#064e4e;">🏛️ প্রতিষ্ঠানের লোগো, নাম ও ঠিকানা সেটআপ</div>
+          <label style="font-weight:600;">🖼️ প্রতিষ্ঠানের লোগো আপলোড করুন:
+            <input id="nhsDirectLogoInp" type="file" accept="image/*" style="display:block;margin-top:4px;">
+          </label>
+          <input id="nhsDirectNameInp" type="text" value="${esc(localStorage.getItem("nhs_custom_org_name") || "")}" placeholder="প্রতিষ্ঠানের নাম (বদলাতে চাইলে লিখুন)..." style="padding:7px;border:1px solid #94a3b8;border-radius:7px;">
+          <input id="nhsDirectAddrInp" type="text" value="${esc(localStorage.getItem("nhs_custom_org_addr") || "")}" placeholder="প্রতিষ্ঠানের ঠিকানা লিখুন..." style="padding:7px;border:1px solid #94a3b8;border-radius:7px;">
+          <button type="button" id="nhsDirectSaveBtn" style="background:#0a6b6b;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:700;cursor:pointer;">💾 লোগো ও তথ্য সেভ করুন</button>
+        `;
+        h2.insertAdjacentElement("afterend", box);
+
+        document.getElementById("nhsDirectLogoInp").onchange = function(ev) {
+          const f = ev.target.files && ev.target.files.at(0);
+          if (!f) return;
+          const rd = new FileReader();
+          rd.onload = () => {
+            localStorage.setItem("nhs_custom_org_logo", rd.result);
+            syncBrandLogo();
+            alert("প্রতিষ্ঠানের লোগো সফলভাবে যুক্ত হয়েছে! পরের বার অ্যাপ খুললেই ওয়েলকাম পর্দায় লোগো দেখাবে।");
+          };
+          rd.readAsDataURL(f);
+        };
+
+        document.getElementById("nhsDirectSaveBtn").onclick = function() {
+          const nm = document.getElementById("nhsDirectNameInp").value.trim();
+          const ad = document.getElementById("nhsDirectAddrInp").value.trim();
+          if (nm) localStorage.setItem("nhs_custom_org_name", nm);
+          if (ad) localStorage.setItem("nhs_custom_org_addr", ad);
+          syncBrandLogo();
+          alert("প্রতিষ্ঠানের নাম, ঠিকানা ও লোগো সংরক্ষিত হয়েছে!");
+        };
+      }, 150);
+    }
+  });
+})();
+</script>
 
 
 </body>
