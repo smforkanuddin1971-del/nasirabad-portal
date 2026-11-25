@@ -4588,6 +4588,528 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   }, 400);
 })();
 </script>
+<script>
+(function(){
+  const toEn = s => String(s || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const esc = v => String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const isMemberView = Boolean(new URLSearchParams(location.search).get("member"));
+  const isVoterView = new URLSearchParams(location.search).get("voter") === "1";
+
+  // ১. ঐচ্ছিক কালার থিম (মূল অ্যাপের বর্তমান রঙ সম্পূর্ণ অপরিবর্তিত থাকবে)
+  const OPTIONAL_THEMES = {
+    default: "",
+    navy: "header, .topbar, .hdr { background: linear-gradient(135deg, #1e3a8a, #0f172a) !important; }",
+    emerald: "header, .topbar, .hdr { background: linear-gradient(135deg, #065f46, #022c22) !important; }",
+    dark: "body { background: #0f172a !important; color: #f1f5f9 !important; } header, .topbar, .hdr { background: #1e293b !important; }"
+  };
+  function applyOptionalTheme(k) {
+    localStorage.setItem("nhs_opt_th", k);
+    let st = document.getElementById("nhsOptThStyle");
+    if (!st) { st = document.createElement("style"); st.id = "nhsOptThStyle"; document.head.appendChild(st); }
+    st.textContent = (k && k !== "default") ? (OPTIONAL_THEMES[k] || "") : "";
+  }
+  if (!isMemberView && !isVoterView) {
+    applyOptionalTheme(localStorage.getItem("nhs_opt_th") || "default");
+  }
+
+  // ২. প্রতিষ্ঠানের বর্তমান নাম, ঠিকানা ও লোগো সংগ্রহ (কোনো ফিক্সড নাম/ঠিকানা নেই)
+  function getOrgProfile() {
+    const qp = new URLSearchParams(location.search);
+    const savedName = localStorage.getItem("nhs_custom_org_name") || "";
+    const savedAddr = localStorage.getItem("nhs_custom_org_addr") || "";
+    const savedLogo = localStorage.getItem("nhs_custom_org_logo") || "";
+    const domTitle = document.querySelector("header h1, .topbar h1, .hdr h1")?.textContent?.trim() || "";
+    const domAddr = document.querySelector("header p, .topbar p, .hdr p, header small, .topbar small")?.textContent?.trim() || "";
+    const domLogo = document.querySelector("header img, .topbar img, .hdr img")?.src || "";
+    return {
+      name: qp.get("oname") || savedName || domTitle || "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ",
+      addr: qp.get("oaddr") || savedAddr || domAddr || "",
+      logo: savedLogo || domLogo || ""
+    };
+  }
+
+  // ৩. পর্দা খোলার মতো স্মার্ট ওয়েলকাম স্ক্রিন (Splash Curtain)
+  if (!isMemberView && !isVoterView && !document.getElementById("nhsCurtainSplash")) {
+    const org = getOrgProfile();
+    const devBrand = localStorage.getItem("nhs_dev_brand") || "Developed & Powered by S. M. Forkan Uddin";
+    const splash = document.createElement("div");
+    splash.id = "nhsCurtainSplash";
+    splash.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:linear-gradient(135deg,#064e3b 0%,#0a6b6b 55%,#042f2e 100%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;transition:opacity .65s ease,transform .65s ease;font-family:sans-serif;";
+    splash.innerHTML = `
+      ${org.logo ? `<img src="${esc(org.logo)}" style="width:84px;height:84px;object-fit:contain;border-radius:50%;background:#fff;padding:6px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);">` : `<div style="width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:14px;">🏛️</div>`}
+      <div style="font-size:1.35rem;font-weight:800;letter-spacing:.3px;line-height:1.4;max-width:420px;">${esc(org.name)}</div>
+      <div style="margin-top:8px;font-size:.88rem;color:#a7f3d0;">ডিজিটাল সদস্য ও তথ্য ব্যবস্থাপনা পোর্টাল</div>
+      <div style="width:140px;height:4px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;margin-top:22px;">
+        <div style="width:100%;height:100%;background:#fde047;animation:nhsLoadBar 1.3s ease forwards;"></div>
+      </div>
+      <div style="position:absolute;bottom:24px;font-size:.82rem;color:#fde047;font-weight:700;letter-spacing:.4px;">${esc(devBrand)}</div>
+      <style>@keyframes nhsLoadBar { from { transform: translateX(-100%); } to { transform: translateX(0); } }</style>
+    `;
+    document.body.appendChild(splash);
+    setTimeout(() => {
+      splash.style.opacity = "0";
+      splash.style.transform = "scale(1.04)";
+      setTimeout(() => splash.remove(), 680);
+    }, 1350);
+  }
+
+  // ৪. ড্যাশবোর্ডে মাঝখানে লোগো ও নিচে নাম-ঠিকানা বসানো
+  function applyDynamicHeader() {
+    if (isMemberView || isVoterView) return;
+    const savedName = localStorage.getItem("nhs_custom_org_name") || "";
+    const savedAddr = localStorage.getItem("nhs_custom_org_addr") || "";
+    const savedLogo = localStorage.getItem("nhs_custom_org_logo") || "";
+    if (!savedName && !savedAddr && !savedLogo) return;
+    const hdr = document.querySelector("header, .topbar, .hdr");
+    if (!hdr) return;
+
+    let brandBox = document.getElementById("nhsDynamicBrandHeader");
+    if (!brandBox) {
+      brandBox = document.createElement("div");
+      brandBox.id = "nhsDynamicBrandHeader";
+      brandBox.style.cssText = "text-align:center;padding:6px 10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;";
+      const h1 = hdr.querySelector("h1");
+      if (h1) { h1.style.display = "none"; h1.insertAdjacentElement("beforebegin", brandBox); }
+      else { hdr.prepend(brandBox); }
+    }
+    const cur = getOrgProfile();
+    brandBox.innerHTML = `
+      ${cur.logo ? `<img src="${esc(cur.logo)}" alt="Logo" style="width:54px;height:54px;object-fit:contain;border-radius:50%;background:#fff;padding:3px;margin-bottom:5px;box-shadow:0 2px 6px rgba(0,0,0,.2);">` : ""}
+      <div style="font-size:1.18rem;font-weight:800;line-height:1.3;">${esc(cur.name)}</div>
+      ${cur.addr ? `<div style="font-size:.82rem;opacity:.92;margin-top:2px;">${esc(cur.addr)}</div>` : ""}
+    `;
+  }
+  applyDynamicHeader();
+
+  // ৫. প্রিন্ট করার সময়ও কাস্টম নাম ও ঠিকানা হুবহু রাখা
+  window.addEventListener("beforeprint", function() {
+    const cName = localStorage.getItem("nhs_custom_org_name");
+    const cAddr = localStorage.getItem("nhs_custom_org_addr");
+    if (cName) {
+      document.querySelectorAll("h1, .print-title").forEach(el => {
+        if (el.textContent.includes("নাসিরাবাদ")) el.textContent = cName;
+      });
+    }
+    if (cAddr) {
+      document.querySelectorAll(".print-addr").forEach(el => { el.textContent = cAddr; });
+    }
+  });
+
+  // ৬. মূল লুপ: মেনুবার খোলা-বন্ধ, সেটিংস কাস্টমাইজেশন, ছবির লিংক ও নির্বাচন কমিশন স্টাইল ডাউনলোড
+  setInterval(function() {
+    applyDynamicHeader();
+
+    // ক) ড্যাশবোর্ড মেনুবার খোলা-বন্ধ হওয়া
+    const btn = document.getElementById("nhsSingleMenuBtn");
+    const panel = document.getElementById("nhsSingleMenuPanel");
+    if (btn && panel && !btn.dataset.finalMenuReady) {
+      btn.dataset.finalMenuReady = "1";
+      let nxt = panel.nextElementSibling;
+      while (nxt) { const m = nxt; nxt = nxt.nextElementSibling; panel.appendChild(m); }
+      btn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const isClosed = (panel.style.display === "none" || getComputedStyle(panel).display === "none");
+        panel.style.setProperty("display", isClosed ? "block" : "none", "important");
+        btn.textContent = isClosed ? "✕ মেনু বন্ধ করুন ▴" : "☰ সকল মেনু ও ফিল্টার দেখুন ▾";
+      };
+    }
+
+    // খ) সেটিংসে প্রতিষ্ঠানের নাম, ঠিকানা, লোগো, ব্র্যান্ডিং ও ঐচ্ছিক থিম
+    const dlg = document.getElementById("dlg");
+    if (dlg && dlg.open) {
+      const h2 = dlg.querySelector("h2");
+      if (h2 && h2.textContent.includes("সেটিংস") && !document.getElementById("nhsOrgCustomBox")) {
+        const cur = getOrgProfile();
+        const box = document.createElement("div");
+        box.id = "nhsOrgCustomBox";
+        box.style.cssText = "margin:10px 0;padding:10px;background:#f0fdf4;border:1.5px solid #0a6b6b;border-radius:10px;display:grid;gap:7px;font-size:.85rem;color:#0f172a;";
+        box.innerHTML = `
+          <div style="font-weight:700;color:#064e4e;">🏛️ প্রতিষ্ঠানের নাম, ঠিকানা, লোগো ও থিম</div>
+          <input id="inpOrgName" type="text" value="${esc(localStorage.getItem("nhs_custom_org_name") || cur.name)}" placeholder="প্রতিষ্ঠানের নাম লিখুন..." style="padding:7px;border:1px solid #94a3b8;border-radius:7px;width:100%;box-sizing:border-box;">
+          <input id="inpOrgAddr" type="text" value="${esc(localStorage.getItem("nhs_custom_org_addr") || cur.addr)}" placeholder="প্রতিষ্ঠানের ঠিকানা লিখুন..." style="padding:7px;border:1px solid #94a3b8;border-radius:7px;width:100%;box-sizing:border-box;">
+          <input id="inpDevBrand" type="text" value="${esc(localStorage.getItem("nhs_dev_brand") || "Developed & Powered by S. M. Forkan Uddin")}" placeholder="নির্মাতা ব্র্যান্ডিং নাম..." style="padding:7px;border:1px solid #94a3b8;border-radius:7px;width:100%;box-sizing:border-box;">
+          <label style="font-weight:600;color:#064e4e;">🖼️ প্রতিষ্ঠানের লোগো আপলোড করুন:
+            <input id="inpOrgLogo" type="file" accept="image/*" style="display:block;margin-top:4px;font-size:.82rem;">
+          </label>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+            <span style="font-weight:700;">🎨 ঐচ্ছিক থিম:</span>
+            <select id="nhsCleanThSel" style="padding:5px 8px;border-radius:6px;border:1px solid #0a6b6b;font-weight:700;background:#fff;">
+              <option value="default">🌿 আসল রঙ (অপরিবর্তিত)</option>
+              <option value="navy">🌊 নেভি ব্লু</option>
+              <option value="emerald">🌲 গাঢ় পান্না সবুজ</option>
+              <option value="dark">🌙 ডার্ক মোড</option>
+            </select>
+          </div>
+          <button type="button" id="saveOrgCustomBtn" style="background:#0a6b6b;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:700;cursor:pointer;">💾 সংরক্ষণ করুন</button>
+        `;
+        h2.insertAdjacentElement("afterend", box);
+        const sel = document.getElementById("nhsCleanThSel");
+        sel.value = localStorage.getItem("nhs_opt_th") || "default";
+        sel.onchange = () => applyOptionalTheme(sel.value);
+
+        document.getElementById("inpOrgLogo").onchange = function(ev) {
+          const f = ev.target.files && ev.target.files.at(0);
+          if (!f) return;
+          const rd = new FileReader();
+          rd.onload = () => { localStorage.setItem("nhs_custom_org_logo", rd.result); applyDynamicHeader(); };
+          rd.readAsDataURL(f);
+        };
+
+        document.getElementById("saveOrgCustomBtn").onclick = function() {
+          localStorage.setItem("nhs_custom_org_name", document.getElementById("inpOrgName").value.trim());
+          localStorage.setItem("nhs_custom_org_addr", document.getElementById("inpOrgAddr").value.trim());
+          localStorage.setItem("nhs_dev_brand", document.getElementById("inpDevBrand").value.trim());
+          applyDynamicHeader();
+          alert("প্রতিষ্ঠানের নাম, ঠিকানা, লোগো ও ব্র্যান্ডিং সফলভাবে সংরক্ষিত হয়েছে!");
+        };
+      }
+    }
+
+    // গ) লিংক তৈরির সময় প্রতিষ্ঠানের নাম, ঠিকানা ও সদস্যের পুরোনো ছবি স্বয়ংক্রিয়ভাবে যুক্ত করা
+    const msgTa = document.getElementById("mWaMsg");
+    if (msgTa && msgTa.value.includes("member=") && !msgTa.value.includes("&oname=")) {
+      const info = getOrgProfile();
+      const mMatch = msgTa.value.match(/member=([০-৯\d]+)/);
+      let extraParams = "&oname=" + encodeURIComponent(info.name);
+      if (info.addr) extraParams += "&oaddr=" + encodeURIComponent(info.addr);
+      if (mMatch && typeof rows !== "undefined" && Array.isArray(rows)) {
+        const mNo = toEn(mMatch.at(1));
+        const mem = rows.find(r => toEn(r.n) === mNo);
+        const pUrl = mem ? (mem.p || mem.img || mem.photo || "") : "";
+        if (pUrl.startsWith("http")) extraParams += "&photo=" + encodeURIComponent(pUrl);
+      }
+      msgTa.value = msgTa.value.replace(/(https?:\/\/[^\s]+)/, "$1" + extraParams);
+      msgTa.dispatchEvent(new Event("input"));
+    }
+
+    // ঘ) সদস্য ফরমে নতুন ছবি আপলোড হলে WhatsApp/Email/Telegram লিংকে ছবির লিংক যুক্ত রাখা
+    const subBtn = document.getElementById("uf_sub");
+    if (subBtn && window.__nhsUploadedPhotoUrl && subBtn.href) {
+      const pLine = encodeURIComponent("\nছবির লিংক: " + window.__nhsUploadedPhotoUrl);
+      if (!subBtn.href.includes(encodeURIComponent(window.__nhsUploadedPhotoUrl))) subBtn.href += pLine;
+      const emBtn = document.getElementById("retEmBtn");
+      if (emBtn && emBtn.href && !emBtn.href.includes(encodeURIComponent(window.__nhsUploadedPhotoUrl))) emBtn.href += pLine;
+      const tgBtn = document.getElementById("retTgBtn");
+      if (tgBtn && tgBtn.href && !tgBtn.href.includes(encodeURIComponent(window.__nhsUploadedPhotoUrl))) tgBtn.href += pLine;
+    }
+
+    // ঙ) নির্বাচন কমিশন (EC / NID Portal) স্টাইলে ডাউনলোড কপি
+    const dlInfoBtn = document.getElementById("uf_dl_info");
+    if (dlInfoBtn && !dlInfoBtn.dataset.ecMasterReady) {
+      dlInfoBtn.dataset.ecMasterReady = "1";
+      dlInfoBtn.textContent = "🏛️ তথ্য বিবরণী কপি ডাউনলোড (নির্বাচন কমিশন স্টাইল)";
+      dlInfoBtn.onclick = async function(ev) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+
+        const org = getOrgProfile();
+        const qp = new URLSearchParams(location.search);
+        let mNo = (qp.get("member") || "").trim();
+        if (!mNo) {
+          const m = document.body.innerText.match(/সদস্য নং[:\s]*([০-৯\d]+)/);
+          if (m) mNo = m.at(1);
+        }
+        const nm = document.getElementById("uf_nm")?.value || "";
+        const f = document.getElementById("uf_f")?.value || "";
+        const m = document.getElementById("uf_m")?.value || "";
+        const o = document.getElementById("uf_o")?.value || "";
+        const bg = document.getElementById("uf_bg")?.value || "";
+        const ph = document.getElementById("uf_ph")?.value || "";
+        const addr = document.getElementById("uf_addr")?.value || "";
+        const photoSrc = window.__nhsUploadedPhotoUrl || document.getElementById("uf_p_prev")?.src || qp.get("photo") || "";
+
+        const cv = document.createElement("canvas");
+        cv.width = 1000;
+        cv.height = 1320;
+        const ctx = cv.getContext("2d");
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, 1000, 1320);
+        ctx.strokeStyle = "#064e3b";
+        ctx.lineWidth = 6;
+        ctx.strokeRect(24, 24, 952, 1272);
+        ctx.strokeStyle = "#059669";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(34, 34, 932, 1252);
+
+        const hasLogo = Boolean(org.logo);
+        const hdrH = hasLogo ? 225 : 155;
+        ctx.fillStyle = "#064e3b";
+        ctx.fillRect(34, 34, 932, hdrH);
+
+        let textStartY = 88;
+        if (hasLogo) {
+          try {
+            const lg = new Image();
+            lg.crossOrigin = "anonymous";
+            await new Promise((res, rej) => { lg.onload = res; lg.onerror = rej; lg.src = org.logo; });
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(500, 88, 42, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.drawImage(lg, 464, 52, 72, 72);
+            textStartY = 162;
+          } catch (e) {}
+        }
+
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.font = "bold 30px sans-serif";
+        ctx.fillText(org.name, 500, textStartY);
+        if (org.addr) {
+          ctx.font = "19px sans-serif";
+          ctx.fillStyle = "#d1fae5";
+          ctx.fillText(org.addr, 500, textStartY + 34);
+        }
+        ctx.fillStyle = "#fde047";
+        ctx.font = "bold 19px sans-serif";
+        ctx.fillText("সদস্য তথ্য হালনাগাদ বিবরণী (অফিশিয়াল রেকর্ড কপি)", 500, textStartY + 68);
+
+        const topOffset = 34 + hdrH + 18;
+        ctx.fillStyle = "#ecfdf5";
+        ctx.fillRect(54, topOffset, 892, 46);
+        ctx.strokeStyle = "#059669";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(54, topOffset, 892, 46);
+        ctx.fillStyle = "#064e3b";
+        ctx.textAlign = "left";
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillText("সদস্য পরিচিতি নম্বর (ID): " + (mNo || "প্রযোজ্য নয়"), 74, topOffset + 30);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#b91c1c";
+        ctx.fillText("তারিখ: " + new Date().toLocaleDateString("bn-BD"), 926, topOffset + 30);
+
+        const bodyY = topOffset + 64;
+        ctx.strokeStyle = "#064e3b";
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(54, bodyY, 220, 265);
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(56, bodyY + 2, 216, 261);
+
+        if (photoSrc && photoSrc.startsWith("http")) {
+          try {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = photoSrc; });
+            ctx.drawImage(img, 62, bodyY + 8, 204, 249);
+          } catch (e) {
+            ctx.fillStyle = "#64748b";
+            ctx.textAlign = "center";
+            ctx.font = "18px sans-serif";
+            ctx.fillText("সদস্যের ছবি", 164, bodyY + 135);
+          }
+        } else {
+          ctx.fillStyle = "#64748b";
+          ctx.textAlign = "center";
+          ctx.font = "18px sans-serif";
+          ctx.fillText("ছবি সংযুক্ত নেই", 164, bodyY + 135);
+        }
+
+        ctx.fillStyle = "#dc2626";
+        ctx.fillRect(54, bodyY + 277, 220, 44);
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.font = "bold 20px sans-serif";
+        ctx.fillText("রক্তের গ্রুপ: " + (bg || "উল্লেখ নেই"), 164, bodyY + 306);
+
+        const fields = [
+          ["সদস্যের নাম", nm],
+          ["পিতার নাম", f],
+          ["মাতার নাম", m],
+          ["পেশা", o],
+          ["মোবাইল নম্বর", ph],
+          ["বর্তমান ঠিকানা", addr]
+        ];
+
+        let y = bodyY;
+        fields.forEach((row, idx) => {
+          const rowH = idx === 5 ? 115 : 68;
+          ctx.fillStyle = idx % 2 === 0 ? "#f0fdf4" : "#ffffff";
+          ctx.fillRect(295, y, 651, rowH);
+          ctx.strokeStyle = "#94a3b8";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(295, y, 651, rowH);
+
+          ctx.fillStyle = "#064e3b";
+          ctx.textAlign = "left";
+          ctx.font = "bold 20px sans-serif";
+          ctx.fillText(row.at(0) + " :", 312, y + 42);
+
+          ctx.fillStyle = "#0f172a";
+          ctx.font = idx === 0 ? "bold 22px sans-serif" : "20px sans-serif";
+          const valText = String(row.at(1) || "—");
+          if (idx === 5 && valText.length > 34) {
+            ctx.fillText(valText.slice(0, 34), 485, y + 40);
+            ctx.fillText(valText.slice(34, 70), 485, y + 74);
+          } else {
+            ctx.fillText(valText, 485, y + 42);
+          }
+          y += rowH;
+        });
+
+        const declY = y + 32;
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(54, declY, 892, 95);
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.strokeRect(54, declY, 892, 95);
+        ctx.fillStyle = "#334155";
+        ctx.textAlign = "left";
+        ctx.font = "18px sans-serif";
+        ctx.fillText("অঙ্গীকারনামা: উপরে প্রদত্ত সকল তথ্য ও ছবি আমার জানামতে সম্পূর্ণ সত্য ও নির্ভুল।", 74, declY + 38);
+        ctx.fillText("প্রয়োজনে কর্তৃপক্ষ মূল জাতীয় পরিচয়পত্রের সাথে তথ্য যাচাই করতে পারবেন।", 74, declY + 70);
+
+        const sigY = declY + 240;
+        const sigs = ["সদস্যের স্বাক্ষর ও তারিখ", "তথ্য যাচাইকারীর স্বাক্ষর", "অনুমোদনকারী কর্তৃপক্ষ"];
+        sigs.forEach((sTxt, i) => {
+          const sx = 175 + i * 325;
+          ctx.strokeStyle = "#0f172a";
+          ctx.beginPath();
+          ctx.moveTo(sx - 115, sigY);
+          ctx.lineTo(sx + 115, sigY);
+          ctx.stroke();
+          ctx.fillStyle = "#0f172a";
+          ctx.textAlign = "center";
+          ctx.font = "bold 18px sans-serif";
+          ctx.fillText(sTxt, sx, sigY + 30);
+        });
+
+        const a = document.createElement("a");
+        a.download = `Member_EC_Profile_${mNo || "Record"}.png`;
+        a.href = cv.toDataURL("image/png");
+        a.click();
+      };
+    }
+  }, 500);
+
+  // ৭. আবেদন যাচাই ও অনুমোদন বক্স
+  document.addEventListener("click", function(e) {
+    const btn = e.target.closest("button, a");
+    if (!btn) return;
+    const t = (btn.textContent || "").trim();
+    if (t.includes("আবেদন") || t.includes("নোটিফিকেশন")) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const oldModal = document.getElementById("nhsApproveModal");
+      if (oldModal) oldModal.remove();
+
+      const modal = document.createElement("div");
+      modal.id = "nhsApproveModal";
+      modal.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px;color-scheme:light;font-family:sans-serif;";
+      modal.innerHTML = `
+        <div style="background:#fff;color:#0f172a;max-width:460px;width:100%;max-height:90vh;overflow-y:auto;padding:16px;border-radius:14px;border:2px solid #0a6b6b;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h3 style="margin:0;color:#064e4e;font-size:1.05rem;">📥 সদস্য তথ্য হালনাগাদ আবেদন যাচাই</h3>
+            <button type="button" id="closeAppModal" style="background:#e2e8f0;border:none;padding:5px 10px;border-radius:6px;font-weight:700;cursor:pointer;">✕</button>
+          </div>
+          <p style="margin:0 0 8px;font-size:.84rem;color:#475569;">সদস্যের পাঠানো WhatsApp বা Email বার্তাটি কপি করে নিচের ঘরে পেস্ট করুন:</p>
+          <textarea id="appWaInput" placeholder="এখানে সদস্যের পাঠানো পুরো মেসেজটি পেস্ট করুন..." style="width:100%;height:110px;padding:8px;border:1.5px solid #0a6b6b;border-radius:8px;box-sizing:border-box;font-size:.86rem;"></textarea>
+          <button type="button" id="appVerifyBtn" style="width:100%;margin-top:8px;background:#0a6b6b;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">🔍 তথ্য ও ছবি যাচাই করুন</button>
+          <div id="appPreviewBox" style="margin-top:10px;"></div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      document.getElementById("closeAppModal").onclick = () => modal.remove();
+
+      document.getElementById("appVerifyBtn").onclick = () => {
+        const raw = document.getElementById("appWaInput").value || "";
+        const pick = lbl => {
+          const m = raw.match(new RegExp(lbl + "[:\\s]*([^\\n]+)"));
+          return m ? m.at(1).trim() : "";
+        };
+        const mNo = toEn(pick("সদস্য নং")).replace(/\D/g, "");
+        const nm = pick("সদস্যের নাম");
+        const f = pick("পিতার নাম");
+        const m = pick("মাতার নাম");
+        const o = pick("পেশা");
+        const bg = pick("রক্তের গ্রুপ");
+        const ph = pick("মোবাইল নম্বর");
+        const addr = pick("বর্তমান ঠিকানা");
+        const photoUrl = pick("ছবির লিংক");
+
+        if (!mNo && !nm) {
+          document.getElementById("appPreviewBox").innerHTML = `<div style="color:#dc2626;font-weight:700;font-size:.88rem;">সঠিক তথ্য পাওয়া যায়নি। পুরো মেসেজটি কপি করে পেস্ট করুন।</div>`;
+          return;
+        }
+
+        const allRows = (typeof rows !== "undefined" && Array.isArray(rows)) ? rows : [];
+        const mem = allRows.find(r => toEn(r.n) === mNo) || allRows.find(r => r.nm === nm);
+
+        document.getElementById("appPreviewBox").innerHTML = `
+          <div style="background:#f0fdfa;border:1.5px solid #0a6b6b;border-radius:10px;padding:10px;font-size:.86rem;">
+            <div style="font-weight:700;color:#064e4e;margin-bottom:6px;">${mem ? "✅ সদস্য শনাক্ত হয়েছে (সদস্য নং: " + esc(mem.n) + ")" : "⚠️ এই সদস্য নম্বরটি মূল তালিকায় পাওয়া যায়নি"}</div>
+            ${photoUrl.startsWith("http") ? `<div style="margin-bottom:6px;"><img src="${esc(photoUrl)}" style="max-height:95px;border-radius:8px;border:1px solid #0a6b6b;"></div>` : ""}
+            <div><b>নাম:</b> ${esc(nm)}</div>
+            <div><b>পিতা:</b> ${esc(f)} | <b>মাতা:</b> ${esc(m)}</div>
+            <div><b>পেশা:</b> ${esc(o)} | <b>রক্ত:</b> ${esc(bg)}</div>
+            <div><b>মোবাইল:</b> ${esc(ph)}</div>
+            <div><b>ঠিকানা:</b> ${esc(addr)}</div>
+            ${mem ? `<button type="button" id="appConfirmSave" style="width:100%;margin-top:10px;background:#16a34a;color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;">✅ অনুমোদন ও মূল তালিকায় সংরক্ষণ করুন</button>` : ""}
+          </div>
+        `;
+
+        const confirmBtn = document.getElementById("appConfirmSave");
+        if (confirmBtn && mem) {
+          confirmBtn.onclick = () => {
+            if (nm) mem.nm = nm;
+            if (f) mem.f = f;
+            if (m) mem.m = m;
+            if (o) mem.o = o;
+            if (ph) mem.ph = ph;
+            if (addr) mem.b = addr;
+            if (photoUrl.startsWith("http")) {
+              mem.p = photoUrl;
+              mem.img = photoUrl;
+              mem.photo = photoUrl;
+            }
+            if (bg) {
+              mem.bg = bg;
+              try {
+                const bgs = JSON.parse(localStorage.getItem("member_blood_groups") || "{}");
+                bgs[String(mem.s)] = bg;
+                localStorage.setItem("member_blood_groups", JSON.stringify(bgs));
+              } catch(err) {}
+            }
+            try {
+              if (typeof db !== "undefined" && db._set) db._set("rows", allRows);
+              localStorage.setItem("nhs_rows", JSON.stringify(allRows));
+            } catch(err) {}
+            if (typeof render === "function") render();
+            alert("সদস্য নং " + mem.n + "-এর তথ্য ও ছবি সফলভাবে অনুমোদিত হয়ে মূল তালিকায় সংরক্ষিত হয়েছে!");
+            modal.remove();
+          };
+        }
+      };
+    }
+  }, true);
+})();
+</script>
+<style>
+  /* ১. সবুজ হেডারের ভেতরের সব বাটন ও লেখা একদম স্পষ্ট সাদা রাখা এবং ডুপ্লিকেট বক্স লুকানো */
+  header button, .topbar button, .hdr button { color: #ffffff !important; opacity: 1 !important; }
+  header small, .topbar small, .hdr small, header p, .topbar p, .hdr p { color: #e2e8f0 !important; opacity: 1 !important; }
+  #nhsMoreDrawer, #nhsMoreMenuBtn, #nhsSettingsThemeBox, #nhsThemeBar { display: none !important; }
+</style>
+<script>
+(function(){
+  // ২. কাঁপাকাঁপি বন্ধ করা: সেটিংসের পুরোনো লুপ থামানো
+  for (let i = 1; i < 9999; i++) { clearInterval(i); }
+
+  // ৩. ড্যাশবোর্ডে ৩ বার আসা রোড বাটনগুলোকে পরিষ্কার করে মাত্র ১টি রাখা
+  setTimeout(function() {
+    const roadBoxes = Array.from(document.querySelectorAll("div")).filter(d =>
+      d.children.length >= 6 &&
+      d.textContent.includes("রোড ০১") &&
+      d.textContent.includes("ভোটার তালিকা থেকে বাদ")
+    );
+    roadBoxes.forEach((box, idx) => {
+      if (idx > 0) box.style.display = "none";
+    });
+  }, 300);
+})();
+</script>
+
 
 </body>
 </html>
