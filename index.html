@@ -5452,6 +5452,56 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   });
 })();
 </script>
+<style>
+  /* ১. আমাদের যোগ করা বাড়তি ডুপ্লিকেট লোগো বক্স সম্পূর্ণ বাতিল—মূল অ্যাপের নিজস্ব "লোগো ও ঠিকানা" ও "সেটিংস" অক্ষত থাকবে */
+  #nhsLogoUploadBox, #nhsTopLogoImg, #nhsDynamicBrandHeader {
+    display: none !important;
+  }
+
+  /* ২. মূল হেডারের লোগো খালি থাকলে ভাঙা "Logo" লেখা না দেখানো, আর লোগো আপলোড করলে বড় ও সুন্দর দেখানো */
+  header img[src=""], .topbar img[src=""], .hdr img[src=""],
+  header img:not([src]), .topbar img:not([src]), .hdr img:not([src]) {
+    display: none !important;
+  }
+  header img[src^="data:"], header img[src^="http"],
+  .topbar img[src^="data:"], .topbar img[src^="http"] {
+    display: block !important;
+    width: 84px !important;
+    height: 84px !important;
+    object-fit: contain !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    padding: 4px !important;
+    margin: 0 auto 6px !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2) !important;
+  }
+</style>
+<script>
+(function(){
+  // ৩. সেটিংসের ভেতরে যোগ হওয়া বাড়তি বক্সটি সম্পূর্ণ সরিয়ে ফেলা যাতে মূল সেটিংস হুবহু আসল থাকে
+  document.addEventListener("click", function(e) {
+    if ((e.target.textContent || "").includes("সেটিংস")) {
+      setTimeout(function() {
+        const extra = document.getElementById("nhsLogoUploadBox");
+        if (extra) extra.remove();
+      }, 260);
+    }
+  });
+
+  // ৪. মূল অ্যাপের নিজস্ব লোগো (যদি সেভ করা থাকে) ওয়েলকাম পর্দায়ও দেখানো
+  const curLogoImg = document.querySelector("header img, .topbar img, .hdr img");
+  const splash = document.getElementById("nhsCurtainSplash");
+  if (splash && curLogoImg && curLogoImg.src && (curLogoImg.src.startsWith("data:") || curLogoImg.src.startsWith("http"))) {
+    const first = splash.firstElementChild;
+    if (first) {
+      const im = document.createElement("img");
+      im.src = curLogoImg.src;
+      im.style.cssText = "display:block;width:125px;height:125px;object-fit:contain;border-radius:50%;background:#ffffff;padding:8px;margin:0 auto 16px;border:3px solid #fde047;box-shadow:0 10px 28px rgba(0,0,0,0.38);";
+      first.replaceWith(im);
+    }
+  }
+})();
+</script>
 
 
 </body>
