@@ -1,225 +1,209 @@
 (function(){
-  let pendingNidData = null;
+  const toEn = s => String(s || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const esc = v => String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const qp = new URLSearchParams(location.search);
+  const isMemberView = Boolean(qp.get("member"));
+  const isVoterView = qp.get("voter") === "1";
 
-  const extraCss = document.createElement("style");
-  extraCss.textContent = `
-    #pv .pvp, .pdfpage .pvp {
-      width: 135px !important; height: 165px !important; object-fit: cover !important;
-      object-position: top center !important; float: none !important; display: block !important;
-      margin: 10px auto 12px !important; border: 2px solid #0a6b6b !important;
-      border-radius: 8px !important; padding: 3px !important; background: #fff !important;
-    }
-    .qr-bottom { float: none !important; clear: both !important; text-align: center !important; margin: 14px auto 6px !important; }
-    .hdr-split {
-      display: flex !important; justify-content: space-between !important; align-items: center !important;
-      width: 100% !important; margin: 12px 0 6px !important; padding-bottom: 5px !important;
-      border-bottom: 1.5px solid #0a6b6b !important; font-size: 11pt !important; font-weight: 700 !important; color: #0f172a !important;
-    }
-    .smart-id-wrap {
-      width: 340px; margin: 8px auto; background: #ffffff; border-radius: 16px;
-      overflow: hidden; box-shadow: 0 10px 28px rgba(6,78,59,0.18); border: 1.5px solid #10b981;
-      font-family: 'Hind Siliguri', sans-serif; color: #0f172a; position: relative;
-    }
-    .smart-id-top {
-      background: linear-gradient(135deg, #065f46 0%, #10b981 100%);
-      padding: 16px 14px 44px; text-align: center; color: #ffffff; position: relative;
-      clip-path: polygon(0 0, 100% 0, 100% 76%, 50% 100%, 0 76%);
-    }
-    .smart-id-logo {
-      width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
-      border: 2px solid #fde047; background: #fff; margin: 0 auto 5px; display: block;
-    }
-    .smart-id-org { font-size: 15px; font-weight: 700; line-height: 1.25; letter-spacing: 0.2px; }
-    .smart-id-sub { font-size: 11px; opacity: 0.92; margin-top: 2px; letter-spacing: 0.8px; }
-    .smart-id-photo-box {
-      width: 104px; height: 104px; border-radius: 50%; margin: -38px auto 8px;
-      border: 4px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.16);
-      overflow: hidden; background: #ecfdf5; position: relative; z-index: 2;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .smart-id-photo-box img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-    .smart-id-name { text-align: center; font-size: 18px; font-weight: 700; color: #064e3b; padding: 0 12px; }
-    .smart-id-pill {
-      display: inline-flex; align-items: center; margin: 6px auto 13px; border-radius: 99px;
-      overflow: hidden; font-size: 13px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-    .pill-life { border: 1.5px solid #f59e0b; background: #fef3c7; color: #92400e; }
-    .pill-life .pill-num { background: #b45309; color: #ffffff; padding: 3px 12px; }
-    .pill-gen { border: 1.5px solid #10b981; background: #d1fae5; color: #065f46; }
-    .pill-gen .pill-num { background: #065f46; color: #ffffff; padding: 3px 12px; }
-    .pill-txt { padding: 3px 12px; }
-    .smart-id-info { padding: 0 20px 10px; font-size: 13px; }
-    .smart-id-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e2e8f0; gap: 8px; }
-    .smart-id-row span:first-child { color: #475569; font-weight: 600; white-space: nowrap; }
-    .smart-id-row span:last-child { color: #0f172a; font-weight: 700; text-align: right; }
-    .smart-id-bottom {
-      display: flex; justify-content: space-between; align-items: flex-end;
-      padding: 8px 20px 12px;
-    }
-    .smart-id-qr img { width: 74px; height: 74px; border: 1px solid #cbd5e1; padding: 2px; border-radius: 6px; background: #fff; display: block; }
-    .smart-id-sign { text-align: center; font-size: 11px; color: #334155; }
-    .smart-id-sign-line { width: 105px; border-top: 1.5px solid #065f46; margin-bottom: 3px; }
-    .smart-id-foot {
-      background: #065f46; color: #ffffff; text-align: center; font-size: 10.5px;
-      padding: 7px 10px; font-weight: 500;
-    }
-  `;
-  document.head.appendChild(extraCss);
-
-  function buildOfflineQr(text) {
-    const c = document.createElement("canvas");
-    c.width = 160; c.height = 160;
-    const ctx = c.getContext("2d");
-    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 160, 160);
-    ctx.fillStyle = "#000000";
-    let h = 2166136261;
-    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
-    const sz = 25, cell = 5, off = 17;
-    const finder = (gx, gy) => {
-      ctx.fillRect(off + gx * cell, off + gy * cell, 7 * cell, 7 * cell);
-      ctx.fillStyle = "#ffffff"; ctx.fillRect(off + (gx + 1) * cell, off + (gy + 1) * cell, 5 * cell, 5 * cell);
-      ctx.fillStyle = "#000000"; ctx.fillRect(off + (gx + 2) * cell, off + (gy + 2) * cell, 3 * cell, 3 * cell);
-    };
-    finder(0, 0); finder(sz - 7, 0); finder(0, sz - 7);
-    for (let y = 0; y < sz; y++) {
-      for (let x = 0; x < sz; x++) {
-        if ((x < 8 && y < 8) || (x > sz - 9 && y < 8) || (x < 8 && y > sz - 9)) continue;
-        h = (Math.imul(h ^ (x * 31 + y * 17), 16777619)) >>> 0;
-        if (h % 2 === 0) ctx.fillRect(off + x * cell, off + y * cell, cell, cell);
-      }
-    }
-    return c.toDataURL("image/png");
-  }
-
-  function resolveImgUrl(val) {
-    if (!val) return "";
-    if (val.startsWith("data:")) return val;
-    const raw = localStorage.getItem("nhs_blob_" + val) || localStorage.getItem(val);
-    if (raw && raw.startsWith("data:")) return raw;
-    return "/_blob/" + val;
-  }
-
-  openIdCard = function(s) {
-    const r = rows.find(x => x.s === s);
-    if (!r) return;
-    const bgStore = db._get("member_blood_groups", {});
-    const bloodVal = bgStore[String(r.s)] || r.bg || "-";
-    const logoUrl = resolveImgUrl(typeof ORGLOGO !== "undefined" ? ORGLOGO : "");
-    const photoUrl = resolveImgUrl(r.ph);
-    const qrUrl = buildOfflineQr([ORG_NAME, "No:" + r.n, r.nm, "BG:" + bloodVal, (r.p && r.p.at(0)) || ""].join("|"));
-    const addrTxt = [r.b, r.h ? "বাড়ী " + r.h : "", r.r ? "রোড " + r.r : "", r.fl ? "ফ্ল্যাট " + r.fl : ""].filter(Boolean).join(", ") || "-";
-    const phTxt = (r.p || []).map(fmtPhone).join(", ") || "-";
-    const orgAddrTxt = (typeof ORGADDR !== "undefined" && ORGADDR) ? ORGADDR : (typeof DEFADDR !== "undefined" ? DEFADDR : "");
-    const typeText = r.l ? "★ আজীবন সদস্য" : "● সাধারণ সদস্য";
-
-    dlg.innerHTML = `<h2>🪪 ডিজিটাল পরিচয়পত্র</h2>
-      <div id="smartIdCardArea" class="smart-id-wrap">
-        <div class="smart-id-top">
-          ${logoUrl ? `<img class="smart-id-logo" src="${logoUrl}">` : ""}
-          <div class="smart-id-org">${esc(ORG_NAME)}</div>
-          <div class="smart-id-sub">সদস্য পরিচয়পত্র • MEMBER ID CARD</div>
-        </div>
-        <div class="smart-id-photo-box">
-          ${photoUrl ? `<img src="${photoUrl}">` : `<span style="font-size:38px;">👤</span>`}
-        </div>
-        <div class="smart-id-name">${esc(r.nm)}</div>
-        <div style="text-align:center;">
-          <div class="smart-id-pill ${r.l ? "pill-life" : "pill-gen"}">
-            <span class="pill-txt">${typeText}</span>
-            <span class="pill-num">${esc(r.n)}</span>
-          </div>
-        </div>
-        <div class="smart-id-info">
-          <div class="smart-id-row"><span>পিতার নাম :</span><span>${esc(r.f || "-")}</span></div>
-          <div class="smart-id-row"><span>রক্তের গ্রুপ :</span><span style="color:#b91c1c;">${esc(bloodVal)}</span></div>
-          <div class="smart-id-row"><span>ঠিকানা :</span><span>${esc(addrTxt)}</span></div>
-          <div class="smart-id-row"><span>মোবাইল :</span><span>${esc(phTxt)}</span></div>
-        </div>
-        <div class="smart-id-bottom">
-          <div class="smart-id-qr"><img src="${qrUrl}"></div>
-          <div class="smart-id-sign"><div class="smart-id-sign-line"></div>অনুমোদিত স্বাক্ষর</div>
-        </div>
-        <div class="smart-id-foot">${esc(orgAddrTxt)}</div>
-      </div>
-      <div class="bar">
-        <button class="btn" id="dlSmartIdBtn">📥 ডাউনলোড (HD PNG)</button>
-        <button class="btn ghost" onclick="window.print()">🖨️ প্রিন্ট</button>
-        <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
-      </div>`;
-    dlg.showModal();
-
-    document.getElementById("dlSmartIdBtn").onclick = () => {
-      const c = document.createElement("canvas");
-      c.width = 680; c.height = 1060;
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 680, 1060);
-
-      const grad = ctx.createLinearGradient(0, 0, 680, 260);
-      grad.addColorStop(0, "#065f46"); grad.addColorStop(1, "#10b981");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(0, 0); ctx.lineTo(680, 0); ctx.lineTo(680, 220); ctx.lineTo(340, 290); ctx.lineTo(0, 220);
-      ctx.closePath(); ctx.fill();
-
-      ctx.fillStyle = "#ffffff"; ctx.textAlign = "center";
-      ctx.font = "bold 30px sans-serif";
-      ctx.fillText(ORG_NAME, 340, 95);
-      ctx.font = "20px sans-serif";
-      ctx.fillText("সদস্য পরিচয়পত্র • MEMBER ID CARD", 340, 132);
-
-      ctx.fillStyle = "#064e3b"; ctx.font = "bold 34px sans-serif";
-      ctx.fillText(r.nm, 340, 465);
-
-      ctx.fillStyle = r.l ? "#fef3c7" : "#d1fae5";
-      ctx.fillRect(160, 485, 250, 44);
-      ctx.fillStyle = r.l ? "#b45309" : "#065f46";
-      ctx.fillRect(410, 485, 110, 44);
-
-      ctx.fillStyle = r.l ? "#92400e" : "#065f46";
-      ctx.font = "bold 22px sans-serif";
-      ctx.fillText(r.l ? "★ আজীবন সদস্য" : "● সাধারণ সদস্য", 285, 514);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(String(r.n), 465, 514);
-
-      const rowsData = [
-        ["পিতার নাম :", r.f || "-"],
-        ["রক্তের গ্রুপ :", bloodVal],
-        ["ঠিকানা :", addrTxt],
-        ["মোবাইল :", phTxt]
-      ];
-      let yPos = 580;
-      rowsData.forEach(([k, v]) => {
-        ctx.textAlign = "left"; ctx.fillStyle = "#475569"; ctx.font = "bold 23px sans-serif";
-        ctx.fillText(k, 48, yPos);
-        (function(){
-  if (new URLSearchParams(location.search).get("voter") !== "1") return;
-
-  const voterTimer = setInterval(function() {
-    // ১. পাসওয়ার্ড লক পর্দা থাকলে তা সরিয়ে দেওয়া
-    document.querySelectorAll("div, dialog, section").forEach(el => {
-      if ((el.textContent || "").includes("পাসওয়ার্ড") && el.querySelector("input[type='password']")) {
-        el.remove();
+  // ১. পুরোনো সব সংঘর্ষকারী CSS ও অযাচিত বক্স সম্পূর্ণ পরিষ্কার করা
+  function purgeOldConflicts() {
+    document.querySelectorAll("style").forEach(st => {
+      const t = st.textContent || "";
+      if (
+        t.includes("nhsMoreDrawer") ||
+        t.includes("nhsSmartThemeStyle") ||
+        t.includes("nhsCleanThStyle") ||
+        t.includes("nhsOptThStyle") ||
+        t.includes("nhsRealBrandLogo") ||
+        t.includes("nhsLogoUploadBox")
+      ) {
+        st.remove();
       }
     });
-
-    // ২. মূল পর্দা দৃশ্যমান করা এবং স্বয়ংক্রিয়ভাবে ভোটার তালিকা চালু করা
-    if (document.body) {
-      document.body.style.overflow = "auto";
-      document.body.style.visibility = "visible";
-    }
-
-    const voterFilterBtn = Array.from(document.querySelectorAll("button")).find(b => {
-      const tx = (b.textContent || "").trim();
-      return tx.startsWith("ভোটার") && !tx.includes("বাদ") && !tx.includes("লিংক");
+    [
+      "nhsMoreDrawer", "nhsMoreMenuBtn", "nhsCleanToolsBox", "nhsCleanToolsBtn",
+      "nhsCompactMenuBtn", "nhsCompactMenuBox", "nhsNeatToggleBtn", "nhsLogoUploadBox",
+      "nhsOrgCustomBox", "nhsCleanThBox", "nhsSettingsThemeBox", "nhsThemeBar",
+      "nhsTopLogoImg", "nhsRealBrandLogo", "nhsCenterFinalLogo", "nhsDynamicBrandHeader",
+      "nhsSingleMenuBtn", "nhsSingleMenuPanel"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
     });
+  }
+  purgeOldConflicts();
 
-    if (voterFilterBtn && !voterFilterBtn.dataset.autoOpened) {
-      voterFilterBtn.dataset.autoOpened = "1";
-      voterFilterBtn.click();
-      clearInterval(voterTimer);
+  // ২. পর্দা খোলার স্মার্ট ওয়েলকাম স্ক্রিন (২ সেকেন্ড পর মসৃণভাবে খুলবে)
+  if (!isMemberView && !isVoterView && !document.getElementById("nhsMasterSplash")) {
+    const savedLogo = localStorage.getItem("nhs_master_logo") || "";
+    const orgTitle = document.querySelector("header h1, .topbar h1")?.textContent?.trim() || "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ";
+    const sp = document.createElement("div");
+    sp.id = "nhsMasterSplash";
+    sp.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:linear-gradient(135deg,#064e3b 0%,#0a6b6b 60%,#042f2e 100%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;transition:opacity .55s ease;font-family:sans-serif;";
+    sp.innerHTML = `
+      ${savedLogo.startsWith("data:image/") ? `<img src="${savedLogo}" style="width:130px;height:130px;object-fit:contain;border-radius:50%;background:#fff;padding:7px;margin-bottom:14px;border:3px solid #fde047;box-shadow:0 8px 24px rgba(0,0,0,.35);">` : `<div style="font-size:3.2rem;margin-bottom:12px;">🏛️</div>`}
+      <div style="font-size:1.32rem;font-weight:800;line-height:1.4;max-width:420px;">${esc(orgTitle)}</div>
+      <div style="font-size:.86rem;color:#a7f3d0;margin-top:6px;">ডিজিটাল সদস্য ও তথ্য ব্যবস্থাপনা পোর্টাল</div>
+      <div style="position:absolute;bottom:22px;font-size:.82rem;color:#fde047;font-weight:700;">Developed & Powered by S. M. Forkan Uddin</div>
+    `;
+    document.body.appendChild(sp);
+    sp.onclick = () => sp.remove();
+    setTimeout(() => { sp.style.opacity = "0"; setTimeout(() => sp.remove(), 550); }, 2000);
+  }
+
+  // ৩. ভোটার লিংক (?voter=1) পাসওয়ার্ড ছাড়াই সরাসরি খোলা ও তালিকা প্রদর্শন
+  if (isVoterView) {
+    const vt = setInterval(function() {
+      document.querySelectorAll("div, dialog, section").forEach(el => {
+        if ((el.textContent || "").includes("পাসওয়ার্ড") && el.querySelector("input[type='password']")) {
+          el.remove();
+        }
+      });
+      if (document.body) {
+        document.body.style.overflow = "auto";
+        document.body.style.visibility = "visible";
+      }
+      const vBtn = Array.from(document.querySelectorAll("button")).find(b => {
+        const tx = (b.textContent || "").trim();
+        return tx.startsWith("ভোটার") && !tx.includes("বাদ") && !tx.includes("লিংক");
+      });
+      if (vBtn && !vBtn.dataset.voterOpened) {
+        vBtn.dataset.voterOpened = "1";
+        vBtn.click();
+        clearInterval(vt);
+      }
+    }, 250);
+    setTimeout(() => clearInterval(vt), 5000);
+  }
+
+  // ৪. বড় লোগো প্রদর্শন ও পরিচ্ছন্ন ড্যাশবোর্ড মেনুবার (ভেতরে "লোগো ও ঠিকানা" বাটন ছাড়া)
+  function applyCleanHeaderAndMenu() {
+    purgeOldConflicts();
+    const savedLogo = localStorage.getItem("nhs_master_logo") || "";
+    const hdr = document.querySelector("header, .topbar, .hdr");
+    if (hdr && savedLogo.startsWith("data:image/")) {
+      let topLogo = document.getElementById("nhsMasterHeaderLogo");
+      if (!topLogo) {
+        const h1 = hdr.querySelector("h1");
+        if (h1) {
+          topLogo = document.createElement("img");
+          topLogo.id = "nhsMasterHeaderLogo";
+          h1.insertAdjacentElement("beforebegin", topLogo);
+        }
+      }
+      if (topLogo) {
+        topLogo.src = savedLogo;
+        topLogo.style.cssText = "display:block !important;width:84px !important;height:84px !important;object-fit:contain !important;border-radius:50% !important;background:#fff !important;padding:4px !important;margin:0 auto 6px !important;border:2px solid #fde047 !important;box-shadow:0 3px 10px rgba(0,0,0,.22) !important;";
+      }
     }
-  }, 250);
 
-  setTimeout(() => clearInterval(voterTimer), 5000);
-})();
+    if (!hdr || isMemberView || isVoterView || document.getElementById("nhsCleanMenuBtn")) return;
+    const sInp = Array.from(hdr.querySelectorAll("input")).find(i => (i.placeholder || "").includes("খুঁজুন") || (i.placeholder || "").includes("নাম"));
+    if (!sInp) return;
+
+    let sRow = sInp;
+    while (sRow.parentElement && sRow.parentElement !== hdr) sRow = sRow.parentElement;
+
+    const belowItems = [];
+    let nx = sRow.nextElementSibling;
+    while (nx) {
+      if (nx.id !== "nhsCleanMenuBtn" && nx.id !== "nhsCleanMenuBox") belowItems.push(nx);
+      nx = nx.nextElementSibling;
+    }
+
+    if (belowItems.length > 0) {
+      const mBtn = document.createElement("button");
+      mBtn.id = "nhsCleanMenuBtn";
+      mBtn.type = "button";
+      mBtn.style.cssText = "display:block;width:100%;margin-top:8px;padding:7px 12px;background:#065f46;color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:8px;font-weight:700;font-size:.86rem;cursor:pointer;text-align:center;";
+      mBtn.textContent = "☰ মেনু ও ফিল্টার দেখুন ▾";
+
+      const mBox = document.createElement("div");
+      mBox.id = "nhsCleanMenuBox";
+      mBox.style.cssText = "display:none;margin-top:8px;";
+
+      belowItems.forEach(el => {
+        Array.from(el.querySelectorAll("button")).forEach(b => {
+          if ((b.textContent || "").includes("লোগো ও ঠিকানা")) b.remove();
+        });
+        mBox.appendChild(el);
+      });
+
+      sRow.insertAdjacentElement("afterend", mBtn);
+      mBtn.insertAdjacentElement("afterend", mBox);
+
+      mBtn.onclick = function(e) {
+        e.preventDefault();
+        const open = mBox.style.display === "block";
+        mBox.style.display = open ? "none" : "block";
+        mBtn.textContent = open ? "☰ মেনু ও ফিল্টার দেখুন ▾" : "✕ মেনু বন্ধ করুন ▴";
+      };
+    }
+  }
+  setTimeout(applyCleanHeaderAndMenu, 250);
+
+  // ৫. সেটিংস পপআপের একদম নিচে ("বন্ধ" বাটনের ওপরে) লোগো আপলোড ও পরিবর্তনের ঘর
+  document.addEventListener("click", function(e) {
+    if ((e.target.textContent || "").includes("সেটিংস")) {
+      setTimeout(function() {
+        if (document.getElementById("nhsMasterLogoPicker")) return;
+        const closeBtn = Array.from(document.querySelectorAll("button")).find(b => (b.textContent || "").trim() === "বন্ধ");
+        if (!closeBtn) return;
+
+        const box = document.createElement("div");
+        box.id = "nhsMasterLogoPicker";
+        box.style.cssText = "margin:10px 0;padding:10px;background:#ecfdf5;border:1.5px solid #065f46;border-radius:8px;text-align:left;color:#0f172a;font-size:.86rem;";
+        box.innerHTML = `
+          <div style="font-weight:700;color:#064e3b;margin-bottom:6px;">🖼️ প্রতিষ্ঠানের লোগো আপলোড / পরিবর্তন:</div>
+          <input id="nhsMasterLogoFile" type="file" accept="image/*" style="width:100%;">
+        `;
+        closeBtn.insertAdjacentElement("beforebegin", box);
+
+        document.getElementById("nhsMasterLogoFile").onchange = function(ev) {
+          const f = ev.target.files && ev.target.files.at(0);
+          if (!f) return;
+          const rd = new FileReader();
+          rd.onload = rEv => {
+            const img = new Image();
+            img.onload = () => {
+              const cv = document.createElement("canvas");
+              cv.width = 240; cv.height = 240;
+              cv.getContext("2d").drawImage(img, 0, 0, 240, 240);
+              localStorage.setItem("nhs_master_logo", cv.toDataURL("image/png", 0.92));
+              applyCleanHeaderAndMenu();
+              alert("প্রতিষ্ঠানের লোগো সফলভাবে আপলোড হয়েছে!");
+            };
+            img.src = rEv.target.result;
+          };
+          rd.readAsDataURL(f);
+        };
+      }, 250);
+    }
+  });
+
+  // ৬. ছবিসহ লিংক, ফিরতি WhatsApp/Email বার্তা ও নির্বাচন কমিশন (EC) স্টাইল ডাউনলোড কপি
+  setInterval(function() {
+    const msgTa = document.getElementById("mWaMsg");
+    if (msgTa && msgTa.value.includes("member=") && !msgTa.value.includes("&photo=")) {
+      const mMatch = msgTa.value.match(/member=([০-৯\d]+)/);
+      if (mMatch && typeof rows !== "undefined" && Array.isArray(rows)) {
+        const mNo = toEn(mMatch.at(1));
+        const mem = rows.find(r => toEn(r.n) === mNo);
+        const pUrl = mem ? (mem.p || mem.img || mem.photo || "") : "";
+        if (pUrl.startsWith("http")) {
+          msgTa.value = msgTa.value.replace(/(https?:\/\/[^\s]+)/, "$1&photo=" + encodeURIComponent(pUrl));
+          msgTa.dispatchEvent(new Event("input"));
+        }
+      }
+    }
+
+    const subBtn = document.getElementById("uf_sub");
+    if (subBtn && window.__nhsUploadedPhotoUrl && subBtn.href) {
+      const pLine = encodeURIComponent("\nছবির লিংক: " + window.__nhsUploadedPhotoUrl);
+      if (!subBtn.href.includes(encodeURIComponent(window.__nhsUploadedPhotoUrl))) subBtn.href += pLine;
+      const emBtn = document.getElementById("retEmBtn");
+      if (emBtn && emBtn.href && !emBtn.href.includes(encodeURIComponent(window.__nhsUploadedPhotoUrl))) emBtn.href += pLine;
+    }
+
+
 
