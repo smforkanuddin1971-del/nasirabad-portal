@@ -5502,6 +5502,26 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   }
 })();
 </script>
+<style>
+  /* ভাঙা খালি Logo লেখা লুকানো */
+  img[alt="Logo"][src=""], img[alt="Logo"]:not([src]) { display: none !important; }
+</style>
+<script>
+(function(){
+  // পার্ট ১: মেনুবারের ভেতর থেকে "লোগো ও ঠিকানা" বাটনটি সম্পূর্ণ বাদ দেওয়া
+  function cleanMenuLogoBtn() {
+    const wrap = document.getElementById("nhsFinalMenuWrap");
+    if (!wrap) return;
+    Array.from(wrap.querySelectorAll("button")).forEach(b => {
+      if ((b.textContent || "").includes("লোগো ও ঠিকানা")) {
+        b.remove();
+      }
+    });
+  }
+  cleanMenuLogoBtn();
+  setTimeout(cleanMenuLogoBtn, 400);
+})();
+</script>
 
 
 </body>
