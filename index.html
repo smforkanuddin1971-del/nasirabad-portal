@@ -5213,6 +5213,71 @@ if (new URLSearchParams(location.search).get("voter") === "1") {
   });
 })();
 </script>
+<script>
+(function(){
+  if (new URLSearchParams(location.search).get("member") || new URLSearchParams(location.search).get("voter") === "1") return;
+
+  // ১. আগের সব বাড়তি বাটন ও সাদা খালি ঘর পরিষ্কার করা (মূল অ্যাপের আসল রঙ অপরিবর্তিত রেখে)
+  ["nhsSmartThemeStyle","nhsThemeBar","nhsMoreDrawer","nhsMoreMenuBtn","nhsCleanToolsBox","nhsCleanToolsBtn","nhsCompactMenuBtn","nhsCompactMenuBox","nhsNeatToggleBtn"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  });
+
+  setTimeout(function() {
+    const hdr = document.querySelector("header, .topbar, .hdr");
+    if (!hdr) return;
+
+    // আগের সরানো অংশ থাকলে তা আগে জায়গামতো ফিরিয়ে আনা
+    const oldPanel = document.getElementById("nhsSingleMenuPanel");
+    if (oldPanel) {
+      while (oldPanel.firstChild) oldPanel.parentNode.insertBefore(oldPanel.firstChild, oldPanel);
+      oldPanel.remove();
+    }
+    const oldBtn = document.getElementById("nhsSingleMenuBtn");
+    if (oldBtn) oldBtn.remove();
+
+    // সার্চ বক্স খুঁজে বের করা
+    const searchInp = Array.from(hdr.querySelectorAll("input")).find(i => (i.placeholder || "").includes("খুঁজুন") || (i.placeholder || "").includes("নাম"));
+    if (!searchInp) return;
+
+    // সার্চ বক্সের সারি পর্যন্ত রেখে নিচের সব অংশ ১টি মেনু বাটনের ভেতরে রাখা
+    let searchContainer = searchInp;
+    while (searchContainer.parentElement && searchContainer.parentElement !== hdr) {
+      searchContainer = searchContainer.parentElement;
+    }
+
+    const belowItems = [];
+    let nxt = searchContainer.nextElementSibling;
+    while (nxt) {
+      belowItems.push(nxt);
+      nxt = nxt.nextElementSibling;
+    }
+
+    if (belowItems.length > 0) {
+      const mBtn = document.createElement("button");
+      mBtn.id = "nhsFinalMenuToggle";
+      mBtn.type = "button";
+      mBtn.style.cssText = "display:block;width:100%;margin-top:8px;padding:7px 12px;background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;font-weight:700;font-size:.86rem;cursor:pointer;text-align:center;";
+      mBtn.textContent = "☰ মেনু ও ফিল্টার দেখুন ▾";
+
+      const mWrap = document.createElement("div");
+      mWrap.id = "nhsFinalMenuWrap";
+      mWrap.style.cssText = "display:none;margin-top:8px;";
+
+      belowItems.forEach(el => mWrap.appendChild(el));
+      searchContainer.insertAdjacentElement("afterend", mBtn);
+      mBtn.insertAdjacentElement("afterend", mWrap);
+
+      mBtn.onclick = function(e) {
+        e.preventDefault();
+        const isClosed = mWrap.style.display === "none";
+        mWrap.style.display = isClosed ? "block" : "none";
+        mBtn.textContent = isClosed ? "✕ মেনু বন্ধ করুন ▴" : "☰ মেনু ও ফিল্টার দেখুন ▾";
+      };
+    }
+  }, 200);
+})();
+</script>
 
 
 </body>
