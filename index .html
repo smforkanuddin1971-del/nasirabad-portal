@@ -1,0 +1,2965 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>সদস্য খোঁজ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2f6f5; --surface:#ffffff; --ink:#15262a; --muted:#587076; --line:#d3dedc;
+  --accent:#0a6b6b; --danger:#b3261e; --warn:#b26a00; --accent-ink:#ffffff; --tab:#e2efed; --mark:#ffe58a; --focus:#0a6b6b;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1a1c; --surface:#152326; --ink:#e5eeed; --muted:#9bb0b3; --line:#294045;
+    --accent:#5cc7bc; --danger:#ff8a80; --warn:#ffb74d; --accent-ink:#05211f; --tab:#1d3438; --mark:#6d5c05; --focus:#5cc7bc;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1a1c; --surface:#152326; --ink:#e5eeed; --muted:#9bb0b3; --line:#294045;
+  --accent:#5cc7bc; --danger:#ff8a80; --warn:#ffb74d; --accent-ink:#05211f; --tab:#1d3438; --mark:#6d5c05; --focus:#5cc7bc;
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 150px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans Bengali","Hind Siliguri","Kalpurush","Nirmala UI","Vrinda",system-ui,sans-serif;
+  font-size:16px;line-height:1.6;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:900px;margin:0 auto;padding:0 14px 40px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);padding:14px 0 10px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:24px;line-height:1.3;font-weight:700}
+.sub{margin:2px 0 12px;color:var(--muted);font-size:15px}
+.sbox{position:relative}
+.sbox input{width:100%;height:56px;font:inherit;font-size:18px;color:var(--ink);background:var(--surface);
+  border:2px solid var(--accent);border-radius:12px;padding:0 52px 0 16px;appearance:none;-webkit-appearance:none}
+.sbox input::placeholder{color:var(--muted)}
+.sbox input::-webkit-search-cancel-button{display:none}
+.clear{position:absolute;right:6px;top:6px;width:44px;height:44px;border:0;border-radius:10px;background:none;color:var(--muted);font-size:26px;line-height:1;cursor:pointer}
+.clear[hidden]{display:none}
+input:focus-visible,button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.hint{margin:8px 0 0;color:var(--muted);font-size:14px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.chip{font:inherit;font-size:15px;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.sort{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:15px;color:var(--muted)}
+.sort select{font:inherit;font-size:15px;min-height:40px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.count{margin:14px 2px 8px;color:var(--muted);font-size:15px}
+ul.list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.m{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid var(--line)}
+.m:last-child{border-bottom:0}
+.head{display:grid;grid-template-columns:78px 1fr;gap:14px;align-items:stretch;text-align:left;width:100%;
+  font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.no{background:var(--tab);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 4px;font-size:26px;font-weight:700;line-height:1.1}
+.no small{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:4px;line-height:1.2}
+.who{padding:12px 0;display:flex;flex-direction:row;align-items:center;gap:12px;min-width:0}
+.tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.who b{font-size:18px;font-weight:600;line-height:1.4}
+.ad{color:var(--muted);font-size:15px;line-height:1.5}
+.life{display:inline-block;align-self:flex-start;margin-top:4px;font-size:13px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:0 8px;line-height:1.6}
+.phones{display:flex;flex-direction:column;gap:6px;justify-content:center;padding:10px 14px}
+.call{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:8px;color:var(--accent);text-decoration:none;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+.nop{color:var(--muted);font-size:14px}
+.more{grid-column:1/-1;padding:2px 16px 16px 92px;border-top:1px dashed var(--line)}
+.more[hidden]{display:none}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:12px 0}
+dt{color:var(--muted);font-size:15px}
+dd{margin:0}
+.cp{font:inherit;font-size:15px;min-height:40px;padding:0 14px;border:1px solid var(--accent);border-radius:8px;background:none;color:var(--accent);cursor:pointer}
+.pic{flex:none;width:52px;height:52px;border-radius:8px;background:var(--tab);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;overflow:hidden}
+.pic img{width:100%;height:100%;object-fit:cover}
+.big{width:120px;height:120px;border-radius:10px;object-fit:cover;display:block;margin-top:12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{font:inherit;font-size:15px;min-height:40px;padding:0 14px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer;font-weight:600}
+.btn.ghost{background:none;color:var(--accent)}
+.btn.warn{background:none;color:var(--danger);border-color:var(--danger)}
+.btn:disabled{opacity:.6}
+dialog{width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:18px;font:inherit}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{margin:0 0 12px;font-size:20px}
+dialog p{margin:6px 0}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg label{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--muted)}
+.fg label.w{grid-column:1/-1}
+.fg input,.fg select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:42px}
+.fg input[type=checkbox]{min-height:0;width:20px;height:20px;vertical-align:middle}
+.msg{font-size:15px;color:var(--muted)}
+.lock{padding:48px 8px;text-align:center}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+.rs{margin:0 0 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 14px 6px}
+.rs summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}
+.rs table{width:100%;border-collapse:collapse;margin:2px 0 8px}
+.rs th,.rs td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}
+.rs th:first-child,.rs td:first-child{text-align:left}
+.pdfpage{position:fixed;left:-10000px;top:0;width:794px;min-height:600px;padding:28px 32px;background:#fff;color:#000;font-size:13pt;line-height:1.5}
+.pdfpage.land{width:1123px}
+.pdfpage.land table{table-layout:fixed}
+.pdfpage.land td,.pdfpage.land th{line-height:1.25;padding:2px 5px}
+.pdfpage .mp{width:50px;height:62px;object-fit:cover;display:block;margin:0 auto}
+.pdfpage h2{margin:0 0 4px;font-size:18pt}
+.sec1 td{background:#d9d9d9;font-weight:700}
+.sec2 td{background:#efefef;font-weight:600}
+.pdfpage p{margin:0 0 10px}
+.pdfpage table{width:100%;border-collapse:collapse}
+.pdfpage th,.pdfpage td{border:1px solid #444;padding:4px 6px;text-align:left;vertical-align:top}
+.pdfpage .pvp{width:110px;height:110px;object-fit:cover;float:right}
+.pdfpage td{font-size:13pt}
+#pv,.pdfpage{font-family:var(--pf,"Noto Sans Bengali","Hind Siliguri","Kalpurush","Nirmala UI","Vrinda",system-ui,sans-serif)}
+.pdfpage th{font-size:13pt}
+.pdfpage .sec1 td{font-size:13pt}
+.pdfpage .sec2 td{font-size:13pt}
+.pdfpage td.c{text-align:center;vertical-align:middle}
+.pdfpage .pg{text-align:center;color:#555;font-size:10pt;margin-top:10px}
+.pgin{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--muted);margin-top:8px}
+.pgin input{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:42px}
+.pgl{max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:4px 10px;margin:8px 0;font-size:14px;color:var(--muted)}
+.pgl p{margin:4px 0}
+.docimg{max-width:100%;max-height:70vh;display:block;margin:8px auto;border:1px solid var(--line)}
+.docpg{width:100%;height:auto;display:block;margin:8px 0;border:1px solid var(--line);background:#fff}
+.docfr{width:100%;height:60vh;border:1px solid var(--line)}
+.brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px}
+.bt{text-align:center}
+.bt .sub{margin:2px 0 0}
+.logo{height:52px;width:auto;max-width:90px;object-fit:contain}
+.logo[hidden]{display:none}
+.hd{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
+.ht{text-align:center}
+.ht p{margin:0;font-size:16pt}
+.hd .lg{height:54px;width:auto;max-width:100px;object-fit:contain}
+#pv thead th,.pdfpage thead th{text-align:center}
+#pvw{width:min(1040px,calc(100vw - 12px));max-height:calc(100dvh - 12px);padding:10px;background:var(--bg)}
+.pvbar{position:sticky;top:-10px;z-index:2;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;background:var(--bg)}
+.pvbar span{color:var(--muted);font-size:14px;flex:1;min-width:140px}
+.shw{overflow:hidden;margin:0 auto 12px;box-shadow:0 1px 8px rgba(0,0,0,.4)}
+.shw.over{outline:3px solid var(--danger)}
+.pdfpage.sheet{position:relative;left:0;top:0;margin:0}
+.tagd{color:var(--danger);border-color:var(--danger);margin-left:6px}
+.pgin textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:60px}
+.m.dead{background:rgba(179,38,30,.08);box-shadow:inset 4px 0 0 var(--danger)}
+.m.dead .no{color:var(--danger)}
+.m.nvr{box-shadow:inset 4px 0 0 var(--warn)}
+.tagw{color:var(--warn);border-color:var(--warn)}
+.fg textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:70px}
+.qres{max-height:220px;overflow:auto;margin:8px 0}
+.qres p{margin:4px 0;font-size:15px}
+.qres .bad{color:var(--danger)}
+.ht p.ad2{font-size:13pt;font-weight:700;margin:2px 0 0}
+.ht p.tb{display:inline-block;border:2px solid #000;border-radius:12px;padding:6px 24px;font-weight:700;font-size:16pt;margin:8px 0 4px}
+.tabs{display:flex;gap:8px;margin:0 0 10px}
+.tabs .chip{flex:1;font-weight:600}
+#pv{display:none}
+@media print{
+  @page{margin:12mm}
+  @page land{size:A4 landscape;margin:7mm}
+  .pvpage.land{page:land}
+  #pv .land table{table-layout:fixed}
+  #pv .land td,#pv .land th{line-height:1.25;padding:2px 5px}
+  #pv .mp{width:50px;height:62px;object-fit:cover;display:block;margin:0 auto}
+  body{background:#fff;color:#000}
+  body::before,.wrap,dialog{display:none!important}
+  #pv{display:block;color:#000;font-size:13pt}
+  #pv h2{margin:0 0 4px;font-size:18pt}
+  #pv p{margin:0 0 10px}
+  #pv table{width:100%;border-collapse:collapse}
+  #pv th,#pv td{border:1px solid #444;padding:4px 6px;text-align:left;vertical-align:top}
+  #pv thead{display:table-header-group}
+  #pv tr{break-inside:avoid}
+  .pvpage{break-after:page;page-break-after:always}
+  .pvpage:last-child{break-after:auto;page-break-after:auto}
+  #pv .pg{text-align:center;color:#555;font-size:10pt;margin-top:8px}
+  #pv td{font-size:13pt}
+  #pv th{font-size:13pt}
+  #pv .sec1 td{font-size:13pt}
+  #pv .sec2 td{font-size:13pt}
+  #pv td.c{text-align:center;vertical-align:middle}
+  .pvp{width:110px;height:110px;object-fit:cover;float:right}
+}
+.empty button{margin-top:10px}
+@media (max-width:600px){
+  .fg{grid-template-columns:1fr}
+  h1{font-size:21px}
+  .m{grid-template-columns:1fr}
+  .phones{flex-direction:row;flex-wrap:wrap;padding:0 14px 12px 92px}
+  .more{padding-left:16px}
+  .sort{margin-left:0;width:100%}
+  .sort select{flex:1}
+}
+@media (prefers-reduced-motion:no-preference){ .more:not([hidden]){animation:open .15s ease-out} }
+@keyframes open{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><img id="logo" class="logo" alt="" hidden><div class="bt"><h1>নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ</h1><p class="sub">সদস্য তালিকা ২০২৩-২৪</p></div></div>
+    <div class="tabs" id="tabs" role="group" aria-label="দৃশ্য"></div>
+    <div class="sbox">
+      <input id="q" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false"
+        placeholder="নাম, সদস্য নং, মোবাইল বা বিল্ডিং লিখুন" aria-label="সদস্য খুঁজুন">
+      <button class="clear" id="clr" type="button" aria-label="লেখা মুছুন" hidden>×</button>
+    </div>
+    <p class="hint" id="hint">শুধু সংখ্যা লিখলে সদস্য নং ধরা হবে। অন্য উদাহরণ: ইদ্রিছ, রোড ২, বাড়ী ২৭, ০১৮১৯৩১২১৭৭</p>
+    <div class="filters" id="filters" role="group" aria-label="ফিল্টার"></div>
+    <div class="bar" id="bar"></div>
+  </header>
+  <p class="count" id="count" aria-live="polite"></p>
+  <ul class="list" id="list"></ul>
+</div>
+<dialog id="dlg"></dialog>
+<dialog id="pvw"></dialog>
+<div id="pv"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+const BN = "০১২৩৪৫৬৭৮৯";
+const toEn = s => String(s).replace(/[০-৯]/g, c => String(BN.indexOf(c)));
+const toBn = s => String(s).replace(/[0-9]/g, d => BN[d]);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const FOLD = {"ী":"ি","ূ":"ু","ণ":"ন","শ":"স","ষ":"স","ঁ":"","\u200c":"","\u200d":"","়":"","ঃ":""};
+function foldMap(s){
+  let t = "", m = [];
+  for (let i = 0; i < s.length; i++){
+    let c = s[i];
+    const d = BN.indexOf(c);
+    if (d >= 0) c = String(d);
+    else if (Object.prototype.hasOwnProperty.call(FOLD, c)) c = FOLD[c];
+    else c = c.toLowerCase();
+    for (const ch of c){ t += ch; m.push(i); }
+  }
+  return {t, m};
+}
+const fold = s => foldMap(s || "").t;
+const TITLES = /^(জনাব|মিসেস|মিস|মিসস|আলহাজ্ব|হাজী|ডাঃ|ডা\.|ডা:|ডা|অধ্যাপক|প্রকৌশলী|এডভোকেট|ক্যাপ্টেন|কেপ্টেন|মোঃ|মো:|মোহাম্মদ|মুহাম্মদ|মোহাম্মাদ|মোছাম্মৎ|মোছাম্মদ|\s)+/;
+const mkRow = r => {
+  const houseNums = (toEn(r.h).match(/\d+/g) || []).map(Number);
+  return Object.assign({}, r, {
+    f_: {name: fold(r.nm), father: fold(r.f), mother: fold(r.m), bld: fold(r.b), job: fold(r.j), age: fold(r.a), flat: fold(r.fl), email: fold(r.e || ""), na: fold(r.na || "")},
+    phones: r.p.join(" "),
+    noN: parseInt(toEn(r.n), 10),
+    roadN: parseInt(toEn(r.r), 10),
+    houseNums: houseNums,
+    houseF: fold(r.h),
+    key: r.nm.replace(TITLES, "")
+  });
+};
+let rows = [];
+const ROADS = ["০১","০২","০৩","০৪","০৫","০৬"];
+const BADI = "বাড\u09bf", ROAD = "রোড";
+const state = {q: "", road: "", life: "", st: "", sort: "rel", open: new Set(), view: "m", hsort: "hn", hb: "1", gopen: new Set()};
+
+function parseQuery(q){
+  let t = fold(q).replace(/[,;|]+/g, " ");
+  const cond = {};
+  t = t.replace(new RegExp(ROAD + "\\s*(?:নং)?\\s*[-:]?\\s*(\\d+)", "g"), (m, d) => { cond.road = parseInt(d, 10); return " "; });
+  t = t.replace(new RegExp("(?:" + BADI + "|বাসা)\\s*(?:নং)?\\s*[-:]?\\s*(\\d+)", "g"), (m, d) => { cond.house = parseInt(d, 10); return " "; });
+  t = t.replace(new RegExp("(?:সদস্য|মেম্বার)\\s*(?:নং)?\\s*[-:]?\\s*(\\d+)", "g"), (m, d) => { cond.no = parseInt(d, 10); return " "; });
+  const tokens = t.split(/\s+/).filter(Boolean).map(x => /^[\d-]+$/.test(x) ? x.replace(/-/g, "") : x).filter(Boolean);
+  return {tokens, cond};
+}
+function tokenScore(r, tk){
+  const f = r.f_;
+  if (/^\d+$/.test(tk)){
+    if (tk.length >= 4){
+      if (r.phones.includes(tk)) return 60;
+      if (f.age.includes(tk)) return 20;
+      return 0;
+    }
+    const v = parseInt(tk, 10);
+    if (r.noN === v) return 100;
+    if (r.houseNums[0] === v) return 30;
+    if (f.flat.includes(tk)) return 5;
+    return 0;
+  }
+  if (f.name.split(" ").some(w => w.startsWith(tk))) return 40;
+  if (f.name.includes(tk)) return 30;
+  if (f.bld.includes(tk)) return 15;
+  if (f.father.includes(tk) || f.mother.includes(tk)) return 12;
+  if (f.job.includes(tk)) return 10;
+  if (f.flat.includes(tk) || r.houseF.includes(tk)) return 8;
+  if (f.email.includes(tk)) return 9;
+  if (f.na.includes(tk)) return 6;
+  return 0;
+}
+function run(){
+  const {tokens, cond} = parseQuery(state.q);
+  const only = tokens.length === 1 && /^\d{1,3}$/.test(tokens[0]) && cond.no == null && cond.road == null && cond.house == null ? parseInt(tokens[0], 10) : null;
+  const exact = only != null && rows.some(r => r.noN === only);
+  const out = [];
+  for (const r of rows){
+    if (exact && r.noN !== only) continue;
+    if (state.road && r.r !== state.road) continue;
+    if (state.life === "l" && !r.l) continue;
+    if (state.life === "g" && r.l) continue;
+    if (!stOk(r, state.st)) continue;
+    if (cond.road != null && r.roadN !== cond.road) continue;
+    if (cond.house != null && r.houseNums[0] !== cond.house) continue;
+    if (cond.no != null && r.noN !== cond.no) continue;
+    let score = 0, ok = true;
+    for (const tk of tokens){ const s = tokenScore(r, tk); if (!s){ ok = false; break; } score += s; }
+    if (ok) out.push({r, score});
+  }
+  const bySerial = (a, b) => a.r.noN - b.r.noN || a.r.s - b.r.s;
+  const hasQ = tokens.length > 0 || cond.road != null || cond.house != null || cond.no != null;
+  if (state.sort === "name") out.sort((a, b) => a.r.key.localeCompare(b.r.key, "bn") || bySerial(a, b));
+  else if (state.sort === "road") out.sort((a, b) => a.r.r.localeCompare(b.r.r) || a.r.noN - b.r.noN);
+  else if (state.sort === "rel" && hasQ) out.sort((a, b) => b.score - a.score || bySerial(a, b));
+  else out.sort(bySerial);
+  return {out, tokens};
+}
+function hl(text, tokens, phone){
+  text = String(text || "");
+  if (!tokens.length) return esc(text);
+  let {t, m} = foldMap(text);
+  if (phone){
+    const t2 = [], m2 = [];
+    for (let i = 0; i < t.length; i++) if (t[i] !== "-"){ t2.push(t[i]); m2.push(m[i]); }
+    t = t2.join(""); m = m2;
+  }
+  const marks = new Array(text.length).fill(false);
+  for (const tk of tokens){
+    if (!tk) continue;
+    let from = 0;
+    for (;;){
+      const k = t.indexOf(tk, from);
+      if (k < 0) break;
+      for (let j = k; j < k + tk.length; j++) marks[m[j]] = true;
+      from = k + tk.length;
+    }
+  }
+  let out = "", on = false;
+  for (let i = 0; i < text.length; i++){
+    if (marks[i] && !on){ out += "<mark>"; on = true; }
+    if (!marks[i] && on){ out += "</mark>"; on = false; }
+    out += esc(text[i]);
+  }
+  return on ? out + "</mark>" : out;
+}
+const fmtPhone = p => toBn(p.slice(0, 5) + "-" + p.slice(5));
+function addrParts(r){
+  const a = [];
+  if (r.b) a.push(["b", r.b]);
+  if (r.h) a.push(["", "বাড়ী " + r.h]);
+  if (r.r) a.push(["", "রোড " + r.r]);
+  if (r.fl) a.push(["", "ফ্ল্যাট " + r.fl]);
+  return a;
+}
+function rowHtml(r, tokens){
+  const txt = tokens.filter(x => !/^\d+$/.test(x));
+  const ph = tokens.filter(x => /^\d{4,}$/.test(x));
+  const noHit = tokens.some(x => /^\d{1,3}$/.test(x) && parseInt(x, 10) === r.noN);
+  const noHtml = noHit ? "<mark>" + esc(r.n) + "</mark>" : esc(r.n);
+  const ad = addrParts(r).map(([k, s]) => k === "b" ? hl(s, txt) : esc(s)).join(", ");
+  const open = state.open.has(r.s);
+  const phones = r.p.length
+    ? r.p.map(p => '<a class="call" href="tel:' + p + '">' + hl(fmtPhone(p), ph, true) + "</a>").join("")
+    : '<span class="nop">মোবাইল নেই</span>';
+  const full = addrParts(r).map(x => x[1]).join(", ");
+  let more = "";
+  if (open){
+    const dl = [["ক্রমিক নং", toBn(r.s)], ["পিতা", r.f], ["মাতা", r.m], ["বয়স/জন্ম তারিখ", r.a], ["পেশা", r.j],
+      ["ঠিকানা", full + (full ? ", " : "") + "নাসিরাবাদ হাউজিং সোসাইটি, নাসিরাবাদ, চট্টগ্রাম"],
+      ["মোবাইল", r.p.map(fmtPhone).join(", ")], ["মৃত্যুর তারিখ", r.dead ? (fmtDate(r.dd) || "নথিভুক্ত") : ""], ["মৃত্যুর মন্তব্য", r.dead ? r.dnote : ""], ["ভোটার তালিকা", !r.dead && r.nv ? "বাদ" + (r.nvr ? " (" + r.nvr + (r.nvd ? ", " + fmtDate(r.nvd) : "") + ")" : "") : ""], ["ইমেইল", r.e], ["বর্তমান ঠিকানা (নতুন)", r.na], ["মন্তব্য", r.t]]
+      .filter(x => x[1]).map(x => "<dt>" + x[0] + "</dt><dd>" + hl(x[1], txt) + "</dd>").join("");
+    more = '<div class="more">' + (r.ph ? '<img class="big" alt="" src="/_blob/' + r.ph + '">' : "") + "<dl>" + dl + "</dl>" +
+      (r.fm ? '<p><button class="btn ghost" type="button" data-doc="' + r.fm + '" data-dn="অফিসের ফরম">অফিসের ফরম দেখুন</button></p>' : "") +
+      (r.ap ? '<p><button class="btn ghost" type="button" data-doc="' + r.ap + '" data-dn="অনুমোদন পত্র">অনুমোদন পত্র দেখুন</button></p>' : "") +
+      '<div class="bar"><button class="cp" type="button" data-copy="' + r.s + '">তথ্য কপি করুন</button>' +
+      '<button class="btn" type="button" data-edit="' + r.s + '">সংশোধন, ছবি ও ফরম</button>' +
+      '<button class="btn ghost" type="button" data-stat="' + r.s + '">' + (r.dead ? "মৃত চিহ্ন সরান" : r.nv ? "ভোটার তালিকায় ফিরিয়ে আনুন" : "মৃত / ভোটার অবস্থা") + '</button>' +
+      '<button class="btn ghost" type="button" data-print="' + r.s + '">প্রিন্ট / ডাউনলোড</button>' +
+      (isOwner ? '<button class="btn warn" type="button" data-del="' + r.s + '">বাদ দিন</button>' : "") + "</div></div>";
+  }
+  return '<li class="m' + (r.dead ? " dead" : r.nv ? " nvr" : "") + '" data-s="' + r.s + '">' +
+    '<button class="head" type="button" aria-expanded="' + open + '" data-toggle="' + r.s + '">' +
+    '<span class="no"><small>' + (r.dead ? "মৃত" : "সদস্য নং") + '</small>' + noHtml + "</span>" +
+    '<span class="who"><span class="pic">' + (r.ph ? '<img loading="lazy" alt="" src="/_blob/' + r.ph + '">' : esc(r.key.charAt(0))) + '</span><span class="tx"><b>' + hl(r.nm, txt) + "</b>" + (ad ? '<span class="ad">' + ad + "</span>" : "") + (r.na ? '<span class="ad">বর্তমান ঠিকানা: ' + esc(r.na) + "</span>" : "") +
+    (r.l ? '<span class="life">আজীবন সদস্য</span>' : "") + (r.dead ? '<span class="life tagd">মৃত' + (r.dd ? " (" + esc(fmtDate(r.dd)) + ")" : "") + "</span>" : r.nv ? '<span class="life tagw">ভোটার তালিকা থেকে বাদ</span>' : "") + "</span></span></button>" +
+    '<div class="phones">' + phones + "</div>" + more + "</li>";
+}
+const listEl = document.getElementById("list"), countEl = document.getElementById("count");
+function render(){
+  if (state.view === "h"){ renderHouses(); return; }
+  const {out, tokens} = run();
+  const total = rows.length;
+  const filtered = state.q.trim() || state.road || state.life;
+  countEl.textContent = (filtered ? toBn(total) + " জনের মধ্যে " + toBn(out.length) + " জন পাওয়া গেছে" : "মোট " + toBn(total) + " জন সদস্য") + "। সাধারণ " + toBn(total - rows.filter(x => x.l).length) + " জন, আজীবন " + toBn(rows.filter(x => x.l).length) + " জন";
+  if (!out.length){
+    listEl.innerHTML = '<li class="empty">কোনো সদস্য পাওয়া যায়নি।<br>নামের অংশ, সদস্য নং বা মোবাইল নম্বর দিয়ে আবার খুঁজুন।<br><button class="chip" type="button" id="reset">সব ফিল্টার মুছুন</button></li>';
+    return;
+  }
+  listEl.innerHTML = out.map(x => rowHtml(x.r, tokens)).join("");
+}
+const qEl = document.getElementById("q"), clr = document.getElementById("clr");
+qEl.addEventListener("input", () => { state.q = qEl.value; clr.hidden = !qEl.value; render(); });
+clr.addEventListener("click", () => { qEl.value = ""; state.q = ""; clr.hidden = true; render(); qEl.focus(); });
+const fEl = document.getElementById("filters");
+function drawFilters(){
+  fEl.innerHTML = ROADS.map(r => '<button class="chip" type="button" data-road="' + r + '" aria-pressed="' + (state.road === r) + '">রোড ' + r + " (" + toBn(rows.filter(x => x.r === r && (state.life === "l" ? x.l : state.life === "g" ? !x.l : true)).length) + ")</button>").join("") +
+    '<button class="chip" type="button" data-life="g" aria-pressed="' + (state.life === "g") + '">সাধারণ সদস্য (' + toBn(rows.filter(x => !x.l).length) + ')</button>' +
+    '<button class="chip" type="button" data-life="l" aria-pressed="' + (state.life === "l") + '">আজীবন সদস্য (' + toBn(rows.filter(x => x.l).length) + ')</button>' +
+    '<button class="chip" type="button" data-st="v" aria-pressed="' + (state.st === "v") + '">ভোটার (' + toBn(rows.filter(x => isVoter(x)).length) + ')</button>' +
+    '<button class="chip" type="button" data-st="x" aria-pressed="' + (state.st === "x") + '">ভোটার তালিকা থেকে বাদ (' + toBn(rows.filter(x => !x.dead && x.nv).length) + ')</button>' +
+    '<button class="chip" type="button" data-st="d" aria-pressed="' + (state.st === "d") + '">মৃত সদস্য (' + toBn(rows.filter(x => x.dead).length) + ')</button>' +
+    (state.road || state.life || state.st ? '<button class="chip" type="button" data-clr="1">✕ ফিল্টার মুছুন</button>' : "") +
+    '<label class="sort">সাজান <select id="sort">' + (state.view === "h" ? '<option value="hn">রোড ও বাড়ী নং অনুযায়ী</option><option value="hc">সদস্য বেশি থেকে কম</option>' : '<option value="rel">মিল অনুযায়ী</option><option value="name">নাম অনুযায়ী</option><option value="road">রোড অনুযায়ী</option>') + "</select></label>";
+  document.getElementById("sort").value = state.view === "h" ? state.hsort : state.sort;
+}
+fEl.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.road){ state.road = state.road === b.dataset.road ? "" : b.dataset.road; }
+  else if (b.dataset.life){ state.life = state.life === b.dataset.life ? "" : b.dataset.life; }
+  else if (b.dataset.hb){ state.hb = state.hb ? "" : "1"; }
+  else if (b.dataset.st){ state.st = state.st === b.dataset.st ? "" : b.dataset.st; }
+  else if (b.dataset.clr){ state.road = ""; state.life = ""; state.st = ""; }
+  drawFilters(); render();
+});
+fEl.addEventListener("change", e => { if (e.target.id === "sort"){ if (state.view === "h") state.hsort = e.target.value; else state.sort = e.target.value; render(); } });
+listEl.addEventListener("click", e => {
+  const ed = e.target.closest("[data-edit]"); if (ed){ openEdit(Number(ed.dataset.edit)); return; }
+  const pr = e.target.closest("[data-print]"); if (pr){ menu("member:" + pr.dataset.print, "সদস্যের তথ্য"); return; }
+  const gt = e.target.closest("[data-g]"); if (gt){ const k = gt.dataset.g; state.gopen.has(k) ? state.gopen.delete(k) : state.gopen.add(k); renderHouses(); return; }
+  const gp = e.target.closest("[data-gp]"); if (gp){ menu("house:" + gp.dataset.gp, "বাড়ির তালিকা"); return; }
+  const go = e.target.closest("[data-go]"); if (go){ pushHist(); state.st = ""; state.view = "m"; state.q = go.dataset.go; qEl.value = go.dataset.go; clr.hidden = false; state.road = ""; state.life = ""; drawTabs(); drawFilters(); render(); window.scrollTo(0, 0); return; }
+  const dd = e.target.closest("[data-del]"); if (dd){ delMember(dd); return; }
+  const dv = e.target.closest("[data-doc]"); if (dv){ viewDoc(dv.dataset.doc, dv.dataset.dn); return; }
+  const sd = e.target.closest("[data-stat]"); if (sd){ statusDlg(Number(sd.dataset.stat)); return; }
+  const t = e.target.closest("[data-toggle]");
+  if (t){
+    const s = Number(t.dataset.toggle);
+    state.open.has(s) ? state.open.delete(s) : state.open.add(s);
+    const keep = t.getBoundingClientRect().top;
+    render();
+    const nt = listEl.querySelector('[data-toggle="' + s + '"]');
+    if (nt) window.scrollBy(0, nt.getBoundingClientRect().top - keep);
+    return;
+  }
+  const c = e.target.closest("[data-copy]");
+  if (c){
+    const r = rows.find(x => x.s === Number(c.dataset.copy));
+    const lines = [r.nm, "সদস্য নং: " + r.n, r.f && "পিতা: " + r.f, r.m && "মাতা: " + r.m,
+      "ঠিকানা: " + addrParts(r).map(x => x[1]).join(", ") + ", নাসিরাবাদ হাউজিং সোসাইটি, চট্টগ্রাম",
+      r.p.length && "মোবাইল: " + r.p.map(fmtPhone).join(", "), r.e && "ইমেইল: " + r.e, r.na && "বর্তমান ঠিকানা: " + r.na].filter(Boolean).join("\n");
+    const done = () => { c.textContent = "কপি হয়েছে"; setTimeout(() => { c.textContent = "তথ্য কপি করুন"; }, 1500); };
+    const fallback = () => {
+      const ta = document.createElement("textarea"); ta.value = lines; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (err) { c.textContent = "কপি করা যায়নি"; }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(lines).then(done, fallback); else fallback();
+    return;
+  }
+  if (e.target.id === "reset"){
+    state.q = ""; state.road = ""; state.life = ""; state.st = ""; qEl.value = ""; clr.hidden = true; drawFilters(); render();
+  }
+});
+
+let db = null, user = null, assets = null, dls = null, isOwner = false, uid = null;
+const gid = n => "g" + Math.floor(n / 50);
+const dlg = document.getElementById("dlg"), barEl = document.getElementById("bar");
+const bd = x => toBn(toEn(x));
+const val = id => document.getElementById("f_" + id).value.trim();
+function lock(msg){ document.querySelector(".wrap").innerHTML = '<div class="lock"><h1>সদস্য খোঁজ</h1><p>' + msg + "</p></div>"; }
+function logA(a, o){ if (db) db.collection("audit").add({t: Date.now(), u: uid, a: a, s: o.s, nm: o.nm}).catch(() => {}); }
+function inp(id, label, v, cls){ return "<label" + (cls ? ' class="' + cls + '"' : "") + ">" + label + '<input id="f_' + id + '" value="' + esc(v || "") + '"></label>'; }
+async function shrink(file){
+  const bmp = await createImageBitmap(file), k = Math.min(1, 480 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(res, "image/jpeg", 0.85));
+}
+function bldInp(v){
+  const names = [...new Set(rows.map(r => r.b).filter(Boolean))].sort((a, b) => a.localeCompare(b, "bn"));
+  return '<label>বাড়ির নাম (তালিকা থেকে বেছে নিন)<input id="f_b" list="bl" autocomplete="off" value="' + esc(v || "") + '"></label><datalist id="bl">' + names.map(x => '<option value="' + esc(x) + '"></option>').join("") + "</datalist>";
+}
+function openEdit(n){
+  const r = n ? rows.find(x => x.s === n) : null, v = r || {};
+  const nextNo = rows.reduce((a, x) => Math.max(a, x.noN || 0), 0) + 1;
+  dlg.innerHTML = "<h2>" + (r ? "সদস্যের তথ্য সংশোধন" : "নতুন সদস্য") + '</h2><div class="fg">' +
+    inp("nm", "নাম", v.nm, "w") + inp("n", "সদস্য নং", v.n || toBn(String(nextNo).padStart(2, "0"))) + inp("a", "বয়স/জন্ম তারিখ", v.a) +
+    inp("f", "পিতা", v.f) + inp("m", "মাতা", v.m) + inp("j", "পেশা", v.j) + bldInp(v.b) + inp("h", "বাড়ী নং", v.h) +
+    '<label>রোড<select id="f_r"><option value=""></option>' + ROADS.map(x => "<option" + (v.r === x ? " selected" : "") + ">" + x + "</option>").join("") + "</select></label>" +
+    inp("fl", "ফ্ল্যাট নং", v.fl) + inp("p", "মোবাইল (একাধিক হলে কমা দিয়ে)", (v.p || []).join(", "), "w") + inp("e", "ইমেইল (থাকলে)", v.e, "w") + inp("na", "বর্তমান/নতুন ঠিকানা (অন্যত্র থাকলে, নিবন্ধিত পুরোনো ঠিকানা অপরিবর্তিত থাকবে)", v.na, "w") + inp("t", "মন্তব্য", v.t, "w") +
+    '<label class="w"><span><input type="checkbox" id="f_l"' + (v.l ? " checked" : "") + "> আজীবন সদস্য</span></label>" +
+    '<label class="w">ছবি (নতুন ছবি দিলে আগেরটি বদলে যাবে)<input type="file" id="f_ph" accept="image/*"></label>' +
+    '<label class="w">অফিসের ফরম (ছবি বা পিডিএফ)' + (v.fm ? " : আপলোড করা আছে, নতুন দিলে বদলে যাবে" : "") + '<input type="file" id="f_fm" accept="image/*,application/pdf"></label>' +
+    '<label class="w">অনুমোদন পত্র (ছবি বা পিডিএফ)' + (v.ap ? " : আপলোড করা আছে, নতুন দিলে বদলে যাবে" : "") + '<input type="file" id="f_ap" accept="image/*,application/pdf"></label></div>' +
+    '<p class="msg" id="msg"></p><div class="bar"><button class="btn" type="button" id="sv">সংরক্ষণ</button><button class="btn ghost" type="button" id="cn">বাতিল</button></div>';
+  document.getElementById("cn").onclick = () => dlg.close();
+  document.getElementById("sv").onclick = ev => save(r, ev.target);
+  dlg.showModal();
+}
+async function save(r, btn){
+  const msg = document.getElementById("msg");
+  if (!val("nm") || !val("n")){ msg.textContent = "নাম ও সদস্য নং লিখুন।"; return; }
+  if (val("e") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val("e"))){ msg.textContent = "ইমেইল ঠিক নেই।"; return; }
+  const no = bd(val("n")), noN = parseInt(toEn(no), 10);
+  if (rows.some(x => x.noN === noN && (!r || x.s !== r.s))){ msg.textContent = "এই সদস্য নং আগে থেকেই আছে।"; return; }
+  btn.disabled = true; msg.textContent = "সংরক্ষণ হচ্ছে...";
+  try {
+    let ph = r ? r.ph || "" : "", fm = r ? r.fm || "" : "", ap = r ? r.ap || "" : "";
+    const pf = document.getElementById("f_ph").files[0], ff = document.getElementById("f_fm").files[0], af = document.getElementById("f_ap").files[0];
+    if ((pf || ff || af) && !assets) throw {message: "আপলোডের অনুমতি নেই"};
+    if (pf) ph = (await assets.upload(await shrink(pf))).id;
+    if (ff) fm = (await assets.upload(ff)).id;
+    if (af) ap = (await assets.upload(af)).id;
+    const o = Object.assign(keepOf(r), {s: r ? r.s : rows.reduce((a, x) => Math.max(a, x.s), 0) + 1, n: no, nm: val("nm"), f: val("f"), m: val("m"),
+      l: document.getElementById("f_l").checked ? 1 : 0, a: bd(val("a")), j: val("j"), b: val("b"), h: bd(val("h")), r: val("r"), fl: bd(val("fl")),
+      p: toEn(val("p")).replace(/[^\d,\s\/]/g, "").split(/[,\s\/]+/).filter(x => /^01\d{9}$/.test(x)), t: val("t"), e: val("e"), na: val("na"), ph: ph, fm: fm, ap: ap, ut: Date.now(), u: uid});
+    const ref = db.doc("members/" + gid(o.s)), patch = {};
+    patch["m" + o.s] = o;
+    if ((await ref.get()).exists) await ref.update(patch); else await ref.set(patch);
+    logA(r ? (pf || ff || af ? "সংশোধন, ছবি, ফরম বা অনুমোদন পত্র আপলোড" : "সংশোধন") : "নতুন সদস্য", o);
+    dlg.close();
+  } catch (e) { msg.textContent = "সংরক্ষণ করা যায়নি: " + (e.message || e.code || ""); btn.disabled = false; }
+}
+function delMember(btn){
+  if (btn.dataset.sure !== "1"){
+    btn.dataset.sure = "1"; btn.textContent = "নিশ্চিত? আবার চাপুন";
+    setTimeout(() => { btn.dataset.sure = ""; btn.textContent = "বাদ দিন"; }, 4000); return;
+  }
+  const n = Number(btn.dataset.del), r = rows.find(x => x.s === n);
+  db.doc("members/" + gid(n)).update({["m" + n]: null}).then(() => logA("বাদ দেওয়া হয়েছে", r)).catch(() => { btn.textContent = "বাদ দেওয়া যায়নি"; });
+}
+async function showLog(){
+  dlg.innerHTML = '<h2>পরিবর্তনের তালিকা</h2><p class="msg" id="msg">লোড হচ্ছে...</p><div id="lg"></div><div class="bar"><button class="btn ghost" type="button" id="pw">প্রিন্ট প্রিভিউ</button><button class="btn" type="button" id="pg">প্রিন্ট</button><button class="btn" type="button" id="pf">পিডিএফ</button><button class="btn" type="button" id="px">এক্সেল</button><button class="btn ghost" type="button" id="cn">বন্ধ করুন</button></div>';
+  document.getElementById("cn").onclick = () => dlg.close();
+  [["pw", "preview"], ["pg", "print"], ["pf", "pdf"], ["px", "xls"]].forEach(a => { document.getElementById(a[0]).onclick = () => act(a[1], "log", document.getElementById("msg")); });
+  dlg.showModal();
+  try {
+    const snap = await db.collection("audit").orderBy("t", "desc").limit(60).get();
+    const items = snap.docs.map(d => d.data());
+    const ids = [...new Set(items.map(x => x.u).filter(Boolean))];
+    const ps = ids.length ? await user.profiles(ids) : {};
+    logCache = {items: items, ps: ps};
+    document.getElementById("msg").textContent = items.length ? "সর্বশেষ ৬০টি পরিবর্তন" : "এখনো কোনো পরিবর্তন নেই।";
+    document.getElementById("lg").innerHTML = items.map(x => "<p>" + esc(new Date(x.t).toLocaleString("bn-BD")) + ": " + esc((ps[x.u] && ps[x.u].name) || "কর্মকর্তা") + ", " + esc(x.a) + " (" + esc(x.nm) + ")</p>").join("");
+  } catch (e) { document.getElementById("msg").textContent = "তালিকা আনা যায়নি।"; }
+}
+const memHead = ["ক্রমিক", "সদস্য নং", "নাম", "পিতা", "মাতা", "ধরন", "বয়স/জন্ম তারিখ", "পেশা", "বিল্ডিং", "বাড়ী", "রোড", "ফ্ল্যাট", "মোবাইল", "মন্তব্য", "ইমেইল", "বর্তমান ঠিকানা", "অবস্থা", "মৃত্যুর তারিখ", "ভোটার তালিকা"];
+const memRow = r => [r.s, r.n, r.nm, r.f, r.m, r.l ? "আজীবন" : "সাধারণ", r.a, r.j, r.b, r.h, r.r, r.fl, r.p.map(fmtPhone).join(" / "), r.t, r.e || "", r.na || "", r.dead ? "মৃত" : "সক্রিয়", r.dead ? fmtDate(r.dd) : "", r.dead ? "—" : r.nv ? "বাদ" + (r.nvr ? ": " + r.nvr : "") : "আছে"];
+async function saveTable(name, head, data){
+  if (!dls) return;
+  try {
+    if (window.XLSX){
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([head].concat(data)), "তালিকা");
+      await dls.save({filename: name + ".xlsx", data: new Blob([XLSX.write(wb, {type: "array", bookType: "xlsx"})], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})});
+    } else {
+      const q = x => '"' + String(x == null ? "" : x).replace(/"/g, '""') + '"';
+      await dls.save({filename: name + ".csv", data: new Blob(["\ufeff" + [head].concat(data).map(l => l.map(q).join(",")).join("\r\n")], {type: "text/csv"})});
+    }
+  } catch (e) {}
+}
+function backup(){ saveTable("all-members", memHead, rows.slice().sort((a, b) => a.noN - b.noN).map(memRow)); }
+const pvEl = document.getElementById("pv");
+function doPrint(){ try { window.print(); } catch (e) { countEl.textContent = "এই ব্রাউজারে প্রিন্ট চালু করা যায়নি।"; } }
+const tabsEl = document.getElementById("tabs"), hintEl = document.getElementById("hint");
+const HINT_M = hintEl.textContent;
+function drawTabs(){
+  tabsEl.innerHTML = (hist.length ? '<button class="chip back" type="button" data-back="1">← ফিরে যান</button>' : "") + '<button class="chip" type="button" data-v="m" aria-pressed="' + (state.view === "m") + '">সদস্য তালিকা</button><button class="chip" type="button" data-v="h" aria-pressed="' + (state.view === "h") + '">বাড়ি অনুযায়ী</button>';
+  qEl.placeholder = state.view === "h" ? "বাড়ির নাম বা বাড়ী নং লিখুন" : "নাম, সদস্য নং, মোবাইল বা বিল্ডিং লিখুন";
+  hintEl.textContent = state.view === "h" ? "বাড়ির নাম লিখুন। উদাহরণ: তিলোত্তমা, সানমার, রোড ৩ বাড়ী ৫। কোন বাড়িতে কতজন আজীবন ও সাধারণ সদস্য আছেন তা দেখাবে।" : HINT_M;
+}
+tabsEl.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.back){ goBack(); return; }
+  if (state.view === b.dataset.v) return;
+  pushHist();
+  state.view = b.dataset.v; state.q = ""; qEl.value = ""; clr.hidden = true; drawTabs(); drawFilters(); render();
+});
+const gNames = g => [...g.bn.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]).join(" / ");
+function roadStats(){
+  const st = ROADS.map(r => { const m = rows.filter(x => x.r === r), l = m.filter(x => x.l).length; return ["রোড " + r, m.length, l, m.length - l]; });
+  const o = rows.filter(x => !ROADS.includes(x.r)), ol = o.filter(x => x.l).length;
+  if (o.length) st.push(["রোড নেই", o.length, ol, o.length - ol]);
+  return st;
+}
+let logCache = null, LOGO = "", ORGADDR = "", hist = [], lastUndo = null;
+async function saveOrg(patch){ const ref = db.doc("settings/org"); if ((await ref.get()).exists) await ref.update(patch); else await ref.set(patch); }
+const RAW = ["s", "n", "nm", "f", "m", "l", "a", "j", "b", "b0", "h", "r", "fl", "p", "t", "e", "na", "ph", "fm", "ap", "ut", "u", "dead", "dd", "dnote", "dby", "dt", "nv", "nvr", "nvd", "nvby"];
+const keepOf = r => { const o = {}; if (r) RAW.forEach(k => { if (r[k] !== undefined) o[k] = r[k]; }); return o; };
+const isVoter = r => !r.dead && !r.nv;
+const stOk = (r, st) => st === "v" ? isVoter(r) : st === "x" ? (!r.dead && !!r.nv) : st === "d" ? !!r.dead : true;
+const fmtDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d || "") ? toBn(d.slice(8, 10) + "/" + d.slice(5, 7) + "/" + d.slice(0, 4)) : (d || "");
+const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const pad2 = i => toBn(String(i).padStart(2, "0"));
+const ACTL = {dead: "মৃত হিসেবে নথিভুক্ত", alive: "মৃত চিহ্ন সরানো হয়েছে", vout: "ভোটার তালিকা থেকে বাদ", vin: "ভোটার তালিকায় ফিরিয়ে আনা"};
+function snap(){ return {view: state.view, q: state.q, road: state.road, life: state.life, st: state.st, sort: state.sort, hsort: state.hsort, y: window.scrollY || 0}; }
+function pushHist(){ hist.push(snap()); if (hist.length > 30) hist.shift(); }
+function goBack(){
+  const h = hist.pop(); if (!h) return;
+  Object.assign(state, {view: h.view, q: h.q, road: h.road, life: h.life, st: h.st, sort: h.sort, hsort: h.hsort});
+  qEl.value = h.q; clr.hidden = !h.q; drawTabs(); drawFilters(); render(); window.scrollTo(0, h.y);
+}
+const ACTN = {dead: "মৃত হিসেবে নথিভুক্ত", vout: "ভোটার তালিকা থেকে বাদ", vin: "ভোটার তালিকায় ফিরিয়ে আনা", alive: "মৃত চিহ্ন সরানো"};
+const ACTS = [["dead", "মৃত হিসেবে নথিভুক্ত"], ["vout", "ভোটার তালিকা থেকে বাদ"], ["vin", "ভোটার তালিকায় ফিরিয়ে আনা"], ["alive", "মৃত চিহ্ন সরানো"]];
+const actOpts = sel => '<option value="">— কী করবেন, বাছুন —</option>' + ACTS.map(o => '<option value="' + o[0] + '"' + (sel === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("");
+async function applyStatus(list, act, date, note){
+  const prevs = list.map(keepOf), by = {};
+  list.forEach(r => {
+    const o = keepOf(r);
+    if (act === "dead"){ o.dead = 1; o.dd = date; o.dnote = note || ""; o.dby = uid; o.dt = Date.now(); }
+    else if (act === "alive"){ o.dead = 0; o.dd = ""; o.dnote = ""; }
+    else if (act === "vout"){ o.nv = 1; o.nvr = note || ""; o.nvd = date; o.nvby = uid; }
+    else { o.nv = 0; o.nvr = ""; o.nvd = ""; }
+    o.ut = Date.now(); o.u = uid;
+    (by[gid(o.s)] = by[gid(o.s)] || {})["m" + o.s] = o;
+  });
+  for (const k of Object.keys(by)) await db.doc("members/" + k).update(by[k]);
+  list.forEach(r => logA(ACTL[act], r));
+  return prevs;
+}
+async function undoStatus(prevs){
+  const by = {};
+  prevs.forEach(o => { (by[gid(o.s)] = by[gid(o.s)] || {})["m" + o.s] = o; });
+  for (const k of Object.keys(by)) await db.doc("members/" + k).update(by[k]);
+  prevs.forEach(o => logA("আগের অবস্থায় ফিরিয়ে নেওয়া হয়েছে", o));
+}
+function setUndo(prevs){
+  lastUndo = prevs && prevs.length ? {prevs: prevs} : null;
+  const ud = document.getElementById("ud"); if (ud) ud.hidden = !lastUndo;
+}
+function doneScreen(title, prevs, again){
+  setUndo(prevs);
+  dlg.innerHTML = "<h2>✓ " + esc(title) + '</h2><p class="msg">ভুল হয়ে থাকলে "ফিরিয়ে নিন" চাপুন, সদস্যরা আগের অবস্থায় ফিরে যাবেন।</p><p class="msg" id="msg"></p><div class="bar"><button class="btn warn" type="button" id="un">↩ ফিরিয়ে নিন</button>' + (again ? '<button class="btn ghost" type="button" id="ag">আরও নথিভুক্ত করুন</button>' : "") + '<button class="btn" type="button" id="cn">বন্ধ করুন</button></div>';
+  document.getElementById("cn").onclick = () => dlg.close();
+  if (again) document.getElementById("ag").onclick = again;
+  document.getElementById("un").onclick = async ev => {
+    ev.target.disabled = true;
+    try { await undoStatus(prevs); setUndo(null); dlg.close(); }
+    catch (e) { document.getElementById("msg").textContent = "ফিরিয়ে নেওয়া যায়নি।"; ev.target.disabled = false; }
+  };
+}
+function statusDlg(n){
+  const r = rows.find(x => x.s === n); if (!r) return;
+  dlg.innerHTML = "<h2>" + esc(r.nm) + " (সদস্য নং " + esc(r.n) + ')</h2><div class="fg"><label class="w">কী করবেন?<select id="f_act"><option value="">— কী করবেন, বাছুন —</option>' +
+    (r.dead ? '<option value="alive">মৃত চিহ্ন সরান</option>' : '<option value="dead">মৃত হিসেবে নথিভুক্ত করুন</option>' + (r.nv ? '<option value="vin">ভোটার তালিকায় ফিরিয়ে আনুন</option>' : '<option value="vout">ভোটার তালিকা থেকে বাদ দিন</option>')) +
+    '</select></label><label>তারিখ<input type="date" id="f_dt" value="' + todayStr() + '"></label>' + inp("nt", "কারণ / মন্তব্য (ঐচ্ছিক)", r.dead ? r.dnote : (r.nvr || "")) +
+    '</div><p class="msg" id="msg">কাজ বেছে "সংরক্ষণ" না চাপা পর্যন্ত কিছুই বদলাবে না।</p><div class="bar"><button class="btn" type="button" id="sv">সংরক্ষণ</button><button class="btn ghost" type="button" id="cn">বাতিল (কিছুই সংরক্ষণ হবে না)</button></div>';
+  document.getElementById("cn").onclick = () => dlg.close();
+  document.getElementById("sv").onclick = async ev => {
+    const act = val("act"), msg = document.getElementById("msg");
+    if (!act){ msg.textContent = "আগে \"কী করবেন\" বাছুন।"; return; }
+    ev.target.disabled = true; msg.textContent = "সংরক্ষণ হচ্ছে...";
+    try { const prevs = await applyStatus([r], act, val("dt"), val("nt")); doneScreen(r.nm + ": " + ACTN[act], prevs, null); }
+    catch (e) { msg.textContent = "সংরক্ষণ করা যায়নি।"; ev.target.disabled = false; }
+  };
+  dlg.showModal();
+}
+function quickDlg(st){
+  const S = st && st.act !== undefined ? st : {act: "", dt: todayStr(), nt: "", nos: ""};
+  const elig = (r, act) => act === "dead" ? !r.dead : act === "alive" ? !!r.dead : act === "vout" ? (!r.dead && !r.nv) : (!r.dead && !!r.nv);
+  const step2 = (ok, skip, miss) => {
+    dlg.innerHTML = "<h2>মিলিয়ে নিন: " + ACTN[S.act] + '</h2><p class="msg"><b>এখনো কিছুই সংরক্ষণ হয়নি।</b> নিচের ' + toBn(ok.length) + " জনের ক্ষেত্রে \"" + ACTN[S.act] + "\" করা হবে। ঠিক থাকলে \"হ্যাঁ, নিশ্চিত\" চাপুন, নইলে \"পেছনে যান\" বা \"বাতিল\" চাপুন।</p>" +
+      '<div class="qres">' + ok.map(r => "<p>" + esc(r.n) + " : " + esc(r.nm) + " (রোড " + esc(r.r) + ", " + esc(r.b || "বাড়ী " + r.h) + ")</p>").join("") +
+      (skip.length ? "<p>আগে থেকেই ওই অবস্থায় আছেন, বাদ দেওয়া হলো: " + skip.map(r => esc(r.n)).join(", ") + "</p>" : "") + (miss.length ? '<p class="bad">এই নম্বরে সদস্য নেই: ' + miss.map(toBn).join(", ") + "</p>" : "") +
+      '</div><p class="msg" id="msg"></p><div class="bar"><button class="btn ghost" type="button" id="bk">← পেছনে যান</button><button class="btn" type="button" id="sv"' + (ok.length ? "" : " disabled") + ">হ্যাঁ, নিশ্চিত: " + ACTN[S.act] + '</button><button class="btn ghost" type="button" id="cn">বাতিল (কিছুই সংরক্ষণ হবে না)</button></div>';
+    document.getElementById("cn").onclick = () => dlg.close();
+    document.getElementById("bk").onclick = () => step1("");
+    document.getElementById("sv").onclick = async ev => {
+      ev.target.disabled = true; document.getElementById("msg").textContent = "সংরক্ষণ হচ্ছে...";
+      try { const prevs = await applyStatus(ok, S.act, S.dt, S.nt); doneScreen(toBn(ok.length) + " জনের ক্ষেত্রে সম্পন্ন: " + ACTN[S.act], prevs, () => quickDlg()); }
+      catch (e) { document.getElementById("msg").textContent = "সংরক্ষণ করা যায়নি।"; ev.target.disabled = false; }
+    };
+  };
+  const step1 = text => {
+    dlg.innerHTML = "<h2>সদস্য নম্বর দিয়ে দ্রুত নথিভুক্তি</h2>" + '<div class="fg"><label class="w">কাজ<select id="f_act">' + actOpts(S.act) + "</select></label>" +
+      '<label>তারিখ<input type="date" id="f_dt" value="' + esc(S.dt) + '"></label>' + inp("nt", "কারণ / মন্তব্য (ঐচ্ছিক)", S.nt) +
+      '<label class="w">সদস্য নম্বরগুলো (কমা বা ফাঁকা দিয়ে লিখুন, রেঞ্জও চলবে, যেমন ১২, ৪৫, ৩০১-৩০৫)<textarea id="f_nos" rows="3">' + esc(S.nos) + "</textarea></label></div>" +
+      '<p class="msg" id="msg">' + (text || "এই ধাপে কিছুই সংরক্ষণ হয় না। আগে \"মিলিয়ে দেখুন\" চাপুন।") + '</p><div class="bar"><button class="btn" type="button" id="chk">মিলিয়ে দেখুন</button><button class="btn ghost" type="button" id="cn">বাতিল</button></div>';
+    document.getElementById("cn").onclick = () => dlg.close();
+    document.getElementById("chk").onclick = () => {
+      S.act = val("act"); S.dt = val("dt") || todayStr(); S.nt = val("nt"); S.nos = document.getElementById("f_nos").value;
+      const msg = document.getElementById("msg"), nos = parseNos(S.nos);
+      if (!S.act){ msg.textContent = "আগে \"কাজ\" বাছুন।"; return; }
+      if (!nos){ msg.textContent = "সদস্য নম্বর ঠিক নেই। যেমন: ১২, ৪৫, ৩০১-৩০৫"; return; }
+      const by = new Map(rows.map(r => [r.noN, r])), ok = [], skip = [], miss = [];
+      nos.forEach(x => { const r = by.get(x); if (!r) miss.push(x); else if (elig(r, S.act)) ok.push(r); else skip.push(r); });
+      step2(ok, skip, miss);
+    };
+  };
+  step1("");
+  dlg.showModal();
+}
+function parseNos(t){
+  const out = new Set();
+  for (const part of toEn(t).replace(/\s*[-–]\s*/g, "-").split(/[,\s،;]+/).filter(Boolean)){
+    const m = part.match(/^(\d+)(?:-(\d+))?$/); if (!m) return null;
+    let a = +m[1], b = m[2] ? +m[2] : a;
+    if (a > b){ const x = a; a = b; b = x; }
+    if (b - a > 300) return null;
+    for (let i = a; i <= b; i++) out.add(i);
+  }
+  return out.size ? [...out] : null;
+}
+const ORG = "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ";
+const DEFPF = '"Noto Sans Bengali","Hind Siliguri","Kalpurush","Nirmala UI","Vrinda",system-ui,sans-serif';
+let PF = "";
+function setPF(name){
+  PF = String(name || "").trim().replace(/["';{}<>\\]/g, "");
+  document.documentElement.style.setProperty("--pf", PF ? '"' + PF + '",' + DEFPF : DEFPF);
+  try { localStorage.setItem("pf", PF); } catch (e) {}
+}
+const DEFADDR = "নাসিরাবাদ হাউজিং সোসাইটি, নাসিরাবাদ, থানা-পাঁচলাইশ, চট্টগ্রাম।";
+function setLogo(id){
+  LOGO = id || "";
+  const el = document.getElementById("logo");
+  if (LOGO){ el.src = "/_blob/" + LOGO; el.hidden = false; } else { el.hidden = true; el.removeAttribute("src"); }
+}
+async function logoPng(file){
+  const bmp = await createImageBitmap(file), k = Math.min(1, 400 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(res, "image/png"));
+}
+function openLogo(){
+  dlg.innerHTML = '<h2>প্রতিষ্ঠানের লোগো ও ঠিকানা</h2><label class="pgin">প্রতিষ্ঠানের ঠিকানা (প্রতিষ্ঠানের নামের নিচে ছাপা হবে। নিজের মতো লিখে সংরক্ষণ করুন)<textarea id="f_oa" rows="2">' + esc(ORGADDR || DEFADDR) + '</textarea></label><div class="bar"><button class="btn" type="button" id="sa">ঠিকানা সংরক্ষণ</button><button class="btn ghost" type="button" id="dfa">আগের ঠিকানা ফিরিয়ে আনুন</button></div><p class="msg">লোগো প্রতিষ্ঠানের নামের বাঁ পাশে পেজে এবং প্রিন্ট ও পিডিএফের শিরোনামে আসবে।</p>' +
+    (LOGO ? '<img class="logo" alt="" src="/_blob/' + LOGO + '">' : "") +
+    '<label class="pgin">নতুন লোগো (ছবি)<input type="file" id="f_lg" accept="image/*"></label><p class="msg" id="msg"></p>' +
+    '<div class="bar"><button class="btn" type="button" id="sv">সংরক্ষণ</button>' + (LOGO ? '<button class="btn warn" type="button" id="rm">লোগো সরিয়ে দিন</button>' : "") + '<button class="btn ghost" type="button" id="cn">বাতিল</button></div>';
+  const msg = document.getElementById("msg");
+  document.getElementById("dfa").onclick = () => { document.getElementById("f_oa").value = DEFADDR; msg.textContent = "আগের ঠিকানা বসেছে। রাখতে চাইলে \"ঠিকানা সংরক্ষণ\" চাপুন।"; };
+  document.getElementById("sa").onclick = async ev => {
+    ev.target.disabled = true; msg.textContent = "সংরক্ষণ হচ্ছে...";
+    try { await saveOrg({addr: document.getElementById("f_oa").value.trim()}); msg.textContent = "ঠিকানা সংরক্ষিত হয়েছে। এখন থেকে ছাপায় এটাই আসবে।"; }
+    catch (e) { msg.textContent = "সংরক্ষণ করা যায়নি।"; }
+    ev.target.disabled = false;
+  };
+  document.getElementById("cn").onclick = () => dlg.close();
+  document.getElementById("sv").onclick = async ev => {
+    const f = document.getElementById("f_lg").files[0];
+    if (!f){ msg.textContent = "আগে একটি ছবি বাছাই করুন।"; return; }
+    ev.target.disabled = true; msg.textContent = "সংরক্ষণ হচ্ছে...";
+    try {
+      const r = await assets.upload(f.type === "image/svg+xml" ? f : await logoPng(f));
+      await saveOrg({logo: r.id});
+      dlg.close();
+    } catch (e) { msg.textContent = "সংরক্ষণ করা যায়নি: " + (e.message || e.code || ""); ev.target.disabled = false; }
+  };
+  const rm = document.getElementById("rm");
+  if (rm) rm.onclick = async () => { try { await saveOrg({logo: ""}); dlg.close(); } catch (e) { msg.textContent = "সরানো যায়নি।"; } };
+  dlg.showModal();
+}
+const lifeTxt = () => (state.life === "l" ? " (আজীবন সদস্য)" : state.life === "g" ? " (সাধারণ সদস্য)" : "") + (state.road ? ", রোড " + state.road : "");
+const LHEAD = ["ক্রমিক নং", "ছবি", "সদস্যের নাম", "সদস্য নং", "বয়স/জন্ম তারিখ", "পেশা", "ঠিকানা ও মোবাইল নম্বর"];
+const LCOLS = ["5%", "8%", "27%", "8%", "11%", "11%", "30%"];
+function nameH(r){ return "<b>" + esc(r.nm) + "</b>" + (r.f ? "<br>পিতা-" + esc(r.f) : "") + (r.m ? "<br>মাতা-" + esc(r.m) : "") + (r.l ? "<br>(আজীবন সদস্য)" : "") + (r.dead ? "<br>(মৃত" + (r.dd ? ": " + fmtDate(r.dd) : "") + ")" : r.nv ? "<br>(ভোটার তালিকা থেকে বাদ)" : ""); }
+function addrH(r){
+  const l2 = [r.fl ? "ফ্ল্যাট নং-" + r.fl : "", r.h ? "বাড়ী নং-" + r.h : "", r.r ? "রোড নং-" + r.r : ""].filter(Boolean).join(", ");
+  return [r.b, l2, "নাসিরাবাদ হাউজিং সোসাইটি, নাসিরাবাদ, চট্টগ্রাম।", r.na ? "বর্তমান ঠিকানা: " + r.na : "", r.p.length ? "মোবাইল-" + r.p.map(fmtPhone).join(", ") : ""].filter(Boolean).map(esc).join("<br>");
+}
+function listRow(r, i){ return [pad2(i + 1), r.ph ? {h: '<img class="mp" alt="" src="/_blob/' + r.ph + '">'} : "", {h: nameH(r), n: r.nm}, r.n, r.a, r.j, {h: addrH(r)}]; }
+const cellH = c => c && typeof c === "object" ? c.h : esc(c).replace(/\n/g, "<br>");
+function getDoc(id){
+  const addr = r => addrParts(r).map(x => x[1]).join(", ");
+  if (id === "cur") id = state.view === "h" ? "voters" : state.st === "d" ? "dead" : state.st === "x" ? "excl" : "list";
+  if (id === "list"){
+    const out = run().out.map(x => x.r);
+    return {land: true, per: 7, ctr: [0, 1, 3, 4, 5], cols: LCOLS, lab: r => r[2].n, file: "members", title: "সদস্য তালিকা" + lifeTxt(), sub: toBn(out.length) + " জন",
+      head: LHEAD, rows: out.map(listRow), xhead: memHead, xrows: out.map(memRow)};
+  }
+  if (id === "voters"){
+    const gs = groupsNow({st: "v"}), tot = gs.reduce((q, g) => q + g.m.length, 0);
+    return votersDoc(gs, "সদস্যদের ভোটার তালিকা" + (state.road ? " রোড " + state.road : "") + (state.life === "l" ? " (আজীবন সদস্য)" : state.life === "g" ? " (সাধারণ সদস্য)" : ""), "মোট " + toBn(tot) + " জন", "voter-list", {voter: true});
+  }
+  if (id === "bhouse"){
+    const gs = groupsNow(), tot = gs.reduce((q, g) => q + g.m.length, 0);
+    return votersDoc(gs, "বাড়ি অনুযায়ী সদস্য তালিকা" + lifeTxt(), toBn(gs.length) + "টি বাড়ি, মোট " + toBn(tot) + " জন", "house-wise");
+  }
+  if (id === "dead" || id === "excl"){
+    const isD = id === "dead", out = run().out.map(x => x.r);
+    const dtf = r => fmtDate(isD ? r.dd : r.nvd), ntf = r => (isD ? r.dnote : r.nvr) || "";
+    out.sort((a, b) => String((isD ? b.dd : b.nvd) || "").localeCompare(String((isD ? a.dd : a.nvd) || "")) || a.noN - b.noN);
+    const plain = r => [r.b, r.h ? "বাড়ী " + r.h : "", r.r ? "রোড " + r.r : ""].filter(Boolean).join(", ");
+    return {lab: r => r[2].n, ctr: [0, 1, 4], file: isD ? "deceased" : "excluded", per: 14, cols: ["6%", "8%", "28%", "28%", "15%", "15%"],
+      title: (isD ? "মৃত সদস্যদের তালিকা" : "ভোটার তালিকা থেকে বাদ পড়া সদস্য") + lifeTxt(), sub: toBn(out.length) + " জন",
+      head: ["ক্রমিক নং", "সদস্য নং", "সদস্যের নাম", "ঠিকানা", isD ? "মৃত্যুর তারিখ" : "বাদ পড়ার তারিখ", isD ? "মন্তব্য" : "কারণ"],
+      rows: out.map((r, i) => [pad2(i + 1), r.n, {h: nameH(r), n: r.nm}, {h: addrH(r)}, dtf(r), ntf(r)]),
+      xhead: ["ক্রমিক", "সদস্য নং", "নাম", "পিতা", "মাতা", "ধরন", "ঠিকানা", "মোবাইল", isD ? "মৃত্যুর তারিখ" : "বাদ পড়ার তারিখ", isD ? "মন্তব্য" : "কারণ"],
+      xrows: out.map((r, i) => [i + 1, r.n, r.nm, r.f, r.m, r.l ? "আজীবন" : "সাধারণ", plain(r), r.p.map(fmtPhone).join(" / "), dtf(r), ntf(r)])};
+  }
+  if (id === "houses"){
+    const gs = groupsNow(), tot = gs.reduce((q, g) => q + g.m.length, 0);
+    const c = g => [g.m.length, g.nl, g.m.length - g.nl];
+    return {file: "houses", ctr: [0, 1, 3, 4, 5, 6], title: "বাড়ি অনুযায়ী সদস্য সংখ্যা" + lifeTxt(), sub: toBn(gs.length) + "টি বাড়ি, মোট " + toBn(tot) + " জন",
+      head: ["ক্রম", "রোড", "বাড়ির নাম", "বাড়ী নং", "মোট সদস্য", "আজীবন", "সাধারণ"],
+      rows: gs.map((g, i) => [toBn(i + 1), g.road, g.name, [...g.hs].join(", ")].concat(c(g).map(toBn))),
+      xhead: ["রোড", "বাড়ির নাম", "বাড়ী নং", "মোট সদস্য", "আজীবন", "সাধারণ"], xrows: gs.map(g => [g.road, g.name, [...g.hs].join(", ")].concat(c(g)))};
+  }
+  if (id.indexOf("house:") === 0){
+    const g = groupsNow().find(x => x.k === id.slice(6)); if (!g) return null;
+    return votersDoc([g], "বাড়ির সদস্য তালিকা", "রোড " + g.road + ", " + g.name, "house-members");
+  }
+  if (id.indexOf("member:") === 0){
+    const r = rows.find(x => x.s === Number(id.slice(7))); if (!r) return null;
+    const kv = [["সদস্য নং", r.n], ["ধরন", r.l ? "আজীবন সদস্য" : "সাধারণ সদস্য"], ["পিতা", r.f], ["মাতা", r.m], ["বয়স/জন্ম তারিখ", r.a], ["পেশা", r.j],
+      ["ঠিকানা", addr(r) + ", নাসিরাবাদ হাউজিং সোসাইটি, চট্টগ্রাম"], ["মোবাইল", r.p.map(fmtPhone).join(", ")], ["মৃত্যুর তারিখ", r.dead ? (fmtDate(r.dd) || "নথিভুক্ত") : ""], ["মৃত্যুর মন্তব্য", r.dead ? r.dnote : ""], ["ভোটার তালিকা", !r.dead && r.nv ? "বাদ" + (r.nvr ? " (" + r.nvr + (r.nvd ? ", " + fmtDate(r.nvd) : "") + ")" : "") : ""], ["ইমেইল", r.e], ["বর্তমান ঠিকানা (নতুন)", r.na], ["মন্তব্য", r.t]].filter(x => x[1]);
+    return {file: "member-" + toEn(r.n), title: r.nm, sub: "", head: ["বিষয়", "তথ্য"], rows: kv, photo: r.ph, per: 100};
+  }
+  if (id === "roads"){
+    const st = roadStats(), tot = st.reduce((a, x) => [a[0] + x[1], a[1] + x[2], a[2] + x[3]], [0, 0, 0]);
+    const all = st.concat([["সর্বমোট"].concat(tot)]);
+    return {file: "road-wise", ctr: [1, 2, 3], title: "রোড অনুযায়ী সদস্য সংখ্যা", sub: "", head: ["রোড", "মোট", "আজীবন", "সাধারণ"],
+      rows: all.map(x => [x[0], toBn(x[1]), toBn(x[2]), toBn(x[3])]), xrows: all};
+  }
+  if (id === "log" && logCache){
+    const L = logCache.items.map(x => [new Date(x.t).toLocaleString("bn-BD"), (logCache.ps[x.u] && logCache.ps[x.u].name) || "কর্মকর্তা", x.a, x.nm]);
+    return {file: "change-log", title: "পরিবর্তনের তালিকা", sub: "", head: ["সময়", "কর্মকর্তা", "কাজ", "সদস্য"], rows: L, per: 30};
+  }
+  return null;
+}
+const perOf = d => d.per || 20;
+const pageCount = d => d.brk ? d.brk.length : Math.max(1, Math.ceil(d.rows.length / perOf(d)));
+function parsePages(t, n){
+  const set = new Set();
+  for (const part of toEn(t).replace(/\s*[-–]\s*/g, "-").split(/[,\s،]+/).filter(Boolean)){
+    const m = part.match(/^(\d+)(?:-(\d+))?$/); if (!m) return null;
+    let a = +m[1], b = m[2] ? +m[2] : a;
+    if (a > b){ const x = a; a = b; b = x; }
+    if (a < 1 || b > n) return null;
+    for (let i = a; i <= b; i++) set.add(i);
+  }
+  return set.size ? [...set].sort((x, y) => x - y) : null;
+}
+async function makePdf(d, sel){
+  const JS = window.jspdf && window.jspdf.jsPDF;
+  if (!JS || !window.html2canvas) throw new Error("lib");
+  const n = pageCount(d), pgs = pagesOf(d, sel, d.rows);
+  const W = d.land ? 297 : 210, H = d.land ? 210 : 297;
+  const pdf = new JS({unit: "mm", format: "a4", orientation: d.land ? "landscape" : "portrait"});
+  const box = document.createElement("div");
+  box.className = "pdfpage" + (d.land ? " land" : ""); document.body.appendChild(box);
+  try {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    for (let i = 0; i < pgs.length; i++){
+      box.innerHTML = docHtml(d, pgs[i].rows, pgs[i].p === 1, pgs[i].p, n);
+      for (const im of box.querySelectorAll("img")){ if (im.decode){ try { await im.decode(); } catch (e) {} } }
+      const cv = await html2canvas(box, {scale: pgs.length > 30 ? 2 : 2.6, backgroundColor: "#ffffff", useCORS: true, onclone: c => { const e = c.querySelector(".pdfpage"); if (e){ e.style.left = "0px"; e.style.top = "0px"; } }});
+      let w = W, h = W * cv.height / cv.width;
+      if (h > H){ w = W * H / h; h = H; }
+      if (i) pdf.addPage();
+      pdf.addImage(cv.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, w, h);
+    }
+  } finally { document.body.removeChild(box); }
+  return pdf.output("arraybuffer");
+}
+const bnum = h => { const x = toEn(h || "").match(/\d+/); return x ? x[0] : ""; };
+const hnum = r => parseInt(bnum(r.h) || "-1", 10);
+function groupsNow(opts){
+  const map = new Map(), st = opts && opts.st !== undefined ? opts.st : state.st;
+  for (const r of rows){
+    if (state.road && r.r !== state.road) continue;
+    if (state.life === "l" && !r.l) continue;
+    if (state.life === "g" && r.l) continue;
+    if (!stOk(r, st)) continue;
+    const nm = (r.b || "").trim(), base = bnum(r.h);
+    const k = r.r + "|" + (nm ? "n:" + fold(nm).replace(/[\s.\-,()]+/g, "") : "h:" + base);
+    let g = map.get(k);
+    if (!g){ g = {k: k, road: r.r, name: nm || "বাড়ির নাম নেই" + (base ? " (বাড়ী " + toBn(base.padStart(2, "0")) + ")" : ""), noName: !nm, m: [], hs: new Set()}; map.set(k, g); }
+    g.m.push(r); if (r.h) g.hs.add(r.h);
+  }
+  const {tokens, cond} = parseQuery(state.q);
+  const gs = [...map.values()].filter(g => {
+    if (cond.road != null && parseInt(toEn(g.road), 10) !== cond.road) return false;
+    if (cond.house != null && !g.m.some(r => hnum(r) === cond.house)) return false;
+    if (cond.no != null && !g.m.some(r => r.noN === cond.no)) return false;
+    const hay = fold(g.name + " " + g.m.map(r => r.nm).join(" "));
+    return tokens.every(tk => /^\d+$/.test(tk)
+      ? (tk.length >= 4 ? g.m.some(r => r.phones.includes(tk)) : g.m.some(r => hnum(r) === parseInt(tk, 10) || r.noN === parseInt(tk, 10)))
+      : hay.includes(tk));
+  });
+  gs.forEach(g => { g.nl = g.m.filter(r => r.l).length; });
+  const nn = g => g.noName ? 1 : 0;
+  gs.sort(state.hsort === "hc" ? (a, b) => b.m.length - a.m.length || a.road.localeCompare(b.road) || a.name.localeCompare(b.name, "bn")
+    : (a, b) => a.road.localeCompare(b.road) || nn(a) - nn(b) || a.name.localeCompare(b.name, "bn"));
+  return gs;
+}
+function renderHouses(){
+  const gs = groupsNow();
+  const tot = gs.reduce((a, g) => a + g.m.length, 0), nl = gs.reduce((a, g) => a + g.nl, 0);
+  countEl.textContent = toBn(gs.length) + "টি বাড়িতে মোট " + toBn(tot) + " জন সদস্য (আজীবন " + toBn(nl) + ", সাধারণ " + toBn(tot - nl) + ")" + (state.st ? " । ফিল্টার চালু: " + {v: "ভোটার", x: "ভোটার তালিকা থেকে বাদ", d: "মৃত সদস্য"}[state.st] + " (সব বাড়ি দেখতে \"ফিল্টার মুছুন\" চাপুন)" : "");
+  if (!gs.length){ listEl.innerHTML = '<li class="empty">কোনো বাড়ি পাওয়া যায়নি।<br>বাড়ির নাম বা বাড়ী নং দিয়ে আবার খুঁজুন।<br><button class="chip" type="button" id="reset">সব ফিল্টার মুছুন</button></li>'; return; }
+  const srt = x => x.slice().sort((a, b) => a.noN - b.noN);
+  const sec = (t, arr) => arr.length ? "<p><b>" + t + " (" + toBn(arr.length) + " জন)</b></p>" + arr.map((r, i) => "<p>" + toBn(i + 1) + '. <button class="chip" type="button" data-go="' + esc(r.n) + '">' + esc(r.n) + "</button> " + esc(r.nm) +
+    (r.fl ? " (ফ্ল্যাট " + esc(r.fl) + ")" : "") + (r.dead ? " [মৃত]" : r.nv ? " [ভোটার তালিকা থেকে বাদ]" : "") + (r.p[0] ? ' <a class="call" href="tel:' + r.p[0] + '">' + fmtPhone(r.p[0]) + "</a>" : "") + "</p>").join("") : "";
+  listEl.innerHTML = gs.map(g => {
+    const open = state.gopen.has(g.k);
+    const more = open ? '<div class="more">' + sec("আজীবন সদস্য", srt(g.m.filter(r => r.l))) + sec("সাধারণ সদস্য", srt(g.m.filter(r => !r.l))) +
+      '<div class="bar"><button class="btn ghost" type="button" data-gp="' + esc(g.k) + '">এই বাড়ির তালিকা প্রিন্ট / ডাউনলোড</button></div></div>' : "";
+    return '<li class="m"><button class="head" type="button" aria-expanded="' + open + '" data-g="' + esc(g.k) + '"><span class="no"><small>সদস্য</small>' + toBn(g.m.length) + "</span>" +
+      '<span class="who"><span class="tx"><b>রোড ' + esc(g.road) + ", " + esc(g.name) + '</b><span class="ad">আজীবন সদস্য ' + toBn(g.nl) + " জন, সাধারণ সদস্য " + toBn(g.m.length - g.nl) + " জন</span>" +
+      (g.hs.size ? '<span class="ad">বাড়ী নং: ' + esc([...g.hs].join(", ")) + "</span>" : "") + "</span></span></button>" + more + "</li>";
+  }).join("");
+}
+function layoutSeq(d, hs, cap){
+  const rows = [], brk = [0], seq = d.seq, hG = new Map();
+  let used = 0, curG = null, curS = null, curSh = 0;
+  seq.forEach((it, i) => { if (it.k === "g") hG.set(it.g, hs[i]); });
+  const push = (r, h) => { rows.push(r); used += h; };
+  const flush = () => { if (rows.length > brk[brk.length - 1]) brk.push(rows.length); used = 0; };
+  for (let i = 0; i < seq.length; i++){
+    const it = seq[i], h = hs[i];
+    if (it.k === "g"){
+      const nx = seq[i + 1], need = h + hs[i + 1] + (nx && nx.k === "s" ? hs[i + 2] : 0);
+      if (used + need > cap) flush();
+      curG = it.g; curS = null; push(d.mk1(it.g, false), h);
+    } else if (it.k === "s"){
+      if (seq[i - 1].k === "m" && used + h + hs[i + 1] > cap){ flush(); push(d.mk1(curG, true), hG.get(curG)); }
+      curS = it.t; curSh = h; push(d.mk2(it.t, false), h);
+    } else {
+      if (used + h > cap){ flush(); push(d.mk1(curG, true), hG.get(curG)); if (curS) push(d.mk2(curS, true), curSh); }
+      push(it.row, h);
+    }
+  }
+  const pgl = brk.map((st, i) => {
+    const seg = rows.slice(st, brk[i + 1] === undefined ? rows.length : brk[i + 1]).filter(r => r.sec === 1), a = seg[0], b = seg[seg.length - 1];
+    return a ? "রোড " + a.g.road + ", " + a.g.name + (b !== a ? " থেকে রোড " + b.g.road + ", " + b.g.name : "") : "";
+  });
+  return {rows: rows, brk: brk, pgl: pgl};
+}
+function votersDoc(gs, title, sub, file, opt){
+  const vt = !!(opt && opt.voter);
+  const mk1 = (g, cont) => { const r = [""]; r.sec = 1; r.g = g;
+    r.t = vt ? g.name + "  →  " + g.road + (cont ? "  [চলমান]" : "") : "রোড " + g.road + ", বাড়ির নাম: " + g.name + (g.hs.size ? ", বাড়ী নং: " + [...g.hs].join(", ") : "") + "   (আজীবন " + toBn(g.nl) + " জন, সাধারণ " + toBn(g.m.length - g.nl) + " জন)" + (cont ? "  [চলমান]" : "");
+    return r; };
+  const mk2 = (t, cont) => { const r = [""]; r.sec = 2; r.t = t + (cont ? "  [চলমান]" : ""); return r; };
+  const seq = []; let cnt = 0;
+  gs.forEach(g => {
+    const parts = [["আজীবন সদস্য", g.m.filter(r => r.l)], ["সাধারণ সদস্য", g.m.filter(r => !r.l)]].filter(x => x[1].length);
+    seq.push({k: "g", g: g});
+    parts.forEach(pt => {
+      pt[1].sort((a, b) => a.noN - b.noN);
+      if (!vt) seq.push({k: "s", t: pt[0] + " (" + toBn(pt[1].length) + " জন)"});
+      pt[1].forEach(r => { const row = listRow(r, cnt++); row.x = [g.road, g.name, pt[0]].concat(memRow(r)); seq.push({k: "m", row: row}); });
+    });
+  });
+  const d = {land: true, ctr: [0, 1, 3, 4, 5], box: vt, seq: seq, mk1: mk1, mk2: mk2, cols: LCOLS, head: LHEAD, file: file, title: title, sub: sub, per: 7,
+    xhead: ["রোড", "বাড়ির নাম", "ধরন"].concat(memHead), xfromRows: true};
+  Object.assign(d, layoutSeq(d, seq.map(it => it.k === "g" ? 30 : it.k === "s" ? 26 : 80), 600));
+  return d;
+}
+async function fitDoc(d){
+  if (!d || !d.land || d.fitted) return d;
+  const box = document.createElement("div");
+  box.className = "pdfpage land"; box.style.minHeight = "0"; box.style.visibility = "hidden";
+  document.body.appendChild(box);
+  try {
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    box.innerHTML = docHtml(d, [], true, 1, 2);
+    const cap = 741 - 8 - (box.offsetHeight - 56);
+    const flat = d.seq ? d.seq.map(it => it.k === "g" ? d.mk1(it.g, false) : it.k === "s" ? d.mk2(it.t, false) : it.row) : d.rows;
+    box.innerHTML = docHtml(d, flat, true, 1, 2);
+    const hs = [...box.querySelectorAll("tbody tr")].map(t => t.getBoundingClientRect().height);
+    if (hs.length === flat.length && cap > 200){
+      if (d.seq) Object.assign(d, layoutSeq(d, hs, cap));
+      else { const brk = [0]; let used = 0; hs.forEach((h, i) => { if (used + h > cap && i > brk[brk.length - 1]){ brk.push(i); used = 0; } used += h; }); d.brk = brk; }
+      d.fitted = true;
+    }
+  } catch (e) {} finally { document.body.removeChild(box); }
+  return d;
+}
+function pagesOf(d, sel, arr){
+  const n = pageCount(d), per = perOf(d), out = [];
+  for (let p = 1; p <= n; p++){
+    if (sel && sel.indexOf(p) < 0) continue;
+    const a = d.brk ? d.brk[p - 1] : (p - 1) * per, b = d.brk ? (d.brk[p] === undefined ? arr.length : d.brk[p]) : p * per;
+    out.push({p: p, rows: arr.slice(a, b)});
+  }
+  return out;
+}
+function docHtml(d, rs, first, p, n){
+  let h = '<div class="hd">' + (LOGO ? '<img class="lg" alt="" src="/_blob/' + LOGO + '">' : "") + '<div class="ht"><h2>' + ORG + '</h2><p class="ad2">' + esc(ORGADDR || DEFADDR).replace(/\n/g, "<br>") + "</p>" +
+    (d.box ? '<p class="tb">' + esc(d.title) + "</p><p>" + esc(d.sub ? d.sub + ", " : "") + "তারিখ " + esc(new Date().toLocaleDateString("bn-BD")) + "</p>" : "<p>" + esc(d.title) + (d.sub ? ", " + esc(d.sub) : "") + ", তারিখ " + esc(new Date().toLocaleDateString("bn-BD")) + "</p>") + "</div></div>";
+  if (first && d.photo) h += '<img class="pvp" alt="" src="/_blob/' + d.photo + '">';
+  h += "<table>" + (d.cols ? "<colgroup>" + d.cols.map(w => '<col width="' + w + '">').join("") + "</colgroup>" : "") + "<thead><tr>" + d.head.map(x => "<th>" + esc(x) + "</th>").join("") + "</tr></thead><tbody>" +
+    rs.map(r => r.sec ? '<tr class="sec' + r.sec + '"><td colspan="' + d.head.length + '">' + esc(r.t) + "</td></tr>" : "<tr>" + r.map((c, ci) => "<td" + (d.ctr && d.ctr.indexOf(ci) >= 0 ? ' class="c"' : "") + ">" + cellH(c) + "</td>").join("") + "</tr>").join("") + "</tbody></table>";
+  return h + (n > 1 ? '<p class="pg">পৃষ্ঠা ' + toBn(p) + " / " + toBn(n) + "</p>" : "");
+}
+async function act(kind, id, msgEl, sel){
+  const d = await fitDoc(getDoc(id)); if (!d) return;
+  const n = pageCount(d), tag = sel ? "-selected" : "";
+  if (kind === "preview"){ await showPreview(d, sel, id); return; }
+  if (kind === "print"){
+    pvEl.innerHTML = pagesOf(d, sel, d.rows).map(x => '<div class="pvpage' + (d.land ? " land" : "") + '">' + docHtml(d, x.rows, x.p === 1, x.p, n) + "</div>").join("");
+    const imgs = [...pvEl.querySelectorAll("img")];
+    await Promise.race([Promise.all(imgs.map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; }))), new Promise(r => setTimeout(r, 6000))]);
+    doPrint(); return;
+  }
+  const prev = countEl.textContent, say = t => { (msgEl || countEl).textContent = t; };
+  if (!dls){ say("এই ব্রাউজারে ডাউনলোড চালু নেই।"); return; }
+  try {
+    if (kind === "xls"){
+      const data = d.xfromRows ? pagesOf(d, sel, d.rows).reduce((a, x) => a.concat(x.rows.filter(r => !r.sec).map(r => r.x)), [])
+        : pagesOf(d, sel, d.xrows || d.rows).reduce((a, x) => a.concat(x.rows), []);
+      await saveTable(d.file + tag, d.xhead || d.head, data);
+    } else {
+      say("পিডিএফ তৈরি হচ্ছে, একটু অপেক্ষা করুন...");
+      const buf = await makePdf(d, sel);
+      await dls.save({filename: d.file + tag + ".pdf", data: new Blob([buf], {type: "application/pdf"})});
+    }
+  } catch (e) { say("ফাইল তৈরি করা যায়নি।"); return; }
+  say(msgEl ? "" : prev);
+}
+function menu(id, label){
+  const hv = id === "cur" && state.view === "h";
+  const cur = () => hv ? document.getElementById("f_doc").value : id;
+  dlg.innerHTML = "<h2>" + esc(label) + "</h2>" +
+    (hv ? '<label class="pgin">কোন তালিকা<select id="f_doc"><option value="voters">ভোটার তালিকা (মৃত ও বাদ পড়া ছাড়া)</option><option value="bhouse">বাড়ি অনুযায়ী সদস্য তালিকা (সবাই)</option><option value="houses">বাড়ি অনুযায়ী সংখ্যার সারসংক্ষেপ</option></select></label>' : "") +
+    '<label class="pgin">ছাপার ফন্ট (কম্পিউটারে যে ফন্ট আছে তার নাম লিখুন, যেমন SutonnyOMJ। ফাঁকা রাখলে সাধারণ ফন্ট)<input id="f_pf" list="pfl" autocomplete="off" value="' + esc(PF) + '"></label><datalist id="pfl"><option value="SutonnyOMJ"></option><option value="Nikosh"></option><option value="Kalpurush"></option><option value="SolaimanLipi"></option><option value="Siyam Rupali"></option><option value="Nirmala UI"></option></datalist>' +
+    '<div id="mpg"></div><p class="msg" id="msg"></p><div class="bar"><button class="btn ghost" type="button" data-a="preview">প্রিন্ট প্রিভিউ</button><button class="btn" type="button" data-a="print">প্রিন্ট</button><button class="btn" type="button" data-a="pdf">পিডিএফ ডাউনলোড</button><button class="btn" type="button" data-a="xls">এক্সেল ডাউনলোড</button></div><div class="bar"><button class="btn ghost" type="button" id="cn">বাতিল</button></div><p class="msg">সবচেয়ে স্পষ্ট লেখার জন্য "প্রিন্ট" চেপে প্রিন্ট জানালা থেকে "PDF হিসেবে সংরক্ষণ" বেছে নিতে পারেন। "পিডিএফ ডাউনলোড" ছবির আকারে তৈরি হয়, তাই কম স্পষ্ট হতে পারে।</p>';
+  const draw = async () => {
+    const d = await fitDoc(getDoc(cur())), n = d ? pageCount(d) : 1;
+    let pg = "";
+    if (d && n > 1){
+      const lines = (d.pgl ? d.pgl.map((t, i) => "<p>পৃষ্ঠা " + toBn(i + 1) + ": " + esc(t) + "</p>") : pagesOf(d, null, d.rows).map(x => { const a = x.rows[0], b = x.rows[x.rows.length - 1];
+        return "<p>পৃষ্ঠা " + toBn(x.p) + ": ক্রম " + esc(a[0]) + "–" + esc(b[0]) + (d.lab ? " (" + esc(d.lab(a)) + " থেকে " + esc(d.lab(b)) + ")" : "") + "</p>"; })).join("");
+      pg = '<p class="msg">মোট ' + toBn(n) + " পৃষ্ঠা" + (d.fitted ? " (কাগজ ভরে সাজানো)" : ", প্রতি পৃষ্ঠায় সর্বোচ্চ " + toBn(perOf(d)) + (d.brk ? " জন সদস্য" : "টি সারি")) + "। শুধু কিছু পৃষ্ঠা চাইলে নম্বর লিখুন, খালি রাখলে সব পৃষ্ঠা আসবে।</p>" +
+        '<label class="pgin">পৃষ্ঠা নম্বর<input id="f_pg" inputmode="text" autocomplete="off" placeholder="যেমন ৩ বা ১-৫ বা ২, ৪, ৭-৯"></label><div class="pgl">' + lines + "</div>";
+    }
+    document.getElementById("mpg").innerHTML = pg;
+  };
+  draw();
+  if (hv) document.getElementById("f_doc").onchange = draw;
+  dlg.querySelectorAll("[data-a]").forEach(b => { b.onclick = async () => {
+    const did = cur(), d = await fitDoc(getDoc(did)); if (!d) return;
+    const n = pageCount(d), inp = document.getElementById("f_pg");
+    let sel = null;
+    if (inp && inp.value.trim()){
+      sel = parsePages(inp.value, n);
+      if (!sel){ document.getElementById("msg").textContent = "পৃষ্ঠা নম্বর ঠিক নেই। ১ থেকে " + toBn(n) + " এর মধ্যে লিখুন।"; return; }
+    }
+    dlg.close(); act(b.dataset.a, did, null, sel);
+  }; });
+  document.getElementById("cn").onclick = () => dlg.close();
+  dlg.showModal();
+}
+async function showPdf(blob, dv){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const pdf = await pdfjsLib.getDocument({data: await blob.arrayBuffer()}).promise;
+  const max = Math.min(pdf.numPages, 10);
+  dv.innerHTML = "";
+  for (let i = 1; i <= max; i++){
+    const pg = await pdf.getPage(i), v0 = pg.getViewport({scale: 1});
+    const w = Math.min(dv.clientWidth || 520, 800);
+    const vp = pg.getViewport({scale: (w / v0.width) * (window.devicePixelRatio || 1)});
+    const cv = document.createElement("canvas"); cv.className = "docpg"; cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+    await pg.render({canvasContext: cv.getContext("2d"), viewport: vp}).promise;
+    dv.appendChild(cv);
+  }
+  return pdf.numPages > max ? "প্রথম ১০ পৃষ্ঠা দেখানো হয়েছে, পুরোটা দেখতে ডাউনলোড করুন।" : "";
+}
+async function viewDoc(id, label){
+  dlg.innerHTML = "<h2>" + esc(label) + '</h2><p class="msg" id="msg">লোড হচ্ছে...</p><div id="dv"></div><div class="bar"><button class="btn" type="button" id="dd" hidden>ডাউনলোড</button><button class="btn ghost" type="button" id="cn">বন্ধ করুন</button></div>';
+  document.getElementById("cn").onclick = () => dlg.close();
+  dlg.showModal();
+  const msg = document.getElementById("msg"), dv = document.getElementById("dv");
+  try {
+    const res = await fetch("/_blob/" + id);
+    if (!res.ok) throw new Error("http " + res.status);
+    const blob = await res.blob();
+    const h = new Uint8Array(await blob.slice(0, 8).arrayBuffer());
+    let t = blob.type || "";
+    if (!/^(image\/|application\/pdf)/.test(t)){
+      if (h[0] === 0x25 && h[1] === 0x50) t = "application/pdf";
+      else if (h[0] === 0xff && h[1] === 0xd8) t = "image/jpeg";
+      else if (h[0] === 0x89 && h[1] === 0x50) t = "image/png";
+    }
+    const ext = t === "application/pdf" ? "pdf" : t === "image/png" ? "png" : t === "image/webp" ? "webp" : t === "image/gif" ? "gif" : "jpg";
+    const dd = document.getElementById("dd");
+    if (dls){ dd.hidden = false; dd.onclick = async () => { try { await dls.save({filename: "document." + ext, data: blob}); } catch (e) { msg.textContent = "ডাউনলোড করা যায়নি।"; } }; }
+    if (t.indexOf("image/") === 0){ dv.innerHTML = '<img class="docimg" alt="" src="/_blob/' + id + '">'; msg.textContent = ""; }
+    else if (t === "application/pdf"){
+      try { msg.textContent = await showPdf(blob, dv); }
+      catch (e) { dv.innerHTML = '<iframe class="docfr" title="' + esc(label) + '" src="/_blob/' + id + '"></iframe>'; msg.textContent = "ফাঁকা দেখালে ডাউনলোড করে খুলুন।"; }
+    } else msg.textContent = "ফাইলটি এখানে দেখানো যাচ্ছে না, ডাউনলোড করে খুলুন।";
+  } catch (e) { msg.textContent = "ফাইলটি খোলা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন।"; }
+}
+async function showPreview(d, sel, id){
+  const pw = document.getElementById("pvw"), n = pageCount(d), pgs = pagesOf(d, sel, d.rows);
+  pw.innerHTML = '<div class="pvbar"><b>প্রিন্ট প্রিভিউ</b><span id="pvi">লোড হচ্ছে...</span><button class="btn" type="button" id="pvp">প্রিন্ট</button><button class="btn" type="button" id="pvf">পিডিএফ</button><button class="btn ghost" type="button" id="pvc">বন্ধ করুন</button></div><div id="pvb"></div>';
+  document.getElementById("pvc").onclick = () => pw.close();
+  document.getElementById("pvp").onclick = () => { pw.close(); act("print", id, null, sel); };
+  document.getElementById("pvf").onclick = () => { pw.close(); act("pdf", id, null, sel); };
+  pw.showModal();
+  const body = document.getElementById("pvb"), W = d.land ? 1123 : 794, H = d.land ? 794 : 1123;
+  body.innerHTML = pgs.map(x => '<div class="shw"><div class="pdfpage sheet' + (d.land ? " land" : "") + '">' + docHtml(d, x.rows, x.p === 1, x.p, n) + "</div></div>").join("");
+  const imgs = [...body.querySelectorAll("img")];
+  await Promise.race([Promise.all(imgs.map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; }))), new Promise(r => setTimeout(r, 6000))]);
+  const sc = Math.min(1, (body.clientWidth || 900) / W);
+  let over = 0;
+  body.querySelectorAll(".shw").forEach(w => {
+    const sh = w.firstChild;
+    sh.style.minHeight = H + "px"; sh.style.transformOrigin = "top left"; sh.style.transform = "scale(" + sc + ")";
+    const hh = sh.offsetHeight;
+    if (hh > H + 4){ over++; w.classList.add("over"); }
+    w.style.height = Math.round(hh * sc) + "px"; w.style.maxWidth = Math.round(W * sc) + "px";
+  });
+  document.getElementById("pvi").textContent = toBn(pgs.length) + " পৃষ্ঠা। " + (over ? toBn(over) + "টি পৃষ্ঠা (লাল দাগ) এক কাগজে আঁটবে না।" : "সব পৃষ্ঠা কাগজে আঁটছে।");
+}
+function openRoads(){
+  const d = getDoc("roads");
+  dlg.innerHTML = "<h2>রোড অনুযায়ী সদস্য সংখ্যা</h2><div class=\"rs\"><table><thead><tr>" + d.head.map(x => "<th>" + x + "</th>").join("") + "</tr></thead><tbody>" +
+    d.rows.map(r => "<tr>" + r.map(c => "<td>" + c + "</td>").join("") + "</tr>").join("") + '</tbody></table></div><p class="msg" id="msg"></p>' +
+    '<div class="bar"><button class="btn ghost" type="button" data-a="preview">প্রিন্ট প্রিভিউ</button><button class="btn" type="button" data-a="print">প্রিন্ট</button><button class="btn" type="button" data-a="pdf">পিডিএফ</button><button class="btn" type="button" data-a="xls">এক্সেল</button><button class="btn ghost" type="button" id="cn">বন্ধ করুন</button></div>';
+  dlg.querySelectorAll("[data-a]").forEach(b => { b.onclick = () => act(b.dataset.a, "roads", document.getElementById("msg")); });
+  document.getElementById("cn").onclick = () => dlg.close();
+  dlg.showModal();
+}
+function drawBar(){
+  barEl.innerHTML = '<button class="btn" type="button" id="add">নতুন সদস্য যোগ</button><button class="btn ghost" type="button" id="qk">দ্রুত নথিভুক্তি (মৃত / ভোটার)</button><button class="btn warn" type="button" id="ud" hidden>↩ শেষ নথিভুক্তি ফিরিয়ে নিন</button><button class="btn ghost" type="button" id="pl">প্রিন্ট / ডাউনলোড</button><button class="btn ghost" type="button" id="rb">রোড অনুযায়ী সংখ্যা</button>' +
+    (isOwner ? '<button class="btn ghost" type="button" id="log">পরিবর্তনের তালিকা</button><button class="btn ghost" type="button" id="lgo">লোগো ও ঠিকানা</button><button class="btn ghost" type="button" id="bk">সব সদস্য নামান (এক্সেল)</button>' : "");
+  document.getElementById("add").onclick = () => openEdit(0);
+  document.getElementById("qk").onclick = () => quickDlg();
+  document.getElementById("ud").onclick = async () => {
+    const u = lastUndo; if (!u) return;
+    try { await undoStatus(u.prevs); setUndo(null); countEl.textContent = "শেষ নথিভুক্তি ফিরিয়ে নেওয়া হয়েছে।"; } catch (e) { countEl.textContent = "ফিরিয়ে নেওয়া যায়নি।"; }
+  };
+  document.getElementById("pl").onclick = () => menu("cur", state.view === "h" ? "বাড়ি অনুযায়ী তালিকা" : "সদস্য তালিকা");
+  document.getElementById("rb").onclick = openRoads;
+  if (isOwner){ document.getElementById("lgo").onclick = openLogo; document.getElementById("log").onclick = showLog; document.getElementById("bk").onclick = backup; }
+}
+db = {
+  _get: (k, d) => JSON.parse(localStorage.getItem("nhs_" + k) || JSON.stringify(d)),
+  _set: (k, v) => { localStorage.setItem("nhs_" + k, JSON.stringify(v)); if (db._cb[k]) db._cb[k](); },
+  _cb: {},
+  collection: (name) => ({
+    onSnapshot: (fn) => {
+      db._cb[name] = () => {
+        const data = db._get(name, name === "settings" ? { org: { addr: DEFADDR, logo: "" } } : {});
+        const docs = Object.keys(data).map(id => ({ id, data: () => data[id] }));
+        fn({ docs, forEach: cb => docs.forEach(cb) });
+      };
+      db._cb[name]();
+    },
+    orderBy: () => ({
+      limit: () => ({
+        get: async () => {
+          const arr = db._get("audit", []);
+          return { docs: arr.map((x, i) => ({ id: String(i), data: () => x })) };
+        }
+      })
+    }),
+    add: async (item) => {
+      const arr = db._get("audit", []);
+      arr.unshift(item);
+      db._set("audit", arr.slice(0, 200));
+    }
+  }),
+  doc: (path) => ({
+    get: async () => {
+      const [col, id] = path.split("/");
+      const all = db._get(col, {});
+      return { exists: !!all[id], data: () => all[id] };
+    },
+    set: async (patch, opt) => {
+      const [col, id] = path.split("/");
+      const all = db._get(col, {});
+      if (opt && opt.merge) all[id] = Object.assign(all[id] || {}, patch);
+      else all[id] = patch;
+      db._set(col, all);
+    },
+    update: async (patch) => {
+      const [col, id] = path.split("/");
+      const all = db._get(col, {});
+      all[id] = all[id] || {};
+      Object.keys(patch).forEach(k => {
+        if (patch[k] === null) delete all[id][k];
+        else all[id][k] = patch[k];
+      });
+      db._set(col, all);
+    }
+  })
+};
+
+assets = {
+  upload: async (blob) => new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => res({ id: r.result });
+    r.readAsDataURL(blob);
+  })
+};
+dls = {
+  save: async ({ filename, data }) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([data]));
+    a.download = filename;
+    a.click();
+  }
+};
+
+function setupLocalImages() {
+  const fix = () => {
+    document.querySelectorAll("img").forEach(im => {
+      const s = im.getAttribute("src") || "";
+      if (s.startsWith("/_blob/data:")) im.src = s.slice(7);
+    });
+  };
+  new MutationObserver(fix).observe(document.body, { childList: true, subtree: true, attributes: true });
+}
+
+function checkAdminLogin() {
+  let adms = db._get("admins", []);
+  let cur = JSON.parse(sessionStorage.getItem("nhs_cur") || "null");
+  if (!adms.length) {
+    dlg.innerHTML = '<h2>প্রধান এডমিন সেটআপ</h2><div class="fg"><label class="w">নাম/পদবী<input id="an" value="প্রধান এডমিন"></label><label class="w">অফিস ইমেইল<input id="ae" type="email"></label><label>পাসওয়ার্ড<input id="ap" type="text"></label><label>গোপন রিকভারি পিন<input id="apin" placeholder="1234"></label></div><p class="msg" id="lmsg"></p><div class="bar"><button class="btn" id="asv">অ্যাকাউন্ট তৈরি করুন</button></div>';
+    dlg.showModal();
+    document.getElementById("asv").onclick = () => {
+      const e = document.getElementById("ae").value.trim().toLowerCase();
+      const p = document.getElementById("ap").value.trim();
+      const pin = document.getElementById("apin").value.trim();
+      const n = document.getElementById("an").value.trim();
+      if (!e || !p || !pin) { document.getElementById("lmsg").textContent = "সব ঘর পূরণ করুন।"; return; }
+      cur = { name: n, email: e, pass: p, pin: pin, role: "super", ok: true };
+      db._set("admins", [cur]);
+      sessionStorage.setItem("nhs_cur", JSON.stringify(cur));
+      dlg.close();
+      init();
+    };
+    return false;
+  }
+  if (!cur) {
+    dlg.innerHTML = '<h2>অফিস পোর্টাল লগইন</h2><div class="fg"><label class="w">ইমেইল<input id="le" type="email"></label><label class="w">পাসওয়ার্ড<input id="lp" type="password"></label></div><p class="msg" id="lmsg"></p><div class="bar"><button class="btn" id="lbtn">লগইন করুন</button><button class="btn ghost" id="lvis">👁️ পাসওয়ার্ড দেখুন</button><button class="btn ghost" id="lrst">পাসওয়ার্ড ভুলে গেছেন?</button></div>';
+    dlg.showModal();
+    document.getElementById("lvis").onclick = () => {
+      const i = document.getElementById("lp");
+      i.type = i.type === "password" ? "text" : "password";
+    };
+    document.getElementById("lbtn").onclick = () => {
+      const e = document.getElementById("le").value.trim().toLowerCase();
+      const p = document.getElementById("lp").value.trim();
+      const f = adms.find(x => x.email === e && x.pass === p);
+      if (!f) { document.getElementById("lmsg").textContent = "ইমেইল বা পাসওয়ার্ড ভুল!"; return; }
+      sessionStorage.setItem("nhs_cur", JSON.stringify(f));
+      dlg.close();
+      init();
+    };
+    document.getElementById("lrst").onclick = () => {
+      const em = prompt("প্রধান এডমিনের ইমেইল দিন:");
+      const pin = prompt("গোপন রিকভারি পিন দিন:");
+      const sup = adms.find(x => x.role === "super" && x.email === (em || "").trim().toLowerCase() && x.pin === (pin || "").trim());
+      if (!sup) return alert("ইমেইল বা পিন সঠিক নয়!");
+      const np = prompt("নতুন পাসওয়ার্ড লিখুন:");
+      if (np) { sup.pass = np.trim(); db._set("admins", adms); alert("পাসওয়ার্ড পরিবর্তন হয়েছে!"); }
+    };
+    return false;
+  }
+  const profMap = {};
+  adms.forEach(a => { profMap[a.email] = { name: a.name }; });
+  user = { name: cur.name, email: cur.email, isOwner: async () => cur.role === "super", canEdit: async () => true, profiles: async () => profMap };
+  uid = cur.email;
+  isOwner = cur.role === "super";
+  return true;
+}
+
+const extraCss = document.createElement("style");
+extraCss.textContent = `
+  .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;}
+  .d-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center;}
+  .d-card b{display:block;font-size:20px;color:var(--accent);line-height:1.2;}
+  .d-card span{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .ph-row{display:flex;align-items:center;gap:5px;}
+  .wa-btn{display:inline-flex;align-items:center;padding:6px 9px;border-radius:8px;background:#e6f7ed;color:#128c7e;border:1px solid #b7ebcd;text-decoration:none;font-size:13px;font-weight:700;}
+  .pdfpage .pvp,#pv .pvp{width:95px!important;height:115px!important;object-fit:cover;object-position:top center;float:right;border:2px solid #334155;border-radius:6px;padding:2px;background:#fff;margin:0 0 8px 12px;}
+  .id-card{width:320px;margin:10px auto;border:2px solid #0a6b6b;border-radius:12px;overflow:hidden;background:#fff;color:#0f172a;}
+  .id-top{background:#0a6b6b;color:#fff;padding:10px;text-align:center;}
+  .id-body{padding:14px;text-align:center;}
+  .id-pic{width:88px;height:102px;border-radius:8px;border:2px solid #0a6b6b;object-fit:cover;object-position:top center;margin:0 auto 8px;display:block;background:#e2efed;line-height:98px;font-size:32px;font-weight:700;color:#0a6b6b;}
+  .id-ft{background:#f1f5f9;padding:6px;text-align:center;font-size:11px;color:#475569;border-top:1px solid #cbd5e1;}
+  .v-foot{margin-top:24px;padding:12px;border-top:1px dashed var(--line);text-align:center;font-size:13px;color:var(--muted);}
+  .badge-req{background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:12px;margin-left:4px;}
+  @media(max-width:600px){.dash-grid{grid-template-columns:repeat(2,1fr);}}
+  @media print{html,body,.wrap{filter:none!important;}}
+`;
+document.head.appendChild(extraCss);
+
+let ORG_NAME = localStorage.getItem("nhs_org_name") || ORG;
+let ORG_SUB = localStorage.getItem("nhs_org_sub") || "";
+function syncOrgTitle() {
+  const h1 = document.querySelector(".bt h1");
+  const sub = document.querySelector(".bt .sub");
+  if (h1) h1.textContent = ORG_NAME;
+  if (sub) { sub.textContent = ORG_SUB; sub.hidden = !ORG_SUB; }
+}
+
+const origFetch = window.fetch;
+window.fetch = async function(url, opts) {
+  if (typeof url === "string" && url.startsWith("/_blob/data:")) {
+    const d = url.slice(7).split(",");
+    const mime = d.at(0).match(/:(.*?);/).at(1);
+    const bstr = atob(d.at(1));
+    let n = bstr.length, u8 = new Uint8Array(n);
+    while (n--) u8[n] = bstr.charCodeAt(n);
+    return new Response(new Blob([u8], { type: mime }));
+  }
+  return origFetch.apply(this, arguments);
+};
+ 
+shrink = async function(file) {
+
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * k);
+  c.height = Math.round(bmp.height * k);
+  const ctx = c.getContext("2d");
+  ctx.drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(res, "image/jpeg", 0.96));
+};
+
+doPrint = function() {
+  fixAllBlobs();
+  if (dlg.open) dlg.close();
+  const pvw = document.getElementById("pvw");
+  if (pvw && pvw.open) pvw.close();
+  setTimeout(() => { window.print(); }, 250);
+};
+
+const origGetDoc = getDoc;
+getDoc = function(id) {
+  if (id === "dead" || id === "excl") {
+    const isD = id === "dead";
+    const gs = groupsNow({ st: isD ? "d" : "x" });
+    const tot = gs.reduce((q, g) => q + g.m.length, 0);
+    return votersDoc(gs, (isD ? "মৃত সদস্যদের তালিকা" : "ভোটার তালিকা থেকে বাদ পড়া সদস্য") + lifeTxt(), "মোট " + toBn(tot) + " জন", isD ? "deceased" : "excluded");
+  }
+  return origGetDoc(id);
+};
+
+function getMemberQrUrl(r) {
+  const info = [ORG_NAME, "সদস্য নং: " + r.n, "নাম: " + r.nm, r.f ? "পিতা: " + r.f : "", "ঠিকানা: " + [r.b, r.h ? "বাড়ী " + r.h : "", r.r ? "রোড " + r.r : ""].filter(Boolean).join(", "), r.p && r.p.length ? "মোবাইল: " + r.p.map(fmtPhone).join(", ") : ""].filter(Boolean).join("\n");
+  return "https://qrserver.com" + encodeURIComponent(info);
+}
+
+const origDocHtmlBase = docHtml;
+docHtml = function(d, rs, first, p, n) {
+  let h = origDocHtmlBase(d, rs, first, p, n).replace(ORG, esc(ORG_NAME));
+  if (first && d.file && d.file.startsWith("member-")) {
+    const r = rows.find(x => toEn(x.n) === d.file.replace("member-", ""));
+    if (r) {
+      const qrBox = `<div style="float:right;clear:right;text-align:center;margin:2px 0 8px 12px;border:1px solid #334155;padding:4px;border-radius:6px;background:#fff;"><img src="${getMemberQrUrl(r)}" style="width:90px;height:90px;display:block;"><small style="font-size:8.5pt;display:block;font-weight:700;">QR যাচাই</small></div>`;
+      h = h.replace("<table>", qrBox + "<table>");
+    }
+  }
+  if (PF && PF.toLowerCase().includes("sutonny")) {
+    const tmp = document.createElement("div"); tmp.innerHTML = h;
+    const w = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT); let nd;
+    while (nd = w.nextNode()) if (nd.nodeValue.trim()) nd.nodeValue = toSutonnyStr(nd.nodeValue);
+    h = tmp.innerHTML;
+  }
+  return h;
+};
+openLogo = function() {
+  dlg.innerHTML = `<h2>প্রতিষ্ঠানের তথ্য, লোগো ও ঠিকানা</h2>
+    <div class="fg">
+      <label class="w">প্রতিষ্ঠানের নাম<input id="f_on" value="${esc(ORG_NAME)}"></label>
+      <label class="w">উপ-শিরোনাম (ঐচ্ছিক)<input id="f_os" value="${esc(ORG_SUB)}"></label>
+      <label class="w">ঠিকানা<textarea id="f_oa" rows="2">${esc(ORGADDR || DEFADDR)}</textarea></label>
+      <label class="w">নতুন লোগো<input type="file" id="f_lg" accept="image/*"></label>
+    </div>
+    <p class="msg" id="msg"></p>
+    <div class="bar"><button class="btn" id="sv">সংরক্ষণ</button><button class="btn ghost" onclick="dlg.close()">বাতিল</button></div>`;
+  document.getElementById("sv").onclick = async (ev) => {
+    ev.target.disabled = true;
+    ORG_NAME = document.getElementById("f_on").value.trim() || ORG;
+    ORG_SUB = document.getElementById("f_os").value.trim();
+    localStorage.setItem("nhs_org_name", ORG_NAME); localStorage.setItem("nhs_org_sub", ORG_SUB);
+    syncOrgTitle();
+    const f = document.getElementById("f_lg").files[0];
+    let patch = { addr: document.getElementById("f_oa").value.trim() };
+    if (f) { const r = await assets.upload(f.type === "image/svg+xml" ? f : await logoPng(f)); patch.logo = r.id; }
+    await saveOrg(patch); dlg.close();
+  };
+  dlg.showModal();
+};
+
+function openIdCard(s) {
+  const r = rows.find(x => x.s === s); if (!r) return;
+  const ad = [r.b, r.h ? "বাড়ী " + r.h : "", r.r ? "রোড " + r.r : ""].filter(Boolean).join(", ");
+  dlg.innerHTML = `<h2>ডিজিটাল পরিচয়পত্র</h2>
+    <div class="id-card">
+      <div class="id-top"><h4>${esc(ORG_NAME)}</h4><small>সদস্য পরিচয়পত্র</small></div>
+      <div class="id-body">
+        ${r.ph ? `<img class="id-pic" src="${r.ph.startsWith('data:') ? r.ph : '/_blob/' + r.ph}">` : `<div class="id-pic">${esc(r.key.charAt(0))}</div>`}
+        <b style="font-size:18px;display:block;">${esc(r.nm)}</b>
+        <p style="margin:4px 0;">সদস্য নং: <b>${esc(r.n)}</b> (${r.l ? "আজীবন" : "সাধারণ"})</p>
+        <p style="margin:2px 0;font-size:13px;">পিতা: ${esc(r.f || "-")}</p>
+        <p style="margin:2px 0;font-size:13px;">ঠিকানা: ${esc(ad || "-")}</p>
+        <p style="margin:2px 0 8px;font-size:13px;">মোবাইল: ${esc((r.p || []).map(fmtPhone).join(", ") || "-")}</p>
+        <img src="${getMemberQrUrl(r)}" style="width:90px;height:90px;border:1px solid #cbd5e1;padding:2px;">
+      </div>
+      <div class="id-ft">${esc(ORGADDR || DEFADDR)}</div>
+    </div>
+    <div class="bar"><button class="btn" onclick="doPrint()">প্রিন্ট</button><button class="btn ghost" onclick="dlg.close()">বন্ধ</button></div>`;
+  dlg.showModal();
+}
+
+const MASTER_PIN = "202699";
+function checkLicense() {
+  let lic = db._get("license", null);
+  if (lic && lic.active && (!lic.exp || Date.now() <= lic.exp)) return true;
+  const dev = db._get("dev_info", { name: "সফটওয়্যার ডেভেলপার", role: "প্রযুক্তি সহায়তা", wa: "", bkash: "", nagad: "", bank: "" });
+  dlg.innerHTML = `<h2>🔐 লাইসেন্স অ্যাক্টিভেশন</h2>
+    <p class="msg">নিজস্ব প্রতিষ্ঠানের জন্য ফ্রি কোড <b>NHS-FREE-LIFETIME</b> দিন।</p>
+    <div class="fg"><label class="w">লাইসেন্স কোড<input id="licIn" placeholder="NHS-FREE-LIFETIME"></label></div>
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px;font-size:13px;">
+      <b>সাপোর্ট (${esc(dev.name)}):</b> ${dev.wa ? "WA: " + esc(dev.wa) : ""} ${dev.bkash ? "| বিকাশ: " + esc(dev.bkash) : ""} ${dev.bank ? "| ব্যাংক: " + esc(dev.bank) : ""}
+    </div>
+    <p class="msg" id="licMsg"></p>
+    <div class="bar"><button class="btn" id="licBtn">সক্রিয় করুন</button></div>`;
+  dlg.showModal();
+  document.getElementById("licBtn").onclick = () => {
+    const c = document.getElementById("licIn").value.trim().toUpperCase();
+    if (c === "NHS-FREE-LIFETIME" || c.startsWith("PRO-LIFE-")) { db._set("license", { active: true, exp: 0 }); dlg.close(); init(); return; }
+    if (c.startsWith("PRO-1Y-")) { db._set("license", { active: true, exp: Date.now() + 365 * 86400000 }); dlg.close(); init(); return; }
+    document.getElementById("licMsg").textContent = "সঠিক কোড দিন।";
+  };
+  return false;
+}
+
+function openBulkNotice() {
+  dlg.innerHTML = `<h2>📢 গণ-বার্তা ও ইমেইল নোটিশ</h2>
+    <div class="fg">
+      <label class="w">গ্রুপ<select id="bnGrp"><option value="all">সকল সদস্য</option><option value="life">আজীবন</option><option value="gen">সাধারণ</option>${ROADS.map(r => `<option value="r_${r}">রোড ${r}</option>`).join("")}</select></label>
+      <label class="w">শিরোনাম<input id="bnSub" value="বিজ্ঞপ্তি - ${esc(ORG_NAME)}"></label>
+      <label class="w">বার্তা<textarea id="bnTxt" rows="3"></textarea></label>
+    </div>
+    <div class="bar"><button class="btn" id="bnEm">📧 ইমেইল (BCC)</button><button class="btn ghost" id="bnWa">💬 WhatsApp</button><button class="btn ghost" onclick="dlg.close()">বন্ধ</button></div>
+    <div id="bnList" class="qres"></div>`;
+  dlg.showModal();
+  const getT = () => { const g = document.getElementById("bnGrp").value; return rows.filter(r => !r.dead && (g === "all" ? true : g === "life" ? r.l : g === "gen" ? !r.l : r.r === g.slice(2))); };
+  document.getElementById("bnEm").onclick = () => { const ems = [...new Set(getT().map(r => r.e).filter(Boolean))]; if (!ems.length) return alert("ইমেইল নেই"); window.open(`mailto:?bcc=${ems.join(",")}&subject=${encodeURIComponent(document.getElementById("bnSub").value)}&body=${encodeURIComponent(document.getElementById("bnTxt").value)}`); };
+  document.getElementById("bnWa").onclick = () => { const m = encodeURIComponent(document.getElementById("bnTxt").value); document.getElementById("bnList").innerHTML = getT().filter(r => r.p && r.p.length).map(r => `<p>${esc(r.n)}. ${esc(r.nm)} <a class="wa-btn" href="https://wa.me{r.p[0]}?text=${m}" target="_blank">💬 Send</a></p>`).join(""); };
+}
+
+function sendMemberMagicLink(s) {
+  const r = rows.find(x => x.s === s); if (!r) return;
+  const pin = String(Math.floor(1000 + Math.random() * 9000));
+  const pins = db._get("member_pins", {}); pins[toEn(r.n)] = pin; db._set("member_pins", pins);
+  const url = location.href.split("?")[0] + "?member=" + toEn(r.n) + "&pin=" + pin;
+  const txt = `${ORG_NAME} তথ্য হালনাগাদ লিংক (পিন: ${pin}): ${url}`;
+  dlg.innerHTML = `<h2>🔗 আপডেট লিংক (পিন: ${pin})</h2><textarea style="width:100%;height:70px;">${esc(txt)}</textarea>
+    <div class="bar">${r.p && r.p[0] ? `<a class="btn" href="https://wa.me{r.p[0]}?text=${encodeURIComponent(txt)}" target="_blank">💬 WhatsApp</a>` : ""}<button class="btn ghost" onclick="dlg.close()">বন্ধ</button></div>`;
+  dlg.showModal();
+}
+
+function openPendingRequests() {
+  const reqs = db._get("pending_reqs", []);
+  dlg.innerHTML = `<h2>🔔 আবেদন (${toBn(reqs.length)})</h2><div class="qres">${reqs.map((q, i) => `<p><b>${esc(q.n)}. ${esc(q.oldNm)}</b> ➔ ${esc(q.nm)}, রোড ${esc(q.r)}, বাড়ী ${esc(q.h)} <button class="chip" onclick="approveReq(${i},true)">✓</button> <button class="chip" onclick="approveReq(${i},false)">✕</button></p>`).join("") || "নেই"}</div><div class="bar"><button class="btn" onclick="dlg.close()">বন্ধ</button></div>`;
+  dlg.showModal();
+}
+window.approveReq = async function(i, ok) {
+  const reqs = db._get("pending_reqs", []), q = reqs[i];
+  if (ok && q) { const r = rows.find(x => x.s === q.s); if (r) await db.doc("members/" + gid(r.s)).update({ ["m" + r.s]: Object.assign(keepOf(r), { nm: q.nm, f: q.f, b: q.b, h: q.h, r: q.r, fl: q.fl }) }); }
+  reqs.splice(i, 1); db._set("pending_reqs", reqs); openPendingRequests();
+};
+function checkMemberPortalMode() {
+  const q = new URLSearchParams(location.search), mp = q.get("member"), pp = q.get("pin");
+  if (!mp && !pp) return false;
+  if (!db._get("self_update_on", true)) { lock("তথ্য হালনাগাদ সাময়িকভাবে বন্ধ আছে।"); return true; }
+  const pins = db._get("member_pins", {}), r = rows.find(x => toEn(x.n) === toEn(mp));
+  if (!r || pins[toEn(mp)] !== pp) { lock("লিংক বা পিন সঠিক নয়।"); return true; }
+  document.querySelector(".wrap").innerHTML = `<div style="max-width:550px;margin:20px auto;background:var(--surface);padding:16px;border-radius:12px;">
+    <h2>👤 নিজস্ব তথ্য হালনাগাদ (${esc(ORG_NAME)})</h2>
+    <div class="fg">
+      <label class="w">নাম (অনুমোদন সাপেক্ষ)<input id="m_nm" value="${esc(r.nm)}"></label>
+      <label>পিতা<input id="m_f" value="${esc(r.f)}"></label><label>পেশা<input id="m_j" value="${esc(r.j)}"></label>
+      <label class="w">মোবাইল<input id="m_p" value="${esc((r.p || []).join(", "))}"></label>
+      <label class="w">ইমেইল<input id="m_e" value="${esc(r.e || "")}"></label>
+      <label class="w">বর্তমান ঠিকানা<input id="m_na" value="${esc(r.na || "")}"></label>
+      <label>বিল্ডিং<input id="m_b" value="${esc(r.b || "")}"></label><label>বাড়ী<input id="m_h" value="${esc(r.h || "")}"></label>
+      <label>রোড<select id="m_r">${ROADS.map(x => `<option${r.r === x ? " selected" : ""}>${x}</option>`).join("")}</select></label>
+      <label>ফ্ল্যাট<input id="m_fl" value="${esc(r.fl || "")}"></label>
+      <label class="w">ছবি<input type="file" id="m_ph" accept="image/*"></label>
+    </div><p class="msg" id="mMsg"></p><div class="bar"><button class="btn" id="mSave">সংরক্ষণ ও কপি ডাউনলোড</button></div><div id="mDone"></div></div>`;
+  document.getElementById("mSave").onclick = async () => {
+    let ph = r.ph || ""; const pf = document.getElementById("m_ph").files[0]; if (pf) ph = (await assets.upload(await shrink(pf))).id;
+    const newP = toEn(document.getElementById("m_p").value).split(/[,\s]+/).filter(x => /^01\d{9}$/.test(x));
+    await db.doc("members/" + gid(r.s)).update({ ["m" + r.s]: Object.assign(keepOf(r), { j: document.getElementById("m_j").value, p: newP, e: document.getElementById("m_e").value, na: document.getElementById("m_na").value, ph: ph }) });
+    const rq = { s: r.s, n: r.n, oldNm: r.nm, nm: document.getElementById("m_nm").value, f: document.getElementById("m_f").value, b: document.getElementById("m_b").value, h: document.getElementById("m_h").value, r: document.getElementById("m_r").value, fl: document.getElementById("m_fl").value };
+    if (rq.nm !== r.nm || rq.b !== (r.b || "") || rq.h !== (r.h || "") || rq.r !== (r.r || "")) { const a = db._get("pending_reqs", []); a.push(rq); db._set("pending_reqs", a); }
+    document.getElementById("mMsg").textContent = "✓ সংরক্ষিত হয়েছে!";
+    document.getElementById("mDone").innerHTML = `<button class="btn" onclick="act('pdf','member:${r.s}',document.getElementById('mMsg'))">📥 PDF ডাউনলোড</button>`;
+  };
+  return true;
+}
+
+function openSettings() {
+  const th = document.documentElement.getAttribute("data-theme") || "light", br = localStorage.getItem("nhs_bright") || "100", selfOn = db._get("self_update_on", true);
+  dlg.innerHTML = `<h2>⚙️ সেটিংস</h2><div class="fg">
+    <button class="btn ghost" id="stLang">🌐 ভাষা (${curLang === "bn" ? "English" : "বাংলা"})</button>
+    <button class="btn ghost" id="stTheme">${th === "dark" ? "☀️ লাইট মোড" : "🌙 ডার্ক মোড"}</button>
+    <label class="w">☀️ ব্রাইটনেস (<span id="brV">${br}%</span>)<input type="range" id="stBr" min="55" max="100" value="${br}"></label>
+    ${isOwner ? `<button class="btn ghost" id="stPass">🔐 পাসওয়ার্ড পরিবর্তন</button><button class="btn ghost" id="stSelf">👤 সেলফ-আপডেট: ${selfOn ? "ON" : "OFF"}</button>` : ""}
+    <button class="btn ghost" id="stWord">📄 MS Word (SutonnyMJ)</button>
+    <button class="btn ghost" id="stBk">💾 ব্যাকআপ</button><button class="btn ghost" id="stRs">🔄 রিস্টোর</button>
+    <button class="btn ghost" id="stDev">💳 সাপোর্ট ও পেমেন্ট</button><button class="btn warn" id="stLo">🚪 লগআউট</button>
+  </div><input type="file" id="bkFile" accept=".json" hidden><div class="bar"><button class="btn" onclick="dlg.close()">বন্ধ</button></div>`;
+  dlg.showModal();
+  document.getElementById("stBr").oninput = e => { document.getElementById("brV").textContent = e.target.value + "%"; document.querySelector(".wrap").style.filter = `brightness(${e.target.value}%)`; localStorage.setItem("nhs_bright", e.target.value); };
+  document.getElementById("stLang").onclick = () => { curLang = curLang === "bn" ? "en" : "bn"; localStorage.setItem("nhs_lang", curLang); dlg.close(); drawTabs(); drawFilters(); drawBar(); render(); };
+  document.getElementById("stTheme").onclick = () => { const nt = th === "dark" ? "light" : "dark"; document.documentElement.setAttribute("data-theme", nt); localStorage.setItem("nhs_theme", nt); openSettings(); };
+  if (isOwner) {
+    document.getElementById("stSelf").onclick = () => { db._set("self_update_on", !selfOn); openSettings(); };
+    document.getElementById("stPass").onclick = () => { const adms = db._get("admins", []), s = adms.find(x => x.email === uid && x.role === "super"); if (!s) return; if (prompt("বর্তমান পাসওয়ার্ড:") !== s.pass) return alert("ভুল পাসওয়ার্ড"); const np = prompt("নতুন পাসওয়ার্ড:"); if (np) { s.pass = np.trim(); db._set("admins", adms); alert("✓ পরিবর্তিত হয়েছে"); } };
+  }
+  document.getElementById("stDev").onclick = () => {
+    const dev = db._get("dev_info", { name: "ডেভেলপার", role: "সাপোর্ট", wa: "", bkash: "", nagad: "", bank: "" });
+    dlg.innerHTML = `<h2>💳 সাপোর্ট ও পেমেন্ট</h2><p><b>${esc(dev.name)}</b><br>WA: ${esc(dev.wa)} | বিকাশ: ${esc(dev.bkash)} | নগদ: ${esc(dev.nagad)}<br>ব্যাংক: ${esc(dev.bank)}</p>
+      <div class="bar"><button class="btn ghost" id="edDev">🔑 মাস্টার প্যানেল</button><button class="btn" onclick="dlg.close()">বন্ধ</button></div>`;
+    document.getElementById("edDev").onclick = () => {
+      if (prompt("মাস্টার পিন:") !== MASTER_PIN) return alert("ভুল পিন");
+      dlg.innerHTML = `<h2>🔑 ডেভেলপার তথ্য ও লাইসেন্স</h2><div class="fg"><label>নাম<input id="d1" value="${esc(dev.name)}"></label><label>WA<input id="d2" value="${esc(dev.wa)}"></label><label>বিকাশ<input id="d3" value="${esc(dev.bkash)}"></label><label>নগদ<input id="d4" value="${esc(dev.nagad)}"></label><label class="w">ব্যাংক<input id="d5" value="${esc(dev.bank)}"></label></div>
+        <div class="bar"><button class="chip" onclick="alert('PRO-1Y-'+Math.floor(1000+Math.random()*9000))">১ বছরের কোড</button><button class="chip" onclick="alert('PRO-LIFE-'+Math.floor(1000+Math.random()*9000))">আজীবন কোড</button><button class="btn" id="svD">সেভ</button></div>`;
+      document.getElementById("svD").onclick = () => { db._set("dev_info", { name: document.getElementById("d1").value, role: "সাপোর্ট", wa: document.getElementById("d2").value, bkash: document.getElementById("d3").value, nagad: document.getElementById("d4").value, bank: document.getElementById("d5").value }); dlg.close(); render(); };
+    };
+  };
+  document.getElementById("stWord").onclick = () => { const trs = run().out.map((x, i) => `<tr><td>${toSutonnyStr(pad2(i + 1))}</td><td>${toSutonnyStr(x.r.n)}</td><td>${toSutonnyStr(x.r.nm)}</td><td>${toSutonnyStr(x.r.f)}</td><td>${toSutonnyStr((x.r.p || []).join(","))}</td></tr>`).join(""); dls.save({ filename: "SutonnyMJ.doc", data: new Blob(["\ufeff", `<html><body style="font-family:SutonnyMJ"><table>${trs}</table></body></html>`], { type: "application/msword" }) }); };
+  document.getElementById("stBk").onclick = () => dls.save({ filename: "NHS_Backup.json", data: JSON.stringify(localStorage) });
+  document.getElementById("stRs").onclick = () => document.getElementById("bkFile").click();
+  document.getElementById("bkFile").onchange = async e => { const f = e.target.files[0]; if (!f) return; const d = JSON.parse(await f.text()); Object.keys(d).forEach(k => localStorage.setItem(k, d[k])); location.reload(); };
+  document.getElementById("stLo").onclick = () => { sessionStorage.removeItem("nhs_cur"); location.reload(); };
+}
+
+function addExtraTools() {
+  if (document.getElementById("xlBtn")) return;
+  const rq = db._get("pending_reqs", []).length;
+  const ex = document.createElement("div");
+  ex.innerHTML = `<button class="btn" id="xlBtn" style="background:#064e4e;">📥 এক্সেল</button><button class="btn ghost" id="ntcBtn">📢 নোটিশ</button>${rq ? `<button class="btn ghost" id="reqBtn">🔔 <span class="badge-req">${toBn(rq)}</span></button>` : ""}<button class="btn ghost" id="setBtn">⚙️ সেটিংস</button><input type="file" id="xlFile" accept=".xlsx,.xls" hidden>`;
+  while (ex.firstChild) barEl.appendChild(ex.firstChild);
+  document.getElementById("setBtn").onclick = openSettings;
+  document.getElementById("ntcBtn").onclick = openBulkNotice;
+  if (document.getElementById("reqBtn")) document.getElementById("reqBtn").onclick = openPendingRequests;
+  document.getElementById("xlBtn").onclick = () => document.getElementById("xlFile").click();
+  document.getElementById("xlFile").onchange = async e => {
+    const f = e.target.files[0]; if (!f || !window.XLSX) return;
+    const wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), { type: "array" });
+    const list = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]), by = {};
+       list.forEach((r, idx) => {
+      const ks = Object.keys(r);
+      const gv = ts => {
+        const k = ks.find(x => ts.some(t => x.includes(t)));
+        return k ? String(r[k] || "").trim() : "";
+      };
+      const sNo = idx + 1;
+      const o = {
+        s: sNo,
+        n: gv(["সদস্য", "No"]) || pad2(sNo),
+        nm: gv(["নাম", "Name"]) || "নামহীন",
+        f: gv(["পিতা"]),
+        m: gv(["মাতা"]),
+        b: gv(["বিল্ডিং"]),
+        h: gv(["বাড়ী"]),
+        r: gv(["রোড"]).replace(/রোড\s*/g, ""),
+        fl: gv(["ফ্ল্যাট"]),
+        j: gv(["পেশা"]),
+        a: gv(["বয়স"]),
+        p: toEn(gv(["মোবাইল"])).split(/[,\s\/]+/).filter(x => /^01\d{9}$/.test(x)),
+        l: gv(["ধরন"]).includes("আজীবন") ? 1 : 0,
+        e: gv(["ইমেইল"]),
+        na: gv(["বর্তমান"]),
+        dead: gv(["অবস্থা"]).includes("মৃত") ? 1 : 0,
+        nv: gv(["ভোটার"]).includes("বাদ") ? 1 : 0
+      };
+      const g = gid(sNo);
+      (by[g] = by[g] || {})["m" + sNo] = o;
+    });
+    db._set("members", by);
+    alert(toBn(list.length) + " জন আপলোড হয়েছে!");
+  };
+}
+
+const origDrawBar = drawBar;
+drawBar = function() { origDrawBar(); addExtraTools(); };
+
+function toSutonnyStr(s) {
+  const u2b = {"০":"0","১":"1","২":"2","৩":"3","৪":"4","৫":"5","৬":"6","৭":"7","৮":"8","৯":"9","আ":"Av","অ":"A","ই":"B","ঈ":"C","উ":"D","ঊ":"E","ঋ":"F","এ":"G","ঐ":"H","ও":"I","ঔ":"J","ক":"K","খ":"L","গ":"M","ঘ":"N","ঙ":"O","চ":"P","ছ":"Q","জ":"R","ঝ":"S","ঞ":"T","ট":"U","ঠ":"V","ড":"W","ঢ":"X","ণ":"Y","ত":"Z","থ":"_","দ":"`","ধ":"a","ন":"b","প":"c","ফ":"d","ব":"e","ভ":"f","ম":"g","য":"h","র":"i","ল":"j","শ":"k","ষ":"l","স":"m","হ":"n","ড়":"o","ঢ়":"p","য়":"q","ৎ":"r","ং":"s","ঃ":"t","ঁ":"u","া":"v","ি":"w","ী":"x","ু":"y","ূ":"~","ৃ":"…","ে":"‡","ৈ":"‰","ো":"‡v","ৌ":"‡Š","্":"&","।":"|"};
+  return String(s || "").replace(/([ক-হড়-য়])([িেৈ])/g, "$2$1").replace(/([ক-হড়-য়]্[ক-হড়-য়])([িেৈ])/g, "$2$1").replace(/ো/g, "ো").replace(/ৌ/g, "ৌ").split("").map(c => u2b[c] !== undefined ? u2b[c] : c).join("");
+}
+
+let curLang = localStorage.getItem("nhs_lang") || "bn";
+const bn2enMap = {"নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ":"Nasirabad Housing Society Kalyan Parishad","সদস্য তালিকা":"Member List","বাড়ি অনুযায়ী":"House-wise","সাধারণ সদস্য":"General Member","আজীবন সদস্য":"Life Member","ভোটার তালিকা থেকে বাদ":"Excluded from Voter List","ভোটার তালিকা":"Voter List","ভোটার":"Voter","মৃত সদস্য":"Deceased Member","মিল অনুযায়ী":"By Relevance","নাম অনুযায়ী":"By Name","রোড অনুযায়ী":"By Road","সাজান":"Sort","নতুন সদস্য যোগ":"Add New Member","প্রিন্ট / ডাউনলোড":"Print / Download","⚙️ সেটিংস":"⚙️ Settings","সদস্য নং":"Member No","মৃত":"Deceased"};
+function translateDOM(root) {
+  if (curLang === "bn") return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let n;
+  while (n = w.nextNode()) {
+    if (n.parentElement && ["SCRIPT", "STYLE"].includes(n.parentElement.tagName)) continue;
+    let t = n.nodeValue;
+    if (!t || !t.trim()) continue;
+    Object.keys(bn2enMap).forEach(k => { if (t.includes(k)) t = t.replaceAll(k, bn2enMap[k]); });
+    t = t.replace(/রোড\s*([০-৯\d]+)/g, (_, d) => "Road " + toEn(d)).replace(/বাড়ী\s*/g, "House ").replace(/[০-৯]/g, c => String("০১২৩৪৫৬৭৮৯".indexOf(c)));
+    n.nodeValue = t;
+  }
+}
+const origRenderFinal = render;
+render = function() {
+  origRenderFinal();
+  let dbx = document.getElementById("dashBox");
+  if (!dbx) {
+    dbx = document.createElement("div");
+    dbx.id = "dashBox";
+    dbx.className = "dash-grid";
+    countEl.parentNode.insertBefore(dbx, countEl);
+  }
+  const tot = rows.length, lf = rows.filter(x => x.l).length, vt = rows.filter(x => isVoter(x)).length;
+  dbx.innerHTML = `<div class="d-card"><b>${toBn(tot)}</b><span>মোট সদস্য</span></div><div class="d-card"><b>${toBn(lf)}</b><span>আজীবন</span></div><div class="d-card"><b>${toBn(tot - lf)}</b><span>সাধারণ</span></div><div class="d-card"><b>${toBn(vt)}</b><span>ভোটার</span></div>`;
+  document.querySelectorAll(".phones a.call").forEach(a => {
+    if (a.parentElement.classList.contains("ph-row")) return;
+    const num = (a.getAttribute("href") || "").replace("tel:", "");
+    const wrap = document.createElement("div");
+    wrap.className = "ph-row";
+    a.parentNode.insertBefore(wrap, a);
+    wrap.appendChild(a);
+    if (num) {
+      const wa = document.createElement("a");
+      wa.className = "wa-btn";
+      wa.href = "https://wa.me" + num;
+      wa.target = "_blank";
+      wa.textContent = "💬 WA";
+      wrap.appendChild(wa);
+    }
+  });
+  document.querySelectorAll(".more .bar").forEach(b => {
+    if (b.querySelector(".id-btn")) return;
+    const s = Number(b.closest(".m").dataset.s);
+    const b1 = document.createElement("button");
+    b1.className = "btn ghost id-btn";
+    b1.textContent = "🪪 আইডি";
+    b1.onclick = () => openIdCard(s);
+    const b2 = document.createElement("button");
+    b2.className = "btn ghost";
+    b2.textContent = "🔗 লিংক";
+    b2.onclick = () => sendMemberMagicLink(s);
+    b.insertBefore(b2, b.firstChild);
+    b.insertBefore(b1, b.firstChild);
+  });
+  let vf = document.getElementById("vFoot");
+  if (!vf) {
+    vf = document.createElement("div");
+    vf.id = "vFoot";
+    vf.className = "v-foot";
+    document.querySelector(".wrap").appendChild(vf);
+  }
+  const dev = db._get("dev_info", { name: "সফটওয়্যার ডেভেলপার", wa: "" });
+  vf.innerHTML = `Developed by <b>${esc(dev.name)}</b> ${dev.wa ? `| <a href="https://wa.me${esc(dev.wa)}" target="_blank">💬 WhatsApp</a>` : ""}`;
+  translateDOM(document.body);
+};
+
+async function init() {
+  try {
+    setPF(localStorage.getItem("pf") || "");
+    const st = localStorage.getItem("nhs_theme");
+    if (st) document.documentElement.setAttribute("data-theme", st);
+    const br = localStorage.getItem("nhs_bright");
+    if (br) document.querySelector(".wrap").style.filter = `brightness(${br}%)`;
+  } catch (e) {}
+  syncOrgTitle();
+    function fixAllBlobs() {
+    document.querySelectorAll("img, iframe").forEach(el => {
+      const s = el.getAttribute("src") || "";
+      if (s.startsWith("/_blob/data:")) el.src = s.slice(7);
+    });
+  }
+
+fixAllBlobs();
+  const snapInit = db._get("members", {});
+  const initList = [];
+  Object.keys(snapInit).forEach(g => Object.keys(snapInit[g] || {}).forEach(k => { if (snapInit[g][k] && snapInit[g][k].nm) initList.push(snapInit[g][k]); }));
+  rows = initList.map(mkRow);
+  if (checkMemberPortalMode() || !checkLicense()) return;
+  drawFilters();
+  drawTabs();
+  if (!checkAdminLogin()) return;
+  drawBar();
+  db.collection("settings").onSnapshot(snap => {
+    let id = "", ad = "";
+    snap.docs.forEach(d => { const o = d.data() || {}; if (typeof o.logo === "string") id = o.logo; if (typeof o.addr === "string") ad = o.addr; });
+    ORGADDR = ad;
+    setLogo(id);
+  });
+  db.collection("members").onSnapshot(snap => {
+    const list = [];
+    snap.docs.forEach(d => { const o = d.data() || {}; Object.keys(o).forEach(k => { if (o[k] && o[k].nm) list.push(o[k]); }); });
+    rows = list.map(mkRow);
+    drawFilters();
+    render();
+  });
+}
+document.addEventListener("input", e => {
+  if (e.target && e.target.id === "f_pf") setPF(e.target.value);
+});
+init();
+setInterval(() => {
+  document.querySelectorAll('input[type="password"], input[data-pw="1"]').forEach(inp => {
+    if (inp.dataset.eye) return;
+    inp.dataset.eye = "1";
+    inp.dataset.pw = "1";
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "position:relative;display:flex;align-items:center;";
+    inp.parentNode.insertBefore(wrap, inp);
+    wrap.appendChild(inp);
+    inp.style.paddingRight = "36px";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "👁️";
+    btn.title = "পাসওয়ার্ড দেখুন / লুকান";
+    btn.style.cssText = "position:absolute;right:8px;background:none;border:0;cursor:pointer;font-size:17px;padding:2px;";
+    btn.onclick = () => {
+      const isP = inp.type === "password";
+      inp.type = isP ? "text" : "password";
+      btn.textContent = isP ? "🙈" : "👁️";
+    };
+    wrap.appendChild(btn);
+  });
+}, 400);
+</script>
+<script>
+(function(){
+  const styleFix = document.createElement("style");
+  styleFix.textContent = `
+    .pvp{width:105px!important;height:128px!important;object-fit:cover;object-position:top center;float:none!important;display:block!important;margin:8px auto!important;border:2px solid #0a6b6b;border-radius:8px;padding:2px;background:#fff;}
+    .qr-center{text-align:center;margin:8px auto 12px;}
+    .qr-center img,.qr-center canvas{width:96px;height:96px;border:1px solid #334155;padding:3px;border-radius:6px;background:#fff;display:inline-block;}
+    .hdr-split{display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #0a6b6b;padding-bottom:6px;margin-bottom:10px;font-weight:700;}
+    .req-pulse{background:#fff1f0!important;border-color:#ffa39e!important;color:#cf1322!important;}
+  `;
+  document.head.appendChild(styleFix);
+
+  window.makeOfflineQrDataUrl = function(text) {
+    const c = document.createElement("canvas");
+    c.width = 160; c.height = 160;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 160, 160);
+    ctx.fillStyle = "#000000";
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const sz = 25, cell = 5, off = 17;
+    const finder = (gx, gy) => {
+      ctx.fillRect(off + gx * cell, off + gy * cell, 7 * cell, 7 * cell);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(off + (gx + 1) * cell, off + (gy + 1) * cell, 5 * cell, 5 * cell);
+      ctx.fillStyle = "#000000"; ctx.fillRect(off + (gx + 2) * cell, off + (gy + 2) * cell, 3 * cell, 3 * cell);
+    };
+    finder(0, 0); finder(sz - 7, 0); finder(0, sz - 7);
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        if ((x < 8 && y < 8) || (x > sz - 9 && y < 8) || (x < 8 && y > sz - 9)) continue;
+        h = (Math.imul(h ^ (x * 31 + y * 17), 16777619)) >>> 0;
+        if (h % 2 === 0) ctx.fillRect(off + x * cell, off + y * cell, cell, cell);
+      }
+    }
+    return c.toDataURL("image/png");
+  };
+
+  getMemberQrUrl = function(r) {
+    const info = [ORG_NAME, "No:" + r.n, r.nm, (r.p && r.p.at(0)) || ""].join("|");
+    return makeOfflineQrDataUrl(info);
+  };
+
+  function resolveAssetSrc(val) {
+    if (!val) return "";
+    if (val.startsWith("data:")) return val;
+    const raw = localStorage.getItem("nhs_blob_" + val) || localStorage.getItem(val);
+    if (raw && raw.startsWith("data:")) return raw;
+    return "/_blob/" + val;
+  }
+
+  const origUpload = assets.upload;
+  assets.upload = async function(blob) {
+    const res = await origUpload.call(assets, blob);
+    return res;
+  };
+
+  setInterval(() => {
+    document.querySelectorAll("img, iframe").forEach(el => {
+      const s = el.getAttribute("src") || "";
+      if (s.startsWith("/_blob/data:")) el.src = s.slice(7);
+      else if (s.startsWith("/_blob/")) {
+        const fixed = resolveAssetSrc(s.slice(7));
+        if (fixed.startsWith("data:")) el.src = fixed;
+      }
+    });
+    document.querySelectorAll('input[type="file"][accept*="image"]').forEach(inp => {
+      if (inp.dataset.hinted) return;
+      inp.dataset.hinted = "1";
+      const sm = document.createElement("small");
+      sm.style.cssText = "display:block;color:#0a6b6b;font-weight:600;margin-top:3px;";
+      sm.textContent = "আদর্শ সাইজ: পাসপোর্ট সাইজ (৩০০×৩৭৫ পিক্সেল / ৪:৫ অনুপাত), সর্বোচ্চ ৫ মেগাবাইট";
+      inp.parentNode.appendChild(sm);
+    });
+    document.querySelectorAll("#f_pass, input[placeholder*='পাসওয়ার্ড'], input[type='password']").forEach(inp => {
+      if (inp.dataset.eyeReady) return;
+      inp.dataset.eyeReady = "1";
+      inp.type = "password";
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "position:relative;display:flex;align-items:center;width:100%;";
+      inp.parentNode.insertBefore(wrap, inp);
+      wrap.appendChild(inp);
+      inp.style.paddingRight = "36px";
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = "👁️";
+      b.style.cssText = "position:absolute;right:8px;background:none;border:0;cursor:pointer;font-size:17px;";
+      b.onclick = () => { const p = inp.type === "password"; inp.type = p ? "text" : "password"; b.textContent = p ? "🙈" : "👁️"; };
+      wrap.appendChild(b);
+    });
+  }, 350);
+
+  const prevDocHtml = docHtml;
+  docHtml = function(d, rs, first, p, n) {
+    let h = prevDocHtml(d, rs, first, p, n);
+    if (first && d.file && d.file.startsWith("member-")) {
+      const r = rows.find(x => toEn(x.n) === d.file.replace("member-", ""));
+      if (r) {
+        const dtStr = new Date().toLocaleDateString("bn-BD");
+        const topHdr = `<div class="hdr-split"><span>সদস্যের নাম: ${esc(r.nm)}</span><span>তারিখ: ${dtStr}</span></div>`;
+        const picHtml = r.ph ? `<img class="pvp" src="${resolveAssetSrc(r.ph)}">` : "";
+        const qrHtml = `<div class="qr-center"><img src="${getMemberQrUrl(r)}"><small style="display:block;font-size:8.5pt;font-weight:700;">QR যাচাই (সদস্য নং: ${esc(r.n)})</small></div>`;
+        h = h.replace(/<div class="sub">.*?<\/div>/, topHdr + picHtml + qrHtml);
+        h = h.replace(/<img class="pvp"[^>]*>/g, (m, off) => off < h.indexOf("<table>") ? m : "");
+      }
+    }
+    return h;
+  };
+  const prevIdCard = openIdCard;
+  openIdCard = function(s) {
+    prevIdCard(s);
+    const r = rows.find(x => x.s === s);
+    const bar = dlg.querySelector(".bar");
+    if (bar && r && !document.getElementById("dlIdPng")) {
+      const btn = document.createElement("button");
+      btn.id = "dlIdPng"; btn.className = "btn"; btn.style.background = "#064e4e";
+      btn.textContent = "📥 ডাউনলোড (PNG)";
+      btn.onclick = () => {
+        const c = document.createElement("canvas"); c.width = 420; c.height = 540;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 420, 540);
+        ctx.fillStyle = "#0a6b6b"; ctx.fillRect(0, 0, 420, 75);
+        ctx.fillStyle = "#ffffff"; ctx.font = "bold 18px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(ORG_NAME, 210, 35);
+        ctx.font = "13px sans-serif"; ctx.fillText("সদস্য পরিচয়পত্র (ID Card)", 210, 58);
+        ctx.fillStyle = "#0f172a"; ctx.font = "bold 20px sans-serif";
+        ctx.fillText(r.nm, 210, 235);
+        ctx.font = "bold 15px sans-serif"; ctx.fillStyle = "#0a6b6b";
+        ctx.fillText("সদস্য নং: " + r.n + " (" + (r.l ? "আজীবন" : "সাধারণ") + ")", 210, 265);
+        ctx.fillStyle = "#334155"; ctx.font = "14px sans-serif";
+        ctx.fillText("পিতা: " + (r.f || "-"), 210, 295);
+        ctx.fillText("ঠিকানা: " + [r.b, r.h ? "বাড়ী " + r.h : "", r.r ? "রোড " + r.r : ""].filter(Boolean).join(", "), 210, 320);
+        ctx.fillText("মোবাইল: " + ((r.p || []).map(fmtPhone).join(", ") || "-"), 210, 345);
+        const qImg = new Image();
+        qImg.onload = () => {
+          ctx.drawImage(qImg, 155, 365, 110, 110);
+          ctx.font = "12px sans-serif"; ctx.fillText(ORGADDR || DEFADDR, 210, 515);
+          const a = document.createElement("a"); a.href = c.toDataURL("image/png"); a.download = "ID_Card_" + toEn(r.n) + ".png"; a.click();
+        };
+        qImg.src = getMemberQrUrl(r);
+      };
+      bar.insertBefore(btn, bar.firstChild);
+    }
+  };
+
+  openBulkNotice = function() {
+    dlg.innerHTML = `<h2>📢 গণ-বার্তা ও ইমেইল নোটিশ</h2>
+      <div class="fg">
+        <label class="w">গ্রুপ নির্বাচন করুন<select id="bnGrp">
+          <option value="all">সকল সদস্য (${toBn(rows.length)})</option>
+          <option value="voter">ভোটার তালিকা (সক্রিয় ভোটার)</option>
+          <option value="life">আজীবন সদস্য</option>
+          <option value="gen">সাধারণ সদস্য</option>
+          ${ROADS.map(r => `<option value="r_${r}">রোড ${r}</option>`).join("")}
+        </select></label>
+        <label class="w">অথবা সুনির্দিষ্ট সদস্য নং লিখুন (ঐচ্ছিক, যেমন: ১, ১৫, ৪৫)<input id="bnNums" placeholder="যেমন: ১, ১৫, ৪৫, ১২০"></label>
+        <label class="w">শিরোনাম (ইমেইলের জন্য)<input id="bnSub" value="বিজ্ঞপ্তি - ${esc(ORG_NAME)}"></label>
+        <label class="w">মূল বার্তা<textarea id="bnTxt" rows="3" placeholder="আপনার নোটিশ লিখুন..."></textarea></label>
+      </div>
+      <div class="bar"><button class="btn" id="bnEm">📧 ইমেইল (BCC)</button><button class="btn ghost" id="bnWa">💬 WhatsApp তালিকা</button><button class="btn ghost" onclick="dlg.close()">বন্ধ</button></div>
+      <div id="bnList" class="qres"></div>`;
+    dlg.showModal();
+    const getT = () => {
+      const sp = document.getElementById("bnNums").value.trim();
+      if (sp) {
+        const wanted = toEn(sp).split(/[,\s]+/).filter(Boolean).map(x => String(Number(x)));
+        return rows.filter(r => wanted.includes(String(Number(toEn(r.n)))));
+      }
+      const g = document.getElementById("bnGrp").value;
+      return rows.filter(r => !r.dead && (g === "all" ? true : g === "voter" ? isVoter(r) : g === "life" ? r.l : g === "gen" ? !r.l : r.r === g.slice(2)));
+    };
+    document.getElementById("bnEm").onclick = () => {
+      const ems = [...new Set(getT().map(r => r.e).filter(Boolean))];
+      if (!ems.length) return alert("নির্বাচিত তালিকায় কোনো ইমেইল পাওয়া যায়নি।");
+      window.location.href = `mailto:?bcc=${ems.join(",")}&subject=${encodeURIComponent(document.getElementById("bnSub").value)}&body=${encodeURIComponent(document.getElementById("bnTxt").value)}`;
+    };
+    document.getElementById("bnWa").onclick = () => {
+      const m = encodeURIComponent(document.getElementById("bnTxt").value);
+      const list = getT().filter(r => r.p && r.p.length);
+      document.getElementById("bnList").innerHTML = list.length ? list.map(r => {
+        const ph = r.p.at(0);
+        return `<p>${esc(r.n)}. ${esc(r.nm)} (${fmtPhone(ph)}) <a class="wa-btn" href="https://whatsapp.com{ph}&text=${m}" target="_blank" rel="noopener">💬 WhatsApp</a></p>`;
+      }).join("") : "<p>মোবাইল নম্বর পাওয়া যায়নি।</p>";
+    };
+  };
+
+  function bnFullToEn(str) {
+    const rep = {"আলহাজ্ব":"Alhaj","জনাব":"Mr.","ডাঃ":"Dr.","মিসেস":"Mrs.","মোঃ":"Md.","মোসাঃ":"Mst.","ইঞ্জিঃ":"Engr.","অ্যাডভোকেট":"Adv.","নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ":"Nasirabad Housing Society Kalyan Parishad","মোট সদস্য":"Total Members","আজীবন":"Life Members","সাধারণ":"General Members","ভোটার":"Voters","লোগো ও ঠিকানা":"Logo & Address","সব সদস্য নামান (এক্সেল)":"Export Excel","এক্সেল":"Upload Excel","নোটিশ":"Notice","সেটিংস":"Settings","আবেদনসমূহ":"Approvals","পরিবার / সদস্য":"Member","বাড়ি অনুযায়ী":"House-wise","সদস্য তালিকা":"Member List","আজীবন সদস্য":"Life Member","সাধারণ সদস্য":"General Member","ভোটার তালিকা থেকে বাদ":"Excluded","মৃত সদস্য":"Deceased"};
+    let t = str;
+    Object.keys(rep).forEach(k => { if (t.includes(k)) t = t.replaceAll(k, rep[k]); });
+    t = t.replace(/রোড\s*([০-৯\d]+)/g, (_, d) => "Road " + toEn(d)).replace(/বাড়ী\s*/g, "House ").replace(/ফ্ল্যাট\s*/g, "Flat ").replace(/[০-৯]/g, c => String("০১২৩৪৫৬৭৮৯".indexOf(c)));
+    if (/[\u0980-\u09FF]/.test(t)) {
+      const cM = {"ক":"k","খ":"kh","গ":"g","ঘ":"gh","ঙ":"ng","চ":"ch","ছ":"chh","জ":"j","ঝ":"jh","ঞ":"n","ট":"t","ঠ":"th","ড":"d","ঢ":"dh","ণ":"n","ত":"t","থ":"th","দ":"d","ধ":"dh","ন":"n","প":"p","ফ":"f","ব":"b","ভ":"bh","ম":"m","য":"j","র":"r","ল":"l","শ":"sh","ষ":"sh","স":"s","হ":"h","ড়":"r","ঢ়":"rh","য়":"y","ৎ":"t","ং":"ng","ঃ":"","ঁ":""};
+      const vM = {"অ":"o","আ":"a","ই":"i","ঈ":"ee","উ":"u","ঊ":"oo","ঋ":"ri","এ":"e","ঐ":"oi","ও":"o","ঔ":"ou","া":"a","ি":"i","ী":"ee","ু":"u","ূ":"oo","ৃ":"ri","ে":"e","ৈ":"oi","ো":"o","ৌ":"ou","্":""};
+      let o = "", chs = [...t];
+      for (let i = 0; i < chs.length; i++) {
+        let c = chs[i], nx = chs[i + 1];
+        if (cM[c] !== undefined) { o += cM[c]; if (nx && vM[nx] !== undefined) { o += vM[nx]; i++; } else if (nx && cM[nx] !== undefined && nx !== "ং" && nx !== "ঃ" && nx !== "ঁ") o += "o"; }
+        else if (vM[c] !== undefined) o += vM[c]; else o += c;
+      }
+      t = o.replace(/\b\w/g, l => l.toUpperCase());
+    }
+    return t;
+  }
+
+  translateDOM = function(root) {
+    if (curLang === "bn") return;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+    while (n = w.nextNode()) {
+      if (n.parentElement && ["SCRIPT", "STYLE"].includes(n.parentElement.tagName)) continue;
+      if (n.nodeValue && n.nodeValue.trim()) n.nodeValue = bnFullToEn(n.nodeValue);
+    }
+  };
+
+  function openCustomExport(mode) {
+    const listAll = run().out.map(x => x.r);
+    dlg.innerHTML = `<h2>${mode === "word" ? "📄 MS Word ডাউনলোড অপশন" : "📊 Excel ডাউনলোড অপশন"}</h2>
+      <div class="fg">
+        <label class="w">কোন অংশ ডাউনলোড করবেন?<select id="exType">
+          <option value="all">বর্তমান পূর্ণ তালিকা (${toBn(listAll.length)} জন)</option>
+          <option value="page">নির্দিষ্ট পেজ নম্বর (প্রতি পেজে ২৫ জন করে)</option>
+          <option value="range">নির্দিষ্ট সদস্য নম্বর সীমা (যেমন: ১ থেকে ৫০)</option>
+        </select></label>
+        <label class="w" id="exRangeBox" hidden><span id="exLbl">পেজ নম্বর বা সীমা লিখুন (যেমন: ১, অথবা ২-৪):</span><input id="exVal" placeholder="১ বা ২-৪"></label>
+      </div>
+      <div class="bar"><button class="btn" id="exGo">ডাউনলোড করুন</button><button class="btn ghost" onclick="dlg.close()">বাতিল</button></div>`;
+    dlg.showModal();
+    document.getElementById("exType").onchange = e => {
+      const v = e.target.value, bx = document.getElementById("exRangeBox");
+      bx.hidden = v === "all";
+      document.getElementById("exLbl").textContent = v === "page" ? "পেজ নম্বর লিখুন (যেমন: ১, অথবা ২-৪):" : "সদস্য নম্বর সীমা লিখুন (যেমন: ১-৫০):";
+    };
+    document.getElementById("exGo").onclick = () => {
+      const t = document.getElementById("exType").value, val = toEn(document.getElementById("exVal").value).trim();
+      let sub = listAll;
+      if (t === "page" && val) {
+        const pts = val.split("-").map(Number), p1 = pts.at(0) || 1, p2 = pts.at(1) || p1;
+        sub = listAll.slice((p1 - 1) * 25, p2 * 25);
+      } else if (t === "range" && val) {
+        const pts = val.split("-").map(Number), s1 = pts.at(0) || 1, s2 = pts.at(1) || s1;
+        sub = listAll.filter(r => { const n = Number(toEn(r.n)); return n >= s1 && n <= s2; });
+      }
+      if (mode === "word") {
+        const trs = sub.map((r, i) => `<tr><td>${toBn(i + 1)}</td><td>${esc(r.n)}</td><td>${esc(r.nm)}</td><td>${esc(r.f)}</td><td>${esc([r.b, r.h ? "বাড়ী " + r.h : "", r.r ? "রোড " + r.r : ""].filter(Boolean).join(", "))}</td><td>${esc((r.p || []).map(fmtPhone).join(", "))}</td><td>${r.l ? "আজীবন" : "সাধারণ"}</td></tr>`).join("");
+        const html = `<html xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset='utf-8'><style>body,td,th{font-family:'Nikosh','Kalpurush',sans-serif;font-size:12pt;}table{width:100%;border-collapse:collapse;}td,th{border:1px solid #000;padding:5px;}</style></head><body><h2 style="text-align:center;">${esc(ORG_NAME)}</h2><table><tr><th>ক্রম</th><th>সদস্য নং</th><th>নাম</th><th>পিতা</th><th>ঠিকানা</th><th>মোবাইল</th><th>ধরন</th></tr>${trs}</table></body></html>`;
+        dls.save({ filename: "Member_List.doc", data: new Blob(["\ufeff", html], { type: "application/msword" }) });
+      } else if (window.XLSX) {
+        const data = sub.map((r, i) => ({
+          "ক্রম": i + 1,
+          "সদস্য নং": r.n,
+          "নাম": r.nm,
+          "পিতা": r.f,
+          "মাতা": r.m,
+          "বিল্ডিং": r.b,
+          "বাড়ী": r.h,
+          "রোড": r.r,
+          "ফ্ল্যাট": r.fl,
+          "মোবাইল": (r.p || []).join(", "),
+          "ধরন": r.l ? "আজীবন" : "সাধারণ"
+        }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Members");
+        XLSX.writeFile(wb, "Member_List.xlsx");
+      }
+      dlg.close();
+    };
+  }
+
+  const prevSettings = openSettings;
+  openSettings = function() {
+    prevSettings();
+    const wBtn = document.getElementById("stWord");
+    if (wBtn) {
+      wBtn.textContent = "📄 MS Word (পেজ/অংশ ডাউনলোড)";
+      wBtn.onclick = () => openCustomExport("word");
+      const exBtn = document.createElement("button");
+      exBtn.className = "btn ghost";
+      exBtn.textContent = "📊 Excel (পেজ/অংশ ডাউনলোড)";
+      exBtn.onclick = () => openCustomExport("excel");
+      wBtn.parentNode.insertBefore(exBtn, wBtn.nextSibling);
+    }
+  };
+
+  const prevAddTools = addExtraTools;
+  addExtraTools = function() {
+    prevAddTools();
+    let rb = document.getElementById("reqBtn");
+    const rq = db._get("pending_reqs", []).length;
+    if (!rb) {
+      rb = document.createElement("button");
+      rb.id = "reqBtn";
+      rb.className = "btn ghost";
+      rb.onclick = openPendingRequests;
+      const sb = document.getElementById("setBtn");
+      if (sb) barEl.insertBefore(rb, sb);
+      else barEl.appendChild(rb);
+    }
+    rb.className = rq ? "btn ghost req-pulse" : "btn ghost";
+    rb.innerHTML = `🔔 আবেদনসমূহ <span class="badge-req">${toBn(rq)}</span>`;
+  };
+
+  if (typeof drawBar === "function") drawBar();
+  if (typeof render === "function") render();
+})();
+</script>
+<script>
+(function(){
+  const finalCss = document.createElement("style");
+  finalCss.textContent = `
+    #pv .pvp, .pdfpage .pvp {
+      width: 135px !important;
+      height: 165px !important;
+      object-fit: cover !important;
+      object-position: top center !important;
+      float: none !important;
+      display: block !important;
+      margin: 10px auto 8px !important;
+      border: 2px solid #0a6b6b !important;
+      border-radius: 8px !important;
+      padding: 3px !important;
+      background: #fff !important;
+    }
+    .qr-center {
+      float: none !important;
+      clear: both !important;
+      text-align: center !important;
+      margin: 6px auto 14px !important;
+    }
+    .hdr-split {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      width: 100% !important;
+      margin: 14px 0 6px !important;
+      padding-bottom: 4px !important;
+      border-bottom: 1.5px solid #0a6b6b !important;
+      font-size: 11.5pt !important;
+      font-weight: 700 !important;
+    }
+  `;
+  document.head.appendChild(finalCss);
+
+  const bnM = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const enM = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function bnOrd(d) {
+    if (d === 1) return "১লা";
+    if (d === 2 || d === 3) return toBn(d) + "রা";
+    if (d === 4) return "৪ঠা";
+    if (d >= 5 && d <= 18) return toBn(d) + "ই";
+    return toBn(d) + "শে";
+  }
+  function fmtAllDate(val, lang) {
+    const s = toEn(String(val)).trim();
+    const m1 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+    const m2 = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+    let d, m, y;
+    if (m1) { d = Number(m1.at(1)); m = Number(m1.at(2)); y = Number(m1.at(3)); }
+    else if (m2) { y = Number(m2.at(1)); m = Number(m2.at(2)); d = Number(m2.at(3)); }
+    else return val;
+    if (!d || !m || m < 1 || m > 12 || !y) return val;
+    return lang === "en" ? (d + " " + enM[m - 1] + " " + y) : (bnOrd(d) + " " + bnM[m - 1] + " " + toBn(y));
+  }
+
+  setInterval(() => {
+    document.querySelectorAll(".m, #pv, .pdfpage, #list").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        if (!n.nodeValue || !/[\/\-\.]/.test(n.nodeValue)) continue;
+        n.nodeValue = n.nodeValue.replace(/\b([০-৯\d]{1,4}[\/\-\.][০-৯\d]{1,2}[\/\-\.][০-৯\d]{1,4})\b/g, full => fmtAllDate(full, typeof curLang !== "undefined" ? curLang : "bn"));
+      }
+    });
+
+    document.querySelectorAll("#pv, .pdfpage").forEach(pg => {
+      const tbl = pg.querySelector("table");
+      if (!tbl || pg.dataset.layoutFixed) return;
+      const sub = pg.querySelector(".sub");
+      if (sub && sub.textContent.includes("তারিখ")) {
+        pg.dataset.layoutFixed = "1";
+        const parts = sub.textContent.split(",");
+        const nmTxt = (parts.at(0) || "").trim();
+        const dtTxt = (parts.at(1) || "").trim();
+        sub.style.display = "none";
+
+        const oldQr = pg.querySelector("div[style*='float:right']");
+        const qrSrc = oldQr ? oldQr.querySelector("img")?.src : pg.querySelector(".qr-center img")?.src;
+        if (oldQr) oldQr.remove();
+
+        if (qrSrc && !pg.querySelector(".qr-center")) {
+          const qDiv = document.createElement("div");
+          qDiv.className = "qr-center";
+          qDiv.innerHTML = `<img src="${qrSrc}" style="width:92px;height:92px;border:1px solid #334155;padding:3px;border-radius:6px;background:#fff;"><small style="display:block;font-size:8.5pt;font-weight:700;">QR যাচাই</small>`;
+          tbl.parentNode.insertBefore(qDiv, tbl);
+        }
+
+        const hdr = document.createElement("div");
+        hdr.className = "hdr-split";
+        hdr.innerHTML = `<span>সদস্যের নাম: ${nmTxt}</span><span>${dtTxt}</span>`;
+        tbl.parentNode.insertBefore(hdr, tbl);
+      }
+    });
+  }, 350);
+
+  if (new URLSearchParams(location.search).get("view") === "voters") {
+    const styleV = document.createElement("style");
+    styleV.textContent = `#bar, #tabs, .act, .more .bar, #reqBtn, #setBtn, #xlBtn, #ntcBtn, #vLinkBtn { display: none !important; }`;
+    document.head.appendChild(styleV);
+    setTimeout(() => {
+      if (typeof tab !== "undefined") { tab = "v"; render(); }
+      const top = document.querySelector(".wrap");
+      if (top && !document.getElementById("vPubBar")) {
+        const b = document.createElement("div");
+        b.id = "vPubBar";
+        b.style.cssText = "background:#e2efed;border:1px solid #0a6b6b;border-radius:10px;padding:10px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;";
+        b.innerHTML = `<b style="color:#064e4e;">🗳️ চূড়ান্ত ভোটার তালিকা (শুধুমাত্র দেখার ও ডাউনলোডের জন্য)</b><div><button class="btn" onclick="act('pdf','voters',this)">📥 ভোটার তালিকা ডাউনলোড (PDF)</button> <button class="btn ghost" onclick="doPrint()">🖨️ প্রিন্ট</button></div>`;
+        top.insertBefore(b, top.children.item(1));
+      }
+    }, 500);
+  }
+
+  const oldBarFn = addExtraTools;
+  addExtraTools = function() {
+    oldBarFn();
+    if (document.getElementById("vLinkBtn")) return;
+    const btn = document.createElement("button");
+    btn.id = "vLinkBtn"; btn.className = "btn ghost"; btn.textContent = "🗳️ ভোটার লিংক";
+    btn.onclick = () => {
+      const vUrl = location.href.split("?").at(0) + "?view=voters";
+      const msg = `আসসালামু আলাইকুম,\n${ORG_NAME}-এর নির্বাচনের চূড়ান্ত ভোটার তালিকা দেখতে ও ডাউনলোড করতে নিচের লিংকে ক্লিক করুন:\n${vUrl}`;
+      dlg.innerHTML = `<h2>🗳️ পাবলিক ভোটার তালিকা লিংক</h2>
+        <p class="msg">এই লিংকে প্রবেশ করলে পাসওয়ার্ড ছাড়াই শুধু ভোটার তালিকা দেখা, খোঁজা এবং PDF ডাউনলোড করা যাবে।</p>
+        <textarea style="width:100%;height:85px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(msg)}</textarea>
+        <div class="bar">
+          <a class="btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="https://whatsapp.com{encodeURIComponent(msg)}" target="_blank">💬 WhatsApp-এ শেয়ার</a>
+          <button class="btn ghost" onclick="navigator.clipboard.writeText('${esc(vUrl)}');alert('ভোটার লিংক কপি হয়েছে!')">📋 লিংক কপি</button>
+          <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+        </div>`;
+      dlg.showModal();
+    };
+    const sb = document.getElementById("setBtn");
+    if (sb) barEl.insertBefore(btn, sb); else barEl.appendChild(btn);
+  };
+  if (typeof drawBar === "function") drawBar();
+
+  document.addEventListener("click", function(e) {
+    const a = e.target.closest("a.wa-btn, a[href*='whatsapp.com'], a[href*='wa.me']");
+    if (!a) return;
+    e.preventDefault();
+    try {
+      const u = new URL(a.href);
+      let ph = u.searchParams.get("phone") || "";
+      if (!ph) {
+        const m = a.href.match(/(?:wa\.me\/|phone=)(\d+)/);
+        if (m) ph = m.at(1);
+      }
+      const txt = u.searchParams.get("text") || "";
+      const isMob = /Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMob) {
+        window.location.href = `whatsapp://send?${ph ? "phone=" + ph + "&" : ""}text=${encodeURIComponent(txt)}`;
+        setTimeout(() => {
+          window.top.location.href = `https://whatsapp.com{ph ? "phone=" + ph + "&" : ""}text=${encodeURIComponent(txt)}`;
+        }, 800);
+      } else {
+        window.open(`https://whatsapp.com{ph ? "phone=" + ph + "&" : ""}text=${encodeURIComponent(txt)}`, "_blank");
+      }
+    } catch (err) {
+      window.top.location.href = a.href;
+    }
+  }, true);
+})();
+</script>
+<script type="text/plain">
+(function(){
+  const smartCss = document.createElement("style");
+  smartCss.textContent = `
+    #pv .pvp, .pdfpage .pvp {
+      width: 135px !important; height: 165px !important; object-fit: cover !important;
+      object-position: top center !important; float: none !important; display: block !important;
+      margin: 10px auto 12px !important; border: 2px solid #0a6b6b !important;
+      border-radius: 8px !important; padding: 3px !important; background: #fff !important;
+    }
+    .qr-bottom { float: none !important; clear: both !important; text-align: center !important; margin: 14px auto 6px !important; }
+    .hdr-split {
+      display: flex !important; justify-content: space-between !important; align-items: center !important;
+      width: 100% !important; margin: 12px 0 6px !important; padding-bottom: 5px !important;
+      border-bottom: 1.5px solid #0a6b6b !important; font-size: 11pt !important; font-weight: 700 !important; color: #0f172a !important;
+    }
+  `;
+  document.head.appendChild(smartCss);
+
+  const bnM = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const enM = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function bnOrd(d) {
+    if (d === 1) return "১লা";
+    if (d === 2 || d === 3) return toBn(d) + "রা";
+    if (d === 4) return "৪ঠা";
+    if (d >= 5 && d <= 18) return toBn(d) + "ই";
+    return toBn(d) + "শে";
+  }
+  function fmtAllDate(val, lang) {
+    const s = toEn(String(val)).trim();
+    const m1 = s.match(/^(\d{1,2})[\/\-\.\\](\d{1,2})[\/\-\.\\](\d{4})$/);
+    const m2 = s.match(/^(\d{4})[\/\-\.\\](\d{1,2})[\/\-\.\\](\d{1,2})$/);
+    let d, m, y;
+    if (m1) { d = Number(m1.at(1)); m = Number(m1.at(2)); y = Number(m1.at(3)); }
+    else if (m2) { y = Number(m2.at(1)); m = Number(m2.at(2)); d = Number(m2.at(3)); }
+    else return val;
+    if (!d || !m || m < 1 || m > 12 || !y) return val;
+    return lang === "en" ? (d + " " + enM[m - 1] + " " + y) : (bnOrd(d) + " " + bnM[m - 1] + " " + toBn(y));
+  }
+
+  function applySmartLayout() {
+    document.querySelectorAll(".m, #pv, .pdfpage, #list").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        if (!n.nodeValue || !/[\/\-\.\\]/.test(n.nodeValue)) continue;
+        n.nodeValue = n.nodeValue.replace(/\b([০-৯\d]{1,4}[\/\-\.\\][০-৯\d]{1,2}[\/\-\.\\][০-৯\d]{1,4})\b/g, full => fmtAllDate(full, typeof curLang !== "undefined" ? curLang : "bn"));
+      }
+    });
+
+    const allPgs = [...document.querySelectorAll("#pv .pdfpage, .pdfpage")];
+    const targetPgs = allPgs.length ? allPgs : [...document.querySelectorAll("#pv")];
+
+    targetPgs.forEach((pg, idx) => {
+      const tbl = pg.querySelector("table");
+      if (!tbl || pg.dataset.smartDone) return;
+      pg.dataset.smartDone = "1";
+
+      const oldSplit = pg.querySelector(".hdr-split");
+      if (oldSplit) oldSplit.remove();
+
+      const sub = pg.querySelector(".sub");
+      let leftTxt = "", rightTxt = "";
+      const todayBn = fmtAllDate(new Date().toLocaleDateString("en-GB"), "bn");
+
+      if (sub) {
+        const raw = sub.textContent.trim();
+        if (raw.includes("তারিখ")) {
+          const pts = raw.split(/,?\s*তারিখ[:\s]*/);
+          leftTxt = "সদস্যের নাম: " + (pts.at(0) || "").trim();
+          rightTxt = "তারিখ: " + ((pts.at(1) || "").trim() || todayBn);
+        } else {
+          const trs = [...tbl.querySelectorAll("tr")].slice(1);
+          const firstNo = trs.at(0)?.children?.item(1)?.textContent?.trim() || "";
+          const lastNo = trs.at(-1)?.children?.item(1)?.textContent?.trim() || "";
+          const rangeInfo = (firstNo && lastNo && trs.length > 1) ? ` | পৃষ্ঠা ${toBn(idx + 1)}: সদস্য নং ${firstNo} থেকে ${lastNo} পর্যন্ত` : "";
+          leftTxt = raw + rangeInfo;
+          rightTxt = "তারিখ: " + todayBn;
+        }
+        sub.style.display = "none";
+      }
+
+      const oldQr = pg.querySelector(".qr-center, div[style*='float:right']");
+      const qrSrc = oldQr ? oldQr.querySelector("img")?.src : "";
+      if (oldQr) oldQr.remove();
+
+      const hdr = document.createElement("div");
+      hdr.className = "hdr-split";
+      hdr.innerHTML = `<span>${leftTxt}</span><span>${rightTxt}</span>`;
+      tbl.parentNode.insertBefore(hdr, tbl);
+
+      if (qrSrc) {
+        const qDiv = document.createElement("div");
+        qDiv.className = "qr-bottom";
+        qDiv.innerHTML = `<img src="${qrSrc}" style="width:94px;height:94px;border:1px solid #334155;padding:3px;border-radius:6px;background:#fff;display:inline-block;"><small style="display:block;font-size:8.5pt;font-weight:700;margin-top:2px;">QR যাচাই</small>`;
+        tbl.parentNode.insertBefore(qDiv, tbl.nextSibling);
+      }
+    });
+  }
+  setInterval(applySmartLayout, 300);
+
+  function viewDocPopup(title, dataUrl) {
+    const isPdf = dataUrl.startsWith("data:application/pdf");
+    dlg.innerHTML = `<h2>📄 ${esc(title)}</h2>
+      ${isPdf ? `<iframe src="${dataUrl}" style="width:100%;height:65vh;border:1px solid var(--line);border-radius:8px;"></iframe>` : `<img src="${dataUrl}" style="max-width:100%;max-height:65vh;display:block;margin:auto;border-radius:8px;border:1px solid var(--line);">`}
+      <div class="bar">
+        <a class="btn" href="${dataUrl}" download="${esc(title)}.${isPdf ? "pdf" : "png"}" style="text-decoration:none;">📥 ডাউনলোড করুন</a>
+        <button class="btn ghost" onclick="dlg.close()">বন্ধ করুন</button>
+      </div>`;
+    dlg.showModal();
+  }
+
+  setInterval(() => {
+    const form = document.querySelector("#dlg form, #dlg .fg");
+    const saveBtn = document.querySelector("#dlg button[type='submit'], #dlg .bar .btn");
+    if (form && saveBtn && saveBtn.textContent.includes("সংরক্ষণ") && !document.getElementById("nidFileField")) {
+      const lbl = document.createElement("label");
+      lbl.className = "w";
+      lbl.id = "nidFileField";
+      lbl.innerHTML = `জাতীয় পরিচয়পত্র (NID) / পাসপোর্ট / জন্মনিবন্ধন (ছবি বা পিডিএফ)
+        <input type="file" id="f_nid_doc" accept="image/*,application/pdf">
+        <small style="display:block;color:#0a6b6b;font-weight:600;margin-top:3px;">সর্বোচ্চ ৪ মেগাবাইট (সংরক্ষণ চাপলে স্বয়ংক্রিয়ভাবে জমা হবে)</small>`;
+      form.appendChild(lbl);
+
+      saveBtn.addEventListener("click", () => {
+        const inp = document.getElementById("f_nid_doc");
+        const f = inp && inp.files && inp.files.item(0);
+        const nameVal = document.getElementById("f_nm")?.value || "";
+        const noVal = document.getElementById("f_n")?.value || "";
+        const target = rows.find(x => toEn(x.n) === toEn(noVal)) || rows.find(x => x.nm === nameVal);
+        if (f && target) {
+          const rd = new FileReader();
+          rd.onload = () => {
+            const allNid = db._get("member_nid_files", {});
+            allNid[String(target.s)] = { name: f.name, data: rd.result };
+            db._set("member_nid_files", allNid);
+            if (typeof render === "function") render();
+          };
+          rd.readAsDataURL(f);
+        }
+      }, true);
+    }
+
+    document.querySelectorAll(".m.open").forEach(card => {
+      const s = Number(card.dataset.s);
+      const allNid = db._get("member_nid_files", {});
+      const nidObj = allNid[String(s)];
+      const bar = card.querySelector(".more .bar");
+      if (nidObj && bar && !bar.querySelector(".view-nid-btn")) {
+        const b = document.createElement("button");
+        b.className = "btn ghost view-nid-btn";
+        b.textContent = "🪪 NID / পাসপোর্ট দেখুন";
+        b.onclick = () => viewDocPopup("NID / পাসপোর্ট / জন্মনিবন্ধন", nidObj.data);
+        bar.insertBefore(b, bar.firstChild);
+      }
+    });
+  }, 350);
+
+  sendMemberMagicLink = function(s) {
+    const r = rows.find(x => x.s === s); if (!r) return;
+    const pin = String(Math.floor(1000 + Math.random() * 9000));
+    const pins = db._get("member_pins", {}); pins[toEn(r.n)] = pin; db._set("member_pins", pins);
+    const url = location.href.split("?").at(0) + "?member=" + toEn(r.n) + "&pin=" + pin;
+    const txt = `আসসালামু আলাইকুম ${r.nm},\n${ORG_NAME}-এ আপনার তথ্য হালনাগাদ করতে নিচের লিংকে ক্লিক করুন (গোপন পিন: ${pin}):\n${url}`;
+    const ph = (r.p && r.p.at(0)) || "";
+    dlg.innerHTML = `<h2>🔗 তথ্য হালনাগাদ লিংক (পিন: ${pin})</h2>
+      <p class="msg">নিচের কপি বাটনে ক্লিক করে বার্তা ও লিংক কপি করুন অথবা সরাসরি WhatsApp-এ পাঠান:</p>
+      <textarea id="mlTxt" style="width:100%;height:95px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(txt)}</textarea>
+      <div class="bar">
+        <button class="btn" id="cpMlBtn">📋 লিংক ও বার্তা কপি করুন</button>
+        ${ph ? `<a class="btn" style="background:#128c7e;text-decoration:none;" href="https://wa.me{ph}?text=${encodeURIComponent(txt)}" target="_blank">💬 WhatsApp</a>` : ""}
+        <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+      </div>`;
+    dlg.showModal();
+    document.getElementById("cpMlBtn").onclick = () => {
+      const ta = document.getElementById("mlTxt"); ta.select();
+      navigator.clipboard?.writeText(txt).catch(() => document.execCommand("copy"));
+      document.getElementById("cpMlBtn").textContent = "✓ কপি হয়েছে!";
+    };
+  };
+
+  function showVoterPublicDialog() {
+    const vUrl = location.href.split("?").at(0) + "?view=voters";
+    const msg = `আসসালামু আলাইকুম,\n${ORG_NAME}-এর নির্বাচনের চূড়ান্ত ভোটার তালিকা দেখতে ও PDF ডাউনলোড করতে নিচের লিংকে ক্লিক করুন:\n${vUrl}`;
+    dlg.innerHTML = `<h2>🗳️ পাবলিক ভোটার তালিকা লিংক</h2>
+      <p class="msg">এই লিংকটি শেয়ার করলে সদস্যরা পাসওয়ার্ড ছাড়াই ভোটার তালিকা দেখতে, খুঁজতে এবং PDF ডাউনলোড করতে পারবেন।</p>
+      <textarea id="vlTxt" style="width:100%;height:90px;padding:8px;border-radius:8px;border:1px solid var(--line);" readonly>${esc(msg)}</textarea>
+      <div class="bar">
+        <button class="btn" id="cpVlBtn">📋 লিংক ও বার্তা কপি করুন</button>
+        <a class="btn" style="background:#128c7e;text-decoration:none;" href="https://wa.me{encodeURIComponent(msg)}" target="_blank">💬 WhatsApp-এ শেয়ার</a>
+        <button class="btn ghost" onclick="dlg.close()">বন্ধ</button>
+      </div>`;
+    dlg.showModal();
+    document.getElementById("cpVlBtn").onclick = () => {
+      const ta = document.getElementById("vlTxt"); ta.select();
+      navigator.clipboard?.writeText(msg).catch(() => document.execCommand("copy"));
+      document.getElementById("cpVlBtn").textContent = "✓ কপি হয়েছে!";
+    };
+  }
+
+  if (new URLSearchParams(location.search).get("view") === "voters") {
+    const stV = document.createElement("style");
+    stV.textContent = `#bar, #tabs, .act, .more .bar, #reqBtn, #setBtn, #xlBtn, #ntcBtn, #vLinkBtn { display: none !important; }`;
+    document.head.appendChild(stV);
+    setTimeout(() => {
+      if (typeof tab !== "undefined") { tab = "v"; render(); }
+      const top = document.querySelector(".wrap");
+      if (top && !document.getElementById("vPubBar")) {
+        const b = document.createElement("div");
+        b.id = "vPubBar";
+        b.style.cssText = "background:#e2efed;border:1px solid #0a6b6b;border-radius:10px;padding:10px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;";
+        b.innerHTML = `<b style="color:#064e4e;">🗳️ চূড়ান্ত ভোটার তালিকা (শুধুমাত্র দেখার ও ডাউনলোডের জন্য)</b><div><button class="btn" onclick="act('pdf','voters',this)">📥 ভোটার তালিকা ডাউনলোড (PDF)</button> <button class="btn ghost" onclick="doPrint()">🖨️ প্রিন্ট</button></div>`;
+        top.insertBefore(b, top.children.item(1));
+      }
+    }, 500);
+  }
+
+  setInterval(() => {
+    if (typeof barEl !== "undefined" && barEl && !document.getElementById("vLinkBtn")) {
+      const btn = document.createElement("button");
+      btn.id = "vLinkBtn"; btn.className = "btn ghost"; btn.textContent = "🗳️ ভোটার লিংক";
+      btn.onclick = showVoterPublicDialog;
+      const sb = document.getElementById("setBtn");
+      if (sb) barEl.insertBefore(btn, sb); else barEl.appendChild(btn);
+    }
+  }, 600);
+})();
+</script>
+<script src="addon.js"></script>
+<script>
+document.addEventListener("click", function(e) {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const t = (b.textContent || "").trim();
+  if (t.includes("লিংক") && !t.includes("ভোটার") && !t.includes("কপি")) {
+    const card = b.closest(".m");
+    if (!card) return;
+    setTimeout(() => {
+      const dlg = document.getElementById("dlg");
+      const ta = dlg ? dlg.querySelector("textarea") : null;
+      const waBtn = dlg ? Array.from(dlg.querySelectorAll("button, a")).find(x => x.textContent.includes("WhatsApp")) : null;
+      if (!dlg || !ta || !waBtn || document.getElementById("optTabWrap")) return;
+
+      const origMsg = ta.value;
+      const d = (card.innerText || "").replace(/[০-৯]/g, c => "০১২৩৪৫৬৭৮৯".indexOf(c)).replace(/\D/g, "");
+      const m = d.match(/(?:88)?(01[3-9]\d{8})/);
+      const ph = m ? ("88" + m.at(1)) : "";
+      const nm = (card.querySelector("b, strong, .nm")?.textContent || "সদস্য").trim();
+
+      const tabs = document.createElement("div");
+      tabs.id = "optTabWrap";
+      tabs.style.cssText = "display:flex;gap:6px;margin-bottom:8px;";
+      tabs.innerHTML = `<button type="button" id="tOpt1" style="flex:1;background:#0a6b6b;color:#fff;border:none;padding:7px;border-radius:7px;font-weight:700;">🔗 তথ্য হালনাগাদ লিংক</button><button type="button" id="tOpt2" style="flex:1;background:#e2e8f0;color:#0f172a;border:none;padding:7px;border-radius:7px;font-weight:700;">✍️ একক বার্তা লিখুন</button>`;
+      ta.parentNode.insertBefore(tabs, ta);
+
+      const a = document.createElement("a");
+      a.target = "_blank"; a.rel = "noopener";
+      a.style.cssText = "background:#16a34a;color:#fff;padding:9px 14px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;";
+      a.textContent = "💬 WhatsApp / WA Business পাঠান";
+      const sync = () => { a.href = "https://" + "wa.me/" + ph + "?text=" + encodeURIComponent(ta.value); };
+      sync(); ta.addEventListener("input", sync);
+      waBtn.replaceWith(a);
+
+      document.getElementById("tOpt1").onclick = () => { ta.readOnly = true; ta.value = origMsg; sync(); document.getElementById("tOpt1").style.cssText += ";background:#0a6b6b;color:#fff;"; document.getElementById("tOpt2").style.cssText += ";background:#e2e8f0;color:#0f172a;"; };
+      document.getElementById("tOpt2").onclick = () => { ta.readOnly = false; ta.value = "আসসালামু আলাইকুম " + nm + ",\n"; ta.focus(); sync(); document.getElementById("tOpt2").style.cssText += ";background:#0a6b6b;color:#fff;"; document.getElementById("tOpt1").style.cssText += ";background:#e2e8f0;color:#0f172a;"; };
+    }, 60);
+  }
+}, true);
+</script>
+<script>
+(function(){
+  const bnM = ["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
+  const enM = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const toEn = v => String(v == null ? "" : v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const toBn = v => String(v == null ? "" : v).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+  const bnOrd = d => d === 1 ? "১লা" : (d === 2 || d === 3) ? toBn(d) + "রা" : d === 4 ? "৪ঠা" : (d >= 5 && d <= 18) ? toBn(d) + "ই" : toBn(d) + "শে";
+
+  function fmtDateSafe(val) {
+    const p = toEn(val).trim().split(/[\/\-\.\\]+/);
+    if (p.length !== 3) return val;
+    let d = 0, m = 0, y = 0;
+    const p0 = p.at(0) || "", p1 = p.at(1) || "", p2 = p.at(2) || "";
+    if (p0.length === 4) { y = +p0; m = +p1; d = +p2; }
+    else if (p2.length === 4) { d = +p0; m = +p1; y = +p2; }
+    else return val;
+    if (!d || !m || m < 1 || m > 12 || y < 1900 || y > 2100) return val;
+    const isEn = (typeof curLang !== "undefined" && curLang === "en");
+    return isEn ? `${d} ${enM[m - 1]} ${y}` : `${bnOrd(d)} ${bnM[m - 1]} ${toBn(y)}`;
+  }
+
+  // ১. পুরোনো ভাঙা window.open('whatsapp.com{ph...') আটকে সঠিক wa.me লিংক চালানো
+  const origOpen = window.open;
+  window.open = function(u, t, f) {
+    if (typeof u === "string" && (u.includes("{ph") || u.includes("whatsapp.com"))) {
+      const m = toEn(u).match(/(?:88)?(01[3-9]\d{8})/);
+      const ph = m ? ("88" + m.at(1)) : "";
+      const tm = u.match(/text=([^&]*)/);
+      const txt = tm ? tm.at(1) : "";
+      u = "https://" + "wa.me/" + ph + (txt ? "?text=" + txt : "");
+    }
+    return origOpen.call(window, u, t || "_blank", f);
+  };
+
+  // ২. জন্মতারিখ ও সেটিংসে সম্পাদকের স্বাক্ষর আপলোড সচল রাখা
+  setInterval(() => {
+    document.querySelectorAll(".m, #pv, #list").forEach(box => {
+      const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        if (n.nodeValue && /[\/\-\.\\]/.test(n.nodeValue)) {
+          const nv = n.nodeValue.replace(/([০-৯\d]{1,4}[\/\-\.\\][০-৯\d]{1,2}[\/\-\.\\][০-৯\d]{1,4})/g, fmtDateSafe);
+          if (nv !== n.nodeValue) n.nodeValue = nv;
+        }
+      }
+    });
+
+    const dlg = document.getElementById("dlg");
+    if (dlg && dlg.open) {
+      const h2 = dlg.querySelector("h2");
+      if (h2 && h2.textContent.includes("সেটিংস") && !document.getElementById("secSignWrap")) {
+        const sig = localStorage.getItem("nhs_secretary_sign") || "";
+        const wrap = document.createElement("div");
+        wrap.id = "secSignWrap";
+        wrap.style.cssText = "margin-top:10px;padding:10px;border:1.5px solid #0a6b6b;border-radius:10px;";
+        wrap.innerHTML = `<b style="display:block;margin-bottom:5px;color:#064e4e;">✍️ সম্পাদকের স্বাক্ষর (আইডি কার্ডের জন্য)</b>${sig ? `<img src="${sig}" style="max-height:44px;display:block;margin-bottom:5px;">` : ""}<input type="file" id="sec_sign_inp" accept="image/*">`;
+        dlg.appendChild(wrap);
+        document.getElementById("sec_sign_inp").onchange = ev => {
+          const files = ev.target.files;
+          if (!files || !files.length) return;
+          const rd = new FileReader();
+          rd.onload = () => { localStorage.setItem("nhs_secretary_sign", rd.result); alert("সম্পাদকের স্বাক্ষর সংরক্ষিত হয়েছে!"); dlg.close(); };
+          rd.readAsDataURL(files.item(0));
+        };
+      }
+    }
+  }, 700);
+})();
+</script>
+<script>
+setInterval(function() {
+  const linkBtn = document.getElementById("finWaRealLink") || document.getElementById("cfRealWaLink") || document.getElementById("cfSendWa");
+  const phInp = document.getElementById("finWaPhone") || document.getElementById("cfPhone");
+  const msgTa = document.getElementById("finWaMsg") || document.getElementById("cfMsg");
+  if (!linkBtn || !phInp || !msgTa) return;
+
+  const d = String(phInp.value || "").replace(/[০-৯]/g, c => "০১২৩৪৫৬৭৮৯".indexOf(c)).replace(/\D/g, "");
+  const m = d.match(/(?:88)?(01[3-9]\d{8})/);
+  const fullPh = m ? ("88" + m.at(1)) : "";
+  const encTxt = encodeURIComponent(msgTa.value || "");
+
+  let wrap = document.getElementById("dualAppWaWrap");
+  if (!wrap) {
+    wrap = document.createElement("div");
+    wrap.id = "dualAppWaWrap";
+    wrap.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;";
+    linkBtn.parentNode.insertBefore(wrap, linkBtn);
+    linkBtn.style.display = "none";
+  }
+
+  const uNormal = "intent://send?phone=" + fullPh + "&text=" + encTxt + "#Intent;scheme=whatsapp;package=com.whatsapp;end";
+  const uBiz = "intent://send?phone=" + fullPh + "&text=" + encTxt + "#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end";
+
+  if (wrap.dataset.last !== uNormal) {
+    wrap.dataset.last = uNormal;
+    wrap.innerHTML =
+      '<a href="' + uNormal + '" style="background:#16a34a;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">💬 WhatsApp</a>' +
+      '<a href="' + uBiz + '" style="background:#0f766e;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">💼 WA Business</a>';
+  }
+}, 400);
+</script>
+<script>(function(){
+  const toEn = s => String(s || "").replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+  const esc = v => String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const qp = new URLSearchParams(location.search);
+  const isMemberView = Boolean(qp.get("member"));
+  const isVoterView = qp.get("voter") === "1";
+
+  // ১. পুরোনো সব সংঘর্ষকারী CSS ও অযাচিত বক্স সম্পূর্ণ পরিষ্কার করা
+  function purgeOldConflicts() {
+    document.querySelectorAll("style").forEach(st => {
+      const t = st.textContent || "";
+      if (
+        t.includes("nhsMoreDrawer") ||
+        t.includes("nhsSmartThemeStyle") ||
+        t.includes("nhsCleanThStyle") ||
+        t.includes("nhsOptThStyle") ||
+        t.includes("nhsRealBrandLogo") ||
+        t.includes("nhsLogoUploadBox")
+      ) {
+        st.remove();
+      }
+    });
+    [
+      "nhsMoreDrawer", "nhsMoreMenuBtn", "nhsCleanToolsBox", "nhsCleanToolsBtn",
+      "nhsCompactMenuBtn", "nhsCompactMenuBox", "nhsNeatToggleBtn", "nhsLogoUploadBox",
+      "nhsOrgCustomBox", "nhsCleanThBox", "nhsSettingsThemeBox", "nhsThemeBar",
+      "nhsTopLogoImg", "nhsRealBrandLogo", "nhsCenterFinalLogo", "nhsDynamicBrandHeader",
+      "nhsSingleMenuBtn", "nhsSingleMenuPanel"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  }
+  purgeOldConflicts();
+
+  // ২. পর্দা খোলার স্মার্ট ওয়েলকাম স্ক্রিন (২ সেকেন্ড পর মসৃণভাবে খুলবে)
+  if (!isMemberView && !isVoterView && !document.getElementById("nhsMasterSplash")) {
+    const savedLogo = localStorage.getItem("nhs_master_logo") || "";
+    const orgTitle = document.querySelector("header h1, .topbar h1")?.textContent?.trim() || "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ";
+    const sp = document.createElement("div");
+    sp.id = "nhsMasterSplash";
+    sp.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:linear-gradient(135deg,#064e3b 0%,#0a6b6b 60%,#042f2e 100%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;transition:opacity .55s ease;font-family:sans-serif;";
+    sp.innerHTML = `
+      ${savedLogo.startsWith("data:image/") ? `<img src="${savedLogo}" style="width:130px;height:130px;object-fit:contain;border-radius:50%;background:#fff;padding:7px;margin-bottom:14px;border:3px solid #fde047;box-shadow:0 8px 24px rgba(0,0,0,.35);">` : `<div style="font-size:3.2rem;margin-bottom:12px;">🏛️</div>`}
+      <div style="font-size:1.32rem;font-weight:800;line-height:1.4;max-width:420px;">${esc(orgTitle)}</div>
+      <div style="font-size:.86rem;color:#a7f3d0;margin-top:6px;">ডিজিটাল সদস্য ও তথ্য ব্যবস্থাপনা পোর্টাল</div>
+      <div style="position:absolute;bottom:22px;font-size:.82rem;color:#fde047;font-weight:700;">Developed & Powered by S. M. Forkan Uddin</div>
+    `;
+    document.body.appendChild(sp);
+    sp.onclick = () => sp.remove();
+    setTimeout(() => { sp.style.opacity = "0"; setTimeout(() => sp.remove(), 550); }, 2000);
+  }
+
+  // ৩. ভোটার লিংক (?voter=1) পাসওয়ার্ড ছাড়াই সরাসরি খোলা ও তালিকা প্রদর্শন
+  if (isVoterView) {
+    const vt = setInterval(function() {
+      document.querySelectorAll("div, dialog, section").forEach(el => {
+        if ((el.textContent || "").includes("পাসওয়ার্ড") && el.querySelector("input[type='password']")) {
+          el.remove();
+        }
+      });
+      if (document.body) {
+        document.body.style.overflow = "auto";
+        document.body.style.visibility = "visible";
+      }
+      const vBtn = Array.from(document.querySelectorAll("button")).find(b => {
+        const tx = (b.textContent || "").trim();
+        return tx.startsWith("ভোটার") && !tx.includes("বাদ") && !tx.includes("লিংক");
+      });
+      if (vBtn && !vBtn.dataset.voterOpened) {
+        vBtn.dataset.voterOpened = "1";
+        vBtn.click();
+        clearInterval(vt);
+      }
+    }, 250);
+    setTimeout(() => clearInterval(vt), 5000);
+  }
+
+  // ৪. বড় লোগো প্রদর্শন ও পরিচ্ছন্ন ড্যাশবোর্ড মেনুবার (ভেতরে "লোগো ও ঠিকানা" বাটন ছাড়া)
+  function applyCleanHeaderAndMenu() {
+    purgeOldConflicts();
+    const savedLogo = localStorage.getItem("nhs_master_logo") || "";
+    const hdr = document.querySelector("header, .topbar, .hdr");
+    if (hdr && savedLogo.startsWith("data:image/")) {
+      let topLogo = document.getElementById("nhsMasterHeaderLogo");
+      if (!topLogo) {
+        const h1 = hdr.querySelector("h1");
+        if (h1) {
+          topLogo = document.createElement("img");
+          topLogo.id = "nhsMasterHeaderLogo";
+          h1.insertAdjacentElement("beforebegin", topLogo);
+        }
+      }
+      if (topLogo) {
+        topLogo.src = savedLogo;
+        topLogo.style.cssText = "display:block !important;width:84px !important;height:84px !important;object-fit:contain !important;border-radius:50% !important;background:#fff !important;padding:4px !important;margin:0 auto 6px !important;border:2px solid #fde047 !important;box-shadow:0 3px 10px rgba(0,0,0,.22) !important;";
+      }
+    }
+
+    if (!hdr || isMemberView || isVoterView || document.getElementById("nhsCleanMenuBtn")) return;
+    const sInp = Array.from(hdr.querySelectorAll("input")).find(i => (i.placeholder || "").includes("খুঁজুন") || (i.placeholder || "").includes("নাম"));
+    if (!sInp) return;
+
+    let sRow = sInp;
+    while (sRow.parentElement && sRow.parentElement !== hdr) sRow = sRow.parentElement;
+
+    const belowItems = [];
+    let nx = sRow.nextElementSibling;
+    while (nx) {
+      if (nx.id !== "nhsCleanMenuBtn" && nx.id !== "nhsCleanMenuBox") belowItems.push(nx);
+      nx = nx.nextElementSibling;
+    }
+
+    if (belowItems.length > 0) {
+      const mBtn = document.createElement("button");
+      mBtn.id = "nhsCleanMenuBtn";
+      mBtn.type = "button";
+      mBtn.style.cssText = "display:block;width:100%;margin-top:8px;padding:7px 12px;background:#065f46;color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:8px;font-weight:700;font-size:.86rem;cursor:pointer;text-align:center;";
+      mBtn.textContent = "☰ মেনু ও ফিল্টার দেখুন ▾";
+
+      const mBox = document.createElement("div");
+      mBox.id = "nhsCleanMenuBox";
+      mBox.style.cssText = "display:none;margin-top:8px;";
+
+      belowItems.forEach(el => {
+        Array.from(el.querySelectorAll("button")).forEach(b => {
+          if ((b.textContent || "").includes("লোগো ও ঠিকানা")) b.remove();
+        });
+        mBox.appendChild(el);
+      });
+
+      sRow.insertAdjacentElement("afterend", mBtn);
+      mBtn.insertAdjacentElement("afterend", mBox);
+
+      mBtn.onclick = function(e) {
+        e.preventDefault();
+        const open = mBox.style.display === "block";
+        mBox.style.display = open ? "none" : "block";
+        mBtn.textContent = open ? "☰ মেনু ও ফিল্টার দেখুন ▾" : "✕ মেনু বন্ধ করুন ▴";
+      };
+    }
+  }
+  setTimeout(applyCleanHeaderAndMenu, 250);
+
+  // ৫. সেটিংস পপআপের একদম নিচে ("বন্ধ" বাটনের ওপরে) লোগো আপলোড ও পরিবর্তনের ঘর
+  document.addEventListener("click", function(e) {
+    if ((e.target.textContent || "").includes("সেটিংস")) {
+      setTimeout(function() {
+        if (document.getElementById("nhsMasterLogoPicker")) return;
+        const closeBtn = Array.from(document.querySelectorAll("button")).find(b => (b.textContent || "").trim() === "বন্ধ");
+        if (!closeBtn) return;
+
+        const box = document.createElement("div");
+        box.id = "nhsMasterLogoPicker";
+        box.style.cssText = "margin:10px 0;padding:10px;background:#ecfdf5;border:1.5px solid #065f46;border-radius:8px;text-align:left;color:#0f172a;font-size:.86rem;";
+        box.innerHTML = `
+          <div style="font-weight:700;color:#064e3b;margin-bottom:6px;">🖼️ প্রতিষ্ঠানের লোগো আপলোড / পরিবর্তন:</div>
+          <input id="nhsMasterLogoFile" type="file" accept="image/*" style="width:100%;">
+        `;
+        closeBtn.insertAdjacentElement("beforebegin", box);
+
+        document.getElementById("nhsMasterLogoFile").onchange = function(ev) {
+          const f = ev.target.files && ev.target.files.at(0);
+          if (!f) return;
+          const rd = new FileReader();
+          rd.onload = rEv => {
+            const img = new Image();
+            img.onload = () => {
+              const cv = document.createElement("canvas");
+              cv.width = 240; cv.height = 240;
+              cv.getContext("2d").drawImage(img, 0, 0, 240, 240);
+              localStorage.setItem("nhs_master_logo", cv.toDataURL("image/png", 0.92));
+              applyCleanHeaderAndMenu();
+              alert("প্রতিষ্ঠানের লোগো সফলভাবে আপলোড হয়েছে!");
+            };
+            img.src = rEv.target.result;
+          };
+          rd.readAsDataURL(f);
+        };
+      }, 250);
+    }
+  });
+});
+})();
+</script>
+<script>
+(function(){
+  const LOGO_KEY = "nhs_master_logo";
+  const escTxt = v => String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const qp = new URLSearchParams(location.search);
+  const isMemberView = Boolean(qp.get("member"));
+  const isVoterView = qp.get("voter") === "1";
+
+  function cleanupDlg() {
+    const dlg = document.getElementById("dlg");
+    if (dlg && !dlg.open) {
+      dlg.removeAttribute("style");
+      try { dlg.close(); } catch (e) {}
+    }
+    document.body.style.pointerEvents = "auto";
+    document.body.style.overflow = "auto";
+  }
+
+  const step34Style = document.createElement("style");
+  step34Style.id = "nhsStep34Style";
+  step34Style.textContent = `
+    header.top .brand img.logo,
+    #nhsMasterHeaderLogo {
+      width: 84px !important;
+      height: 84px !important;
+      max-width: 84px !important;
+      max-height: 84px !important;
+      object-fit: contain !important;
+      border-radius: 50% !important;
+      background: #ffffff !important;
+      padding: 4px !important;
+      border: 2px solid #0a6b6b !important;
+      box-shadow: 0 3px 10px rgba(0,0,0,.18) !important;
+      flex: none !important;
+    }
+    .nhs-welcome-logo {
+      width: 130px !important;
+      height: 130px !important;
+      max-width: 130px !important;
+      max-height: 130px !important;
+      object-fit: contain !important;
+      border-radius: 50% !important;
+      background: #ffffff !important;
+      padding: 7px !important;
+      margin: 0 auto 14px !important;
+      display: block !important;
+      border: 3px solid #fde047 !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,.35) !important;
+    }
+    #nhsMenuToggleBtn {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      min-height: 40px;
+      padding: 8px 14px;
+      background: var(--tab, #e2efed);
+      color: var(--ink, #15262a);
+      border: 1px solid var(--line, #d3dedc);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+    #nhsMenuDrawer {
+      margin-top: 8px;
+    }
+    #nhsMenuDrawer[hidden] {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(step34Style);
+
+  function showWelcomeScreen() {
+    if (isMemberView || isVoterView || document.getElementById("nhsWelcomeOverlay")) return;
+    const logoData = localStorage.getItem(LOGO_KEY) || "";
+    const orgTitle = document.querySelector("header.top .bt h1")?.textContent?.trim() || "নাসিরাবাদ হাউজিং সোসাইটি কল্যাণ পরিষদ";
+    const orgSub = document.querySelector("header.top .bt .sub")?.textContent?.trim() || "";
+
+    const ov = document.createElement("div");
+    ov.id = "nhsWelcomeOverlay";
+    ov.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:linear-gradient(135deg,#064e3b 0%,#0a6b6b 65%,#042f2e 100%);color:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;transition:opacity .45s ease;";
+    ov.innerHTML = `
+      ${logoData.startsWith("data:image/") ? `<img class="nhs-welcome-logo" src="${logoData}" alt="">` : `<div style="font-size:52px;margin-bottom:12px;">🏛️</div>`}
+      <div style="font-size:21px;font-weight:700;line-height:1.35;max-width:440px;">${escTxt(orgTitle)}</div>
+      ${orgSub ? `<div style="font-size:14px;color:#d1fae5;margin-top:4px;">${escTxt(orgSub)}</div>` : ""}
+    `;
+    document.body.appendChild(ov);
+    ov.onclick = () => ov.remove();
+    setTimeout(() => {
+      ov.style.opacity = "0";
+      setTimeout(() => ov.remove(), 450);
+    }, 1800);
+  }
+
+  function syncHeaderLogo() {
+    const logoData = localStorage.getItem(LOGO_KEY) || "";
+    if (!logoData.startsWith("data:image/")) return;
+
+    const mainLogo = document.getElementById("logo");
+    if (mainLogo) {
+      mainLogo.src = logoData;
+      mainLogo.hidden = false;
+    }
+
+    const brand = document.querySelector("header.top .brand");
+    if (brand && !document.getElementById("nhsMasterHeaderLogo") && !mainLogo) {
+      const img = document.createElement("img");
+      img.id = "nhsMasterHeaderLogo";
+      img.className = "logo";
+      img.alt = "";
+      img.src = logoData;
+      brand.insertBefore(img, brand.firstChild);
+    }
+  }
+
+  function setupCleanMenuBar() {
+    if (isMemberView || isVoterView) return;
+    const hdr = document.querySelector("header.top");
+    const sbox = hdr && hdr.querySelector(".sbox");
+    if (!hdr || !sbox || document.getElementById("nhsMenuToggleBtn")) return;
+
+    const extraBlocks = [];
+    let nx = sbox.nextElementSibling;
+    while (nx) {
+      if (nx.id !== "nhsMenuToggleBtn" && nx.id !== "nhsMenuDrawer") {
+        extraBlocks.push(nx);
+      }
+      nx = nx.nextElementSibling;
+    }
+    if (!extraBlocks.length) return;
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.id = "nhsMenuToggleBtn";
+    toggleBtn.type = "button";
+    toggleBtn.setAttribute("aria-expanded", "false");
+    toggleBtn.textContent = "☰ মেনু ও ফিল্টার ▾";
+
+    const drawer = document.createElement("div");
+    drawer.id = "nhsMenuDrawer";
+    drawer.hidden = true;
+
+    extraBlocks.forEach(blk => {
+      blk.querySelectorAll("button").forEach(btn => {
+        if ((btn.textContent || "").includes("লোগো ও ঠিকানা")) btn.remove();
+      });
+      drawer.appendChild(blk);
+    });
+
+    sbox.insertAdjacentElement("afterend", toggleBtn);
+    toggleBtn.insertAdjacentElement("afterend", drawer);
+
+    toggleBtn.onclick = () => {
+      const willOpen = drawer.hidden;
+      drawer.hidden = !willOpen;
+      toggleBtn.setAttribute("aria-expanded", String(willOpen));
+      toggleBtn.textContent = willOpen ? "✕ মেনু বন্ধ করুন ▴" : "☰ মেনু ও ফিল্টার ▾";
+    };
+  }
+
+  document.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn || !(btn.textContent || "").includes("সেটিংস")) return;
+
+    setTimeout(() => {
+      const dlg = document.getElementById("dlg");
+      if (!dlg || !dlg.open || document.getElementById("nhsStep4LogoBox")) return;
+
+      const closeBtn = Array.from(dlg.querySelectorAll("button")).find(b => (b.textContent || "").trim().startsWith("বন্ধ"));
+      const box = document.createElement("div");
+      box.id = "nhsStep4LogoBox";
+      box.style.cssText = "margin:10px 0;padding:10px;border:1px solid var(--line,#d3dedc);border-radius:8px;background:var(--bg,#f2f6f5);";
+      box.innerHTML = `
+        <div style="font-weight:700;margin-bottom:6px;">🖼️ প্রতিষ্ঠানের লোগো আপলোড / পরিবর্তন</div>
+        <input id="nhsStep4LogoInput" type="file" accept="image/*" style="width:100%;">
+        <div id="nhsStep4LogoMsg" class="msg" style="margin-top:4px;"></div>
+      `;
+
+      if (closeBtn && closeBtn.parentElement) {
+        closeBtn.parentElement.insertAdjacentElement("beforebegin", box);
+      } else {
+        dlg.appendChild(box);
+      }
+
+      const fileInp = document.getElementById("nhsStep4LogoInput");
+      fileInp.onchange = ev => {
+        const f = ev.target.files && ev.target.files[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = rEv => {
+          const dataUrl = rEv.target.result;
+          try {
+            localStorage.setItem(LOGO_KEY, dataUrl);
+          } catch (err) {
+            document.getElementById("nhsStep4LogoMsg").textContent = "ছবির সাইজ বড় হওয়ায় সেভ করা যায়নি। ছোট ছবি দিন।";
+            return;
+          }
+          syncHeaderLogo();
+          document.getElementById("nhsStep4LogoMsg").textContent = "✓ লোগো সংরক্ষিত হয়েছে (হেডারে ৮৪px ও ওয়েলকাম পর্দায় ১৩০px দেখাবে)।";
+        };
+        reader.readAsDataURL(f);
+      };
+    }, 200);
+  });
+
+  cleanupDlg();
+  syncHeaderLogo();
+  setupCleanMenuBar();
+  showWelcomeScreen();
+  setTimeout(setupCleanMenuBar, 400);
+})();
+</script>
+</body>
+</html>
